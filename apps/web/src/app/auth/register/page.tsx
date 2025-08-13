@@ -15,7 +15,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/auth/register', { email, name, password });
+      const response = await api.post('/auth/register', { email, name, password });
+      // Store the token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Registration failed');

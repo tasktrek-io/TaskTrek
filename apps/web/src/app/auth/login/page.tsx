@@ -14,7 +14,11 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
+      // Store the token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Login failed');

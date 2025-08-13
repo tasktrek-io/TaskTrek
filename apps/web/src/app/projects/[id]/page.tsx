@@ -1,5 +1,5 @@
 "use client";
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import AuthGuard from '../../../components/AuthGuard';
 import { api } from '../../../lib/api';
@@ -10,6 +10,7 @@ interface Task { _id: string; title: string; status: 'todo'|'in_progress'|'done'
 
 export default function ProjectPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const projectId = params.id;
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -57,14 +58,40 @@ export default function ProjectPage() {
     setQuery(''); setResults([]); loadProject();
   };
 
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Even if logout fails on server, still clear local token
+    }
+    localStorage.removeItem('token');
+    router.push('/auth/login');
+  };
+
   const allMembers = useMemo(()=> project ? [project.owner, ...project.members] : [], [project]);
 
   return (
     <AuthGuard>
       <main className="p-6 max-w-4xl mx-auto space-y-8">
-        <div>
-          <div className="text-2xl font-bold">{project?.name || 'Project'}</div>
-          {project?.description && <div className="text-gray-600">{project.description}</div>}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <button 
+                onClick={() => router.push('/dashboard')}
+                className="text-blue-600 hover:underline"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <div className="text-2xl font-bold">{project?.name || 'Project'}</div>
+            {project?.description && <div className="text-gray-600">{project.description}</div>}
+          </div>
+          <button 
+            onClick={logout}
+            className="bg-red-600 text-white rounded px-4 py-2 hover:bg-red-700"
+          >
+            Logout
+          </button>
         </div>
 
         <section className="space-y-2">

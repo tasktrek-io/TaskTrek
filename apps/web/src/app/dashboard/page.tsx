@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react';
 import AuthGuard from '../../components/AuthGuard';
 import { api } from '../../lib/api';
+import { useRouter } from 'next/navigation';
 
 interface Project { _id: string; name: string; description?: string }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -25,10 +27,28 @@ export default function DashboardPage() {
     }
   };
 
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Even if logout fails on server, still clear local token
+    }
+    localStorage.removeItem('token');
+    router.push('/auth/login');
+  };
+
   return (
     <AuthGuard>
       <main className="p-6 space-y-6 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold">My Projects</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">My Projects</h1>
+          <button 
+            onClick={logout}
+            className="bg-red-600 text-white rounded px-4 py-2 hover:bg-red-700"
+          >
+            Logout
+          </button>
+        </div>
 
         <form onSubmit={createProject} className="space-y-2 border rounded p-4">
           <div className="font-medium">Create Project</div>

@@ -27,7 +27,8 @@ router.post('/register', async (req: Request, res: Response) => {
       httpOnly: true, 
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
-      domain: isProduction ? '.vercel.app' : undefined
+      // Remove domain restriction to allow subdomains to work
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
     return res.status(201).json({ user: { id: user.id, email, name }, token });
@@ -57,7 +58,8 @@ router.post('/login', async (req: Request, res: Response) => {
       httpOnly: true, 
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
-      domain: isProduction ? '.vercel.app' : undefined
+      // Remove domain restriction to allow subdomains to work
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
     return res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
