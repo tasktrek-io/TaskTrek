@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 
 import authRouter from './routes/auth';
+import workspaceRouter from './routes/workspaces';
 import projectRouter from './routes/projects';
 import taskRouter from './routes/tasks';
 import userRouter from './routes/users';
@@ -22,6 +23,7 @@ app.use(morgan('dev'));
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 
 app.use('/api/auth', authRouter);
+app.use('/api/workspaces', workspaceRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/tasks', taskRouter);
 app.use('/api/users', userRouter);
