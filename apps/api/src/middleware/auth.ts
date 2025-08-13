@@ -11,7 +11,9 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
   try {
     const authHeader = req.headers?.authorization;
     const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
-    const token = req.cookies?.token || bearer;
+    const cookieToken = req.cookies?.token;
+    const token = bearer || cookieToken;
+    
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
     const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
     req.user = payload;

@@ -20,8 +20,17 @@ router.post('/register', async (req: Request, res: Response) => {
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({ email, name, passwordHash: hash });
     const token = jwt.sign({ id: user.id, email, name }, JWT_SECRET, { expiresIn: '7d' });
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
-    return res.status(201).json({ user: { id: user.id, email, name } });
+    
+    // Set cookie with proper cross-domain settings
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
+      domain: isProduction ? '.vercel.app' : undefined
+    });
+    
+    return res.status(201).json({ user: { id: user.id, email, name }, token });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -41,8 +50,17 @@ router.post('/login', async (req: Request, res: Response) => {
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
-    return res.json({ user: { id: user.id, email: user.email, name: user.name } });
+    
+    // Set cookie with proper cross-domain settings
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
+      domain: isProduction ? '.vercel.app' : undefined
+    });
+    
+    return res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -51,7 +69,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.post('/logout', (_req: Request, res: Response) => {
   res.clearCookie('token');
-  res.json({ ok: true });
+  res.json({ ok: true, message: 'Logged out successfully' });
 });
 
 router.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => {
