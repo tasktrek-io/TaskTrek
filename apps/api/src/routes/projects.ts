@@ -3,6 +3,7 @@ import { requireAuth, AuthedRequest } from '../middleware/auth';
 import Project from '../models/Project';
 import Workspace from '../models/Workspace';
 import User from '../models/User';
+import WorkspaceService from '../services/WorkspaceService';
 import { Types } from 'mongoose';
 
 const router = Router();
@@ -48,6 +49,11 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       owner: ownerId, 
       members: members || [] 
     });
+    
+    // Add all initial members to workspace
+    if (members && members.length > 0) {
+      await WorkspaceService.addUsersToWorkspaceForProject(members, (project._id as Types.ObjectId).toString());
+    }
     
     const populated = await Project.findById(project._id)
       .populate('workspace', 'name')
@@ -159,6 +165,9 @@ router.post('/:id/members', requireAuth, async (req: AuthedRequest, res: Respons
   if (!project.members.some(m => m.toString() === memberId)) {
     project.members.push(new Types.ObjectId(memberId) as any);
     await project.save();
+    
+    // Add user to workspace automatically
+    await WorkspaceService.addUserToWorkspaceForProject(memberId, id);
   }
   res.json({ ok: true });
 });

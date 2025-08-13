@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import AuthGuard from '../../components/AuthGuard';
 import Sidebar from '../../components/Sidebar';
-import { useWorkspace } from '../../contexts/WorkspaceContext';
 
 interface User {
   _id: string;
@@ -33,7 +32,6 @@ interface Task {
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   dueDate?: string;
-  assignees?: Array<{ _id: string; name: string; email: string }>;
   project: {
     _id: string;
     name: string;
@@ -42,8 +40,9 @@ interface Task {
 
 export default function Dashboard() {
   const router = useRouter();
-  const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
   const [user, setUser] = useState<User | null>(null);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,13 +59,20 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [userResponse, tasksResponse] = await Promise.all([
+      const [userResponse, workspacesResponse, tasksResponse] = await Promise.all([
         api.get('/users/me'),
+        api.get('/workspaces'),
         api.get('/tasks/assigned')
       ]);
       
       setUser(userResponse.data);
+      setWorkspaces(workspacesResponse.data);
       setAssignedTasks(tasksResponse.data);
+      
+      // Set first workspace as default
+      if (workspacesResponse.data.length > 0) {
+        setCurrentWorkspace(workspacesResponse.data[0]);
+      }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -78,37 +84,10 @@ export default function Dashboard() {
     if (!currentWorkspace) return;
     
     try {
-      // Load projects for current workspace
-      const projectsResponse = await api.get(`/projects/workspace/${currentWorkspace._id}`);
+      const projectsResponse = await api.get(`/projects?workspace=${currentWorkspace._id}`);
       setProjects(projectsResponse.data);
-      
-      // Filter assigned tasks for current workspace
-      const allTasksResponse = await api.get('/tasks/assigned');
-      const workspaceProjectIds = projectsResponse.data.map((p: Project) => p._id);
-      const filteredTasks = allTasksResponse.data.filter((task: Task) => 
-        workspaceProjectIds.includes(task.project._id)
-      );
-      setAssignedTasks(filteredTasks);
     } catch (err) {
       console.error('Failed to load workspace data:', err);
-      // Fallback to all user's projects and tasks
-      try {
-        const [allProjectsResponse, allTasksResponse] = await Promise.all([
-          api.get('/projects'),
-          api.get('/tasks/assigned')
-        ]);
-        
-        const workspaceProjects = allProjectsResponse.data.filter((p: Project) => p.workspace === currentWorkspace._id);
-        setProjects(workspaceProjects);
-        
-        const workspaceProjectIds = workspaceProjects.map((p: Project) => p._id);
-        const filteredTasks = allTasksResponse.data.filter((task: Task) => 
-          workspaceProjectIds.includes(task.project._id)
-        );
-        setAssignedTasks(filteredTasks);
-      } catch (fallbackErr) {
-        console.error('Fallback failed:', fallbackErr);
-      }
     }
   };
 

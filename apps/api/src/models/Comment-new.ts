@@ -3,7 +3,6 @@ import { Schema, model, Document } from 'mongoose';
 export interface IReaction {
   emoji: string;
   users: Schema.Types.ObjectId[];
-  count: number;
 }
 
 export interface IComment extends Document {
@@ -23,11 +22,7 @@ const reactionSchema = new Schema<IReaction>({
   users: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }],
-  count: {
-    type: Number,
-    default: 0
-  }
+  }]
 });
 
 const commentSchema = new Schema<IComment>({

@@ -3,7 +3,6 @@ import { Schema, model, Document } from 'mongoose';
 export interface IReaction {
   emoji: string;
   users: Schema.Types.ObjectId[];
-  count: number;
 }
 
 export interface IComment extends Document {
@@ -23,11 +22,7 @@ const reactionSchema = new Schema<IReaction>({
   users: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }],
-  count: {
-    type: Number,
-    default: 0
-  }
+  }]
 });
 
 const commentSchema = new Schema<IComment>({
@@ -51,4 +46,21 @@ const commentSchema = new Schema<IComment>({
   timestamps: true
 });
 
-export default model<IComment>('Comment', commentSchema);
+export default model<IComment>('Comment', commentSchema); Schema, Document, Types } from 'mongoose';
+
+export interface IComment extends Document {
+  task: Types.ObjectId; // Task
+  author: Types.ObjectId; // User
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const CommentSchema = new Schema<IComment>({
+  task: { type: Schema.Types.ObjectId, ref: 'Task', required: true },
+  author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+}, { timestamps: true });
+
+const Comment = mongoose.model<IComment>('Comment', CommentSchema);
+export default Comment;

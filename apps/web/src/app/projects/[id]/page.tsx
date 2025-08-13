@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import AuthGuard from '../../../components/AuthGuard';
+import TaskActivity from '../../../components/TaskActivity';
 import { api } from '../../../lib/api';
 
 interface Member { _id: string; email: string; name: string }
@@ -32,6 +33,11 @@ interface Comment {
   content: string;
   author: Member;
   createdAt: string;
+  reactions: {
+    emoji: string;
+    users: string[];
+    count: number;
+  }[];
 }
 
 export default function ProjectPage() {
@@ -46,6 +52,24 @@ export default function ProjectPage() {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   
+  // Task editing states
+  const [isEditing, setIsEditing] = useState<{ [key: string]: boolean }>({});
+  const [editValues, setEditValues] = useState<{
+    title: string;
+    description: string;
+    status: Task['status'];
+    priority: Task['priority'];
+    dueDate: string;
+    assignees: string[];
+  }>({
+    title: '',
+    description: '',
+    status: 'todo',
+    priority: 'medium',
+    dueDate: '',
+    assignees: []
+  });
+  
   // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -56,6 +80,11 @@ export default function ProjectPage() {
   
   // Comment form
   const [newComment, setNewComment] = useState('');
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionSuggestions, setMentionSuggestions] = useState<Member[]>([]);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{ [commentId: string]: boolean }>({});
   
   // Member search
   const [query, setQuery] = useState('');
@@ -78,6 +107,19 @@ export default function ProjectPage() {
     }, 250);
     return ()=>clearTimeout(t);
   }, [query]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.emoji-picker-container')) {
+        setShowEmojiPicker({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault(); 
@@ -124,9 +166,65 @@ export default function ProjectPage() {
       const response = await api.get(`/tasks/${task._id}`);
       setSelectedTask(response.data.task);
       setComments(response.data.comments);
+      
+      // Initialize edit values
+      setEditValues({
+        title: response.data.task.title,
+        description: response.data.task.description || '',
+        status: response.data.task.status,
+        priority: response.data.task.priority,
+        dueDate: response.data.task.dueDate ? new Date(response.data.task.dueDate).toISOString().split('T')[0] : '',
+        assignees: response.data.task.assignees.map((a: Member) => a._id)
+      });
+      
       setShowTaskDetail(true);
     } catch (err) {
       console.error('Failed to load task details:', err);
+    }
+  };
+
+  const startEditing = (field: string) => {
+    setIsEditing(prev => ({ ...prev, [field]: true }));
+  };
+
+  const cancelEditing = (field: string) => {
+    setIsEditing(prev => ({ ...prev, [field]: false }));
+    // Reset to original values
+    if (selectedTask) {
+      setEditValues(prev => ({
+        ...prev,
+        [field]: field === 'dueDate' 
+          ? (selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString().split('T')[0] : '')
+          : selectedTask[field as keyof Task] || ''
+      }));
+    }
+  };
+
+  const saveField = async (field: string) => {
+    if (!selectedTask) return;
+    
+    try {
+      const updateData: any = {};
+      
+      if (field === 'assignees') {
+        updateData[field] = editValues[field];
+      } else {
+        updateData[field] = editValues[field as keyof typeof editValues];
+      }
+
+      const response = await api.patch(`/tasks/${selectedTask._id}`, updateData);
+      
+      // Update the selected task with new data
+      setSelectedTask(response.data);
+      
+      // Update the task in the tasks list
+      setTasks(prev => prev.map(task => 
+        task._id === selectedTask._id ? response.data : task
+      ));
+      
+      setIsEditing(prev => ({ ...prev, [field]: false }));
+    } catch (err) {
+      console.error(`Failed to update ${field}:`, err);
     }
   };
 
@@ -140,9 +238,97 @@ export default function ProjectPage() {
       });
       setComments(prev => [...prev, response.data]);
       setNewComment('');
+      setShowMentions(false);
     } catch (err) {
       console.error('Failed to add comment:', err);
     }
+  };
+
+  const addReaction = async (commentId: string, emoji: string) => {
+    if (!selectedTask) return;
+
+    try {
+      const response = await api.post(`/tasks/${selectedTask._id}/comments/${commentId}/reactions`, {
+        emoji
+      });
+      
+      // Update the comment in the comments list
+      setComments(prev => prev.map(comment => 
+        comment._id === commentId ? response.data : comment
+      ));
+
+      // Close emoji picker after selecting
+      setShowEmojiPicker(prev => ({ ...prev, [commentId]: false }));
+    } catch (err) {
+      console.error('Failed to add reaction:', err);
+    }
+  };
+
+  const toggleEmojiPicker = (commentId: string) => {
+    setShowEmojiPicker(prev => ({ ...prev, [commentId]: !prev[commentId] }));
+  };
+
+  const getCurrentUserReaction = (comment: Comment) => {
+    // This would need the current user ID - for now return null
+    // In a real app, you'd get this from auth context
+    return null;
+  };
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart;
+    
+    setNewComment(value);
+    setCursorPosition(position);
+    
+    // Check for @ mentions
+    const beforeCursor = value.substring(0, position);
+    const mentionMatch = beforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      setShowMentions(true);
+      
+      // Filter project members for suggestions
+      const suggestions = allMembers.filter(member => 
+        member.name.toLowerCase().includes(query.toLowerCase()) ||
+        member.email.toLowerCase().includes(query.toLowerCase())
+      );
+      setMentionSuggestions(suggestions);
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  // Helper function to render comment content with highlighted mentions
+  const renderCommentContent = (content: string) => {
+    const mentionRegex = /@(\w+)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      // If index is odd, it's a mention
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-blue-100 text-blue-800 px-1 rounded">
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const insertMention = (member: Member) => {
+    const beforeCursor = newComment.substring(0, cursorPosition);
+    const afterCursor = newComment.substring(cursorPosition);
+    
+    // Replace the @query with @memberName
+    const beforeMention = beforeCursor.replace(/@\w*$/, '');
+    const newValue = beforeMention + `@${member.name} ` + afterCursor;
+    
+    setNewComment(newValue);
+    setShowMentions(false);
   };
 
   const toggleWatcher = async (taskId: string, action: 'add' | 'remove') => {
@@ -534,14 +720,111 @@ export default function ProjectPage() {
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(selectedTask.priority)}`}>
-                        {selectedTask.priority} Priority
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedTask.status)}`}>
-                        {selectedTask.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
+                      {/* Priority Editing */}
+                      {isEditing.priority ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={editValues.priority}
+                            onChange={(e) => setEditValues(prev => ({ ...prev, priority: e.target.value as Task['priority'] }))}
+                            className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="low">Low Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="high">High Priority</option>
+                            <option value="urgent">Urgent Priority</option>
+                          </select>
+                          <button
+                            onClick={() => saveField('priority')}
+                            className="text-green-600 hover:text-green-700 text-sm"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => cancelEditing('priority')}
+                            className="text-red-600 hover:text-red-700 text-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEditing('priority')}
+                          className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(selectedTask.priority)} hover:opacity-80`}
+                        >
+                          {selectedTask.priority} Priority ✏️
+                        </button>
+                      )}
+
+                      {/* Status Editing */}
+                      {isEditing.status ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={editValues.status}
+                            onChange={(e) => setEditValues(prev => ({ ...prev, status: e.target.value as Task['status'] }))}
+                            className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                          </select>
+                          <button
+                            onClick={() => saveField('status')}
+                            className="text-green-600 hover:text-green-700 text-sm"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => cancelEditing('status')}
+                            className="text-red-600 hover:text-red-700 text-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEditing('status')}
+                          className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedTask.status)} hover:opacity-80`}
+                        >
+                          {selectedTask.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ✏️
+                        </button>
+                      )}
                     </div>
-                    <h2 className="text-2xl font-semibold text-gray-900">{selectedTask.title}</h2>
+                    
+                    {/* Title Editing */}
+                    {isEditing.title ? (
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={editValues.title}
+                          onChange={(e) => setEditValues(prev => ({ ...prev, title: e.target.value }))}
+                          className="text-2xl font-semibold text-gray-900 border-b-2 border-blue-500 focus:outline-none bg-transparent flex-1"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => saveField('title')}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => cancelEditing('title')}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startEditing('title')}
+                        className="text-left hover:bg-gray-50 rounded p-1 w-full group"
+                      >
+                        <h2 className="text-2xl font-semibold text-gray-900">
+                          {selectedTask.title} 
+                          <span className="opacity-0 group-hover:opacity-100 text-sm ml-2">✏️</span>
+                        </h2>
+                      </button>
+                    )}
+                    
                     <p className="text-gray-600 mt-1">
                       Created by {selectedTask.createdBy.name}
                     </p>
@@ -570,23 +853,81 @@ export default function ProjectPage() {
                     {/* Description */}
                     <div>
                       <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        {selectedTask.description || 'No description provided'}
-                      </div>
+                      {isEditing.description ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editValues.description}
+                            onChange={(e) => setEditValues(prev => ({ ...prev, description: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows={4}
+                            placeholder="Enter task description"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveField('description')}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => cancelEditing('description')}
+                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEditing('description')}
+                          className="w-full text-left bg-gray-50 rounded-lg p-4 hover:bg-gray-100 group"
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className="text-gray-700">
+                              {selectedTask.description || 'No description provided'}
+                            </span>
+                            <span className="opacity-0 group-hover:opacity-100 text-sm">✏️</span>
+                          </div>
+                        </button>
+                      )}
                     </div>
 
                     {/* Comments */}
                     <div>
                       <h3 className="font-medium text-gray-900 mb-4">Comments</h3>
                       
-                      <form onSubmit={addComment} className="mb-4">
+                      <form onSubmit={addComment} className="mb-4 relative">
                         <textarea
                           value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Add a comment..."
+                          onChange={handleCommentChange}
+                          placeholder="Add a comment... (type @ to mention someone)"
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           rows={3}
                         />
+                        
+                        {/* Mention Suggestions */}
+                        {showMentions && mentionSuggestions.length > 0 && (
+                          <div className="absolute bottom-16 left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg max-h-32 overflow-y-auto z-10">
+                            {mentionSuggestions.map(member => (
+                              <button
+                                key={member._id}
+                                type="button"
+                                onClick={() => insertMention(member)}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                  {member.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium">{member.name}</div>
+                                  <div className="text-xs text-gray-500">{member.email}</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        
                         <button
                           type="submit"
                           className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -600,16 +941,61 @@ export default function ProjectPage() {
                           <div key={comment._id} className="border rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
-                                {comment.author.name.charAt(0).toUpperCase()}
+                                {comment.author?.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                               <div>
-                                <div className="font-medium text-sm">{comment.author.name}</div>
+                                <div className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</div>
                                 <div className="text-xs text-gray-500">
                                   {new Date(comment.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
-                            <p className="text-gray-700">{comment.content}</p>
+                            <p className="text-gray-700 mb-3">{renderCommentContent(comment.content)}</p>
+                            
+                            {/* Emoji Reactions */}
+                            <div className="flex flex-wrap gap-2 items-center">
+                              {/* Existing Reactions */}
+                              {comment.reactions?.filter(r => r.count > 0).map((reaction, index) => (
+                                <button
+                                  key={`${reaction.emoji}-${index}`}
+                                  onClick={() => addReaction(comment._id, reaction.emoji)}
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                                >
+                                  <span>{reaction.emoji}</span>
+                                  <span className="text-xs text-gray-600">{reaction.count}</span>
+                                </button>
+                              ))}
+                              
+                              {/* Add Reaction Button */}
+                              <div className="relative emoji-picker-container">
+                                <button
+                                  onClick={() => toggleEmojiPicker(comment._id)}
+                                  className="flex items-center gap-1 px-2 py-1 text-gray-500 hover:bg-gray-100 rounded-full text-sm transition-colors"
+                                  title="Add reaction"
+                                >
+                                  <span>😊</span>
+                                  <span className="text-xs">Add</span>
+                                </button>
+                                
+                                {/* Emoji Picker Dropdown */}
+                                {showEmojiPicker[comment._id] && (
+                                  <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
+                                    <div className="grid grid-cols-5 gap-1">
+                                      {['👍', '👎', '❤️', '😊', '😢', '😮', '😡', '🎉', '👏', '🔥'].map(emoji => (
+                                        <button
+                                          key={emoji}
+                                          onClick={() => addReaction(comment._id, emoji)}
+                                          className="w-10 h-10 hover:bg-gray-100 rounded-md flex items-center justify-center text-xl transition-colors border-0 p-1"
+                                          title={`React with ${emoji}`}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         ))}
                         {comments.length === 0 && (
@@ -617,27 +1003,85 @@ export default function ProjectPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Activity Section */}
+                    <TaskActivity taskId={selectedTask._id} />
                   </div>
 
                   {/* Sidebar */}
                   <div className="space-y-6">
                     {/* Assignees */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Assignees</h3>
-                      <div className="space-y-2">
-                        {selectedTask.assignees.length > 0 ? (
-                          selectedTask.assignees.map(assignee => (
-                            <div key={assignee._id} className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
-                                {assignee.name.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="text-sm">{assignee.name}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-sm">No assignees</p>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium text-gray-900">Assignees</h3>
+                        {!isEditing.assignees && (
+                          <button
+                            onClick={() => startEditing('assignees')}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            ✏️ Edit
+                          </button>
                         )}
                       </div>
+                      
+                      {isEditing.assignees ? (
+                        <div className="space-y-2">
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {allMembers.map(member => (
+                              <label key={member._id} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={editValues.assignees.includes(member._id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setEditValues(prev => ({
+                                        ...prev,
+                                        assignees: [...prev.assignees, member._id]
+                                      }));
+                                    } else {
+                                      setEditValues(prev => ({
+                                        ...prev,
+                                        assignees: prev.assignees.filter(id => id !== member._id)
+                                      }));
+                                    }
+                                  }}
+                                  className="mr-2"
+                                />
+                                <span className="text-sm">{member.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveField('assignees')}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => cancelEditing('assignees')}
+                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {selectedTask.assignees.length > 0 ? (
+                            selectedTask.assignees.map(assignee => (
+                              <div key={assignee._id} className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                  {assignee.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-sm">{assignee.name}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-gray-500 text-sm">No assignees</p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Watchers */}
@@ -660,14 +1104,51 @@ export default function ProjectPage() {
                     </div>
 
                     {/* Due Date */}
-                    {selectedTask.dueDate && (
-                      <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Due Date</h3>
-                        <p className="text-sm text-gray-600">
-                          {new Date(selectedTask.dueDate).toLocaleDateString()}
-                        </p>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium text-gray-900">Due Date</h3>
+                        {!isEditing.dueDate && (
+                          <button
+                            onClick={() => startEditing('dueDate')}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
                       </div>
-                    )}
+                      
+                      {isEditing.dueDate ? (
+                        <div className="space-y-2">
+                          <input
+                            type="date"
+                            value={editValues.dueDate}
+                            onChange={(e) => setEditValues(prev => ({ ...prev, dueDate: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveField('dueDate')}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => cancelEditing('dueDate')}
+                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          {selectedTask.dueDate 
+                            ? new Date(selectedTask.dueDate).toLocaleDateString()
+                            : 'No due date set'
+                          }
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
