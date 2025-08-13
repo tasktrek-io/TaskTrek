@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts,js --exec \"node -r ts-node/register src/index.ts\"",
-    "build": "tsc -p tsconfig.json",
+    "build": "npx tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "vercel-build": "npm run build"
   },
@@ -29,6 +29,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.15.0",
-    "tslib": "^2.6.3"
+    "tslib": "^2.6.3",
+    "typescript": "^5.5.4"
   }
 }
