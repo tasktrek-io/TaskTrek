@@ -145,13 +145,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
             onClick={() => setShowDropdown(false)}
           />
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-20 max-h-96 overflow-hidden">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-gray-900">Notifications</h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-700"
+                    className="text-sm text-blue-600 hover:text-blue-700 flex-shrink-0"
                   >
                     Mark all read
                   </button>
@@ -173,34 +173,34 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                   <div
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                       !notification.read ? 'bg-blue-50' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="text-lg flex-shrink-0">
+                      <span className="text-lg flex-shrink-0 mt-0.5">
                         {getNotificationIcon(notification.type)}
                       </span>
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-sm text-gray-900 truncate">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="font-medium text-sm text-gray-900 truncate pr-2">
                             {notification.title}
                           </h4>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                          )}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {getTimeAgo(notification.createdAt)}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2 break-words">
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words leading-relaxed">
                           {notification.message}
                         </p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500 truncate">
-                            {notification.sender.name}
-                          </span>
-                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                            {getTimeAgo(notification.createdAt)}
-                          </span>
-                        </div>
+                        <span className="text-xs text-gray-500 truncate block">
+                          From: {notification.sender.name}
+                        </span>
                       </div>
                     </div>
                   </div>

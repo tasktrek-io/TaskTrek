@@ -2,7 +2,9 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import AuthGuard from '../../../components/AuthGuard';
+import Sidebar from '../../../components/Sidebar';
 import TaskActivity from '../../../components/TaskActivity';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { api } from '../../../lib/api';
 
 interface Member { _id: string; email: string; name: string }
@@ -43,6 +45,7 @@ interface Comment {
 export default function ProjectPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { currentWorkspace } = useWorkspace();
   const projectId = params.id;
   
   const [project, setProject] = useState<Project | null>(null);
@@ -388,43 +391,72 @@ export default function ProjectPage() {
 
   return (
     <AuthGuard>
-      <main className="p-6 max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <button 
-                onClick={() => router.push('/workspaces')}
-                className="text-blue-600 hover:underline"
-              >
-                ← Back
-              </button>
-            </div>
-            <div className="text-2xl font-bold">{project?.name || 'Project'}</div>
-            {project?.description && <div className="text-gray-600">{project.description}</div>}
-            {project?.workspace && (
-              <div className="text-sm text-gray-500 mt-1">
-                Workspace: {project.workspace.name}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowTaskModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              + Add Task
-            </button>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <main className="flex-1 p-6 overflow-auto space-y-8">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
             <button 
-              onClick={logout}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              onClick={() => router.push('/dashboard')}
+              className="hover:text-blue-600 transition-colors"
             >
-              Logout
+              Dashboard
             </button>
-          </div>
-        </div>
+            <span>›</span>
+            <button 
+              onClick={() => router.push('/workspaces')}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Workspaces
+            </button>
+            <span>›</span>
+            {project?.workspace && (
+              <>
+                <button 
+                  onClick={() => router.push(`/workspaces/${project.workspace._id}`)}
+                  className="hover:text-blue-600 transition-colors"
+                >
+                  {project.workspace.name}
+                </button>
+                <span>›</span>
+              </>
+            )}
+            <span className="text-gray-900 font-medium">{project?.name}</span>
+          </nav>
 
-        {/* Project Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Project Header */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{project?.name || 'Project'}</h1>
+                {project?.description && (
+                  <p className="text-gray-600 mb-2">{project.description}</p>
+                )}
+                {project?.workspace && (
+                  <p className="text-sm text-gray-500">
+                    Workspace: {project.workspace.name}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowTaskModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + Add Task
+                </button>
+                <button 
+                  onClick={logout}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Project Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-lg border">
             <div className="text-2xl font-bold text-blue-600">{tasksByStatus.todo.length}</div>
             <div className="text-sm text-gray-600">To Do</div>
@@ -1155,7 +1187,8 @@ export default function ProjectPage() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </AuthGuard>
   );
 }

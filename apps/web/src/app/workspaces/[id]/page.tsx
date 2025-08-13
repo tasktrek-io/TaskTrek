@@ -2,6 +2,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AuthGuard from '../../../components/AuthGuard';
+import Sidebar from '../../../components/Sidebar';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { api } from '../../../lib/api';
 
 interface Workspace {
@@ -35,6 +37,7 @@ interface Member {
 export default function WorkspacePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { currentWorkspace } = useWorkspace();
   const workspaceId = params.id;
   
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -55,6 +58,14 @@ export default function WorkspacePage() {
   // Member search
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Member[]>([]);
+
+  // Time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   const loadData = async () => {
     try {
@@ -157,14 +168,17 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <AuthGuard>
-        <div className="p-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
-              ))}
+        <div className="flex h-screen bg-gray-50">
+          <Sidebar />
+          <div className="flex-1 p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1,2,3].map(i => (
+                  <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -176,51 +190,78 @@ export default function WorkspacePage() {
 
   return (
     <AuthGuard>
-      <main className="p-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <button 
-                onClick={() => router.push('/workspaces')}
-                className="text-blue-600 hover:underline"
-              >
-                ← Back to Workspaces
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <div
-                className="w-6 h-6 rounded-full"
-                style={{ backgroundColor: workspace?.color }}
-              ></div>
-              <h1 className="text-3xl font-bold text-gray-900">{workspace?.name}</h1>
-            </div>
-            {workspace?.description && (
-              <p className="text-gray-600 mt-1">{workspace.description}</p>
-            )}
-            <p className="text-sm text-gray-500 mt-2">
-              {allMembers.length} member{allMembers.length !== 1 ? 's' : ''}
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <main className="flex-1 p-6 overflow-auto">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Dashboard
+            </button>
+            <span>›</span>
+            <button 
+              onClick={() => router.push('/workspaces')}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Workspaces
+            </button>
+            <span>›</span>
+            <span className="text-gray-900 font-medium">{workspace?.name}</span>
+          </nav>
+
+          {/* Greeting Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {getGreeting()}! Welcome to {workspace?.name}
+            </h1>
+            <p className="text-gray-600">
+              Manage your projects and collaborate with your team
             </p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              + New Project
-            </button>
-            <button 
-              onClick={logout}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
 
-        {/* Projects */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Projects</h2>
+          {/* Workspace Info */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                  style={{ backgroundColor: workspace?.color }}
+                >
+                  {workspace?.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{workspace?.name}</h2>
+                  {workspace?.description && (
+                    <p className="text-gray-600 mt-1">{workspace.description}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    {allMembers.length} member{allMembers.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + New Project
+                </button>
+                <button 
+                  onClick={logout}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Projects Section */}
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Projects</h3>
           
           {projects.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border">
@@ -480,7 +521,8 @@ export default function WorkspacePage() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </AuthGuard>
   );
 }
