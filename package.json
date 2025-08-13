@@ -1,0 +1,23 @@
+{
+  "name": "project-management",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace api\" \"npm run dev --workspace web\"",
+    "build": "npm run build --workspace web && npm run build --workspace api",
+    "start": "concurrently \"npm run start --workspace api\" \"npm run start --workspace web\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.15.0",
+    "concurrently": "^9.0.1",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
