@@ -54,6 +54,13 @@ export default function ProjectPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const [currentUser, setCurrentUser] = useState<Member | null>(null);
+  
+  // Search states for watchers and assignees
+  const [watcherSearchQuery, setWatcherSearchQuery] = useState('');
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+  const [watcherSearchResults, setWatcherSearchResults] = useState<Member[]>([]);
+  const [assigneeSearchResults, setAssigneeSearchResults] = useState<Member[]>([]);
   
   // Task editing states
   const [isEditing, setIsEditing] = useState<{ [key: string]: boolean }>({});
@@ -95,6 +102,41 @@ export default function ProjectPage() {
 
   const loadProject = () => api.get(`/projects/${projectId}`).then(r=>setProject(r.data));
   const loadTasks = () => api.get(`/tasks/project/${projectId}`).then(r=>setTasks(r.data));
+  const loadCurrentUser = () => api.get('/auth/me').then(r=>setCurrentUser(r.data.user));
+
+  useEffect(()=>{ 
+    loadCurrentUser();
+    if(projectId){ 
+      loadProject(); 
+      loadTasks(); 
+    } 
+  }, [projectId]);
+
+  // Search for watchers
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (watcherSearchQuery) {
+        api.get(`/users/search`, { params: { q: watcherSearchQuery } })
+          .then(r => setWatcherSearchResults(r.data.slice(0, 5)));
+      } else {
+        setWatcherSearchResults([]);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [watcherSearchQuery]);
+
+  // Search for assignees  
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (assigneeSearchQuery) {
+        api.get(`/users/search`, { params: { q: assigneeSearchQuery } })
+          .then(r => setAssigneeSearchResults(r.data.slice(0, 5)));
+      } else {
+        setAssigneeSearchResults([]);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [assigneeSearchQuery]);
 
   useEffect(()=>{ 
     if(projectId){ 
@@ -105,7 +147,7 @@ export default function ProjectPage() {
 
   useEffect(()=>{
     const t = setTimeout(()=>{
-      if(query) api.get(`/users/search`, { params: { email: query } }).then(r=>setSearchResults(r.data));
+      if(query) api.get(`/users/search`, { params: { q: query } }).then(r=>setSearchResults(r.data));
       else setSearchResults([]);
     }, 250);
     return ()=>clearTimeout(t);
@@ -345,6 +387,68 @@ export default function ProjectPage() {
     }
   };
 
+  const addWatcher = async (taskId: string, userId: string) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/watchers`, { 
+        userId,
+        action: 'add' 
+      });
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(response.data);
+      }
+      setWatcherSearchQuery('');
+      setWatcherSearchResults([]);
+    } catch (err) {
+      console.error('Failed to add watcher:', err);
+    }
+  };
+
+  const removeWatcher = async (taskId: string, userId: string) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/watchers`, { 
+        userId,
+        action: 'remove' 
+      });
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to remove watcher:', err);
+    }
+  };
+
+  const addAssignee = async (taskId: string, userId: string) => {
+    try {
+      if (!selectedTask) return;
+      
+      const newAssignees = [...selectedTask.assignees.map(a => a._id), userId];
+      const response = await api.patch(`/tasks/${taskId}`, { assignees: newAssignees });
+      
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(response.data);
+      }
+      setAssigneeSearchQuery('');
+      setAssigneeSearchResults([]);
+    } catch (err) {
+      console.error('Failed to add assignee:', err);
+    }
+  };
+
+  const removeAssignee = async (taskId: string, userId: string) => {
+    try {
+      if (!selectedTask) return;
+      
+      const newAssignees = selectedTask.assignees.filter(a => a._id !== userId).map(a => a._id);
+      const response = await api.patch(`/tasks/${taskId}`, { assignees: newAssignees });
+      
+      if (selectedTask && selectedTask._id === taskId) {
+        setSelectedTask(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to remove assignee:', err);
+    }
+  };
+
   const addMember = async (memberId: string) => {
     await api.post(`/projects/${projectId}/members`, { memberId });
     setQuery(''); 
@@ -489,7 +593,7 @@ export default function ProjectPage() {
             <input 
               value={query} 
               onChange={e=>setQuery(e.target.value)} 
-              placeholder="Add member by email" 
+              placeholder="Add member by name or email" 
               className="border rounded-lg p-2 w-full max-w-md" 
             />
             {!!searchResults.length && (
@@ -749,31 +853,31 @@ export default function ProjectPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex justify-between items-start mb-8">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {/* Priority Editing */}
+                    <div className="flex items-center gap-3 mb-4">
+                      {/* Priority Badge */}
                       {isEditing.priority ? (
                         <div className="flex items-center gap-2">
                           <select
                             value={editValues.priority}
                             onChange={(e) => setEditValues(prev => ({ ...prev, priority: e.target.value as Task['priority'] }))}
-                            className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-1 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="low">Low Priority</option>
-                            <option value="medium">Medium Priority</option>
-                            <option value="high">High Priority</option>
-                            <option value="urgent">Urgent Priority</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
                           </select>
                           <button
                             onClick={() => saveField('priority')}
-                            className="text-green-600 hover:text-green-700 text-sm"
+                            className="text-green-600 hover:text-green-700 text-sm p-1 hover:bg-green-50 rounded"
                           >
                             ✓
                           </button>
                           <button
                             onClick={() => cancelEditing('priority')}
-                            className="text-red-600 hover:text-red-700 text-sm"
+                            className="text-red-600 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
                           >
                             ✕
                           </button>
@@ -781,19 +885,19 @@ export default function ProjectPage() {
                       ) : (
                         <button
                           onClick={() => startEditing('priority')}
-                          className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(selectedTask.priority)} hover:opacity-80`}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(selectedTask.priority)} hover:opacity-80 transition-all`}
                         >
-                          {selectedTask.priority} Priority ✏️
+                          {selectedTask.priority.toUpperCase()}
                         </button>
                       )}
 
-                      {/* Status Editing */}
+                      {/* Status Badge */}
                       {isEditing.status ? (
                         <div className="flex items-center gap-2">
                           <select
                             value={editValues.status}
                             onChange={(e) => setEditValues(prev => ({ ...prev, status: e.target.value as Task['status'] }))}
-                            className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-1 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="todo">To Do</option>
                             <option value="in_progress">In Progress</option>
@@ -801,13 +905,13 @@ export default function ProjectPage() {
                           </select>
                           <button
                             onClick={() => saveField('status')}
-                            className="text-green-600 hover:text-green-700 text-sm"
+                            className="text-green-600 hover:text-green-700 text-sm p-1 hover:bg-green-50 rounded"
                           >
                             ✓
                           </button>
                           <button
                             onClick={() => cancelEditing('status')}
-                            className="text-red-600 hover:text-red-700 text-sm"
+                            className="text-red-600 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
                           >
                             ✕
                           </button>
@@ -815,32 +919,32 @@ export default function ProjectPage() {
                       ) : (
                         <button
                           onClick={() => startEditing('status')}
-                          className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedTask.status)} hover:opacity-80`}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedTask.status)} hover:opacity-80 transition-all`}
                         >
-                          {selectedTask.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ✏️
+                          {selectedTask.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </button>
                       )}
                     </div>
                     
-                    {/* Title Editing */}
+                    {/* Task Title */}
                     {isEditing.title ? (
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-4">
                         <input
                           type="text"
                           value={editValues.title}
                           onChange={(e) => setEditValues(prev => ({ ...prev, title: e.target.value }))}
-                          className="text-2xl font-semibold text-gray-900 border-b-2 border-blue-500 focus:outline-none bg-transparent flex-1"
+                          className="text-3xl font-bold text-gray-900 border-none focus:outline-none bg-transparent flex-1 focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
                           autoFocus
                         />
                         <button
                           onClick={() => saveField('title')}
-                          className="text-green-600 hover:text-green-700"
+                          className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded"
                         >
                           ✓
                         </button>
                         <button
                           onClick={() => cancelEditing('title')}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded"
                         >
                           ✕
                         </button>
@@ -848,31 +952,27 @@ export default function ProjectPage() {
                     ) : (
                       <button
                         onClick={() => startEditing('title')}
-                        className="text-left hover:bg-gray-50 rounded p-1 w-full group"
+                        className="text-left hover:bg-gray-50 rounded-lg p-2 w-full group mb-4 transition-colors"
                       >
-                        <h2 className="text-2xl font-semibold text-gray-900">
+                        <h1 className="text-3xl font-bold text-gray-900">
                           {selectedTask.title} 
-                          <span className="opacity-0 group-hover:opacity-100 text-sm ml-2">✏️</span>
-                        </h2>
+                          <span className="opacity-0 group-hover:opacity-100 text-lg ml-2 text-gray-400">✏️</span>
+                        </h1>
                       </button>
                     )}
                     
-                    <p className="text-gray-600 mt-1">
-                      Created by {selectedTask.createdBy.name}
-                    </p>
+                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                      <span>Created by</span>
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                        {selectedTask.createdBy.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{selectedTask.createdBy.name}</span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => toggleWatcher(selectedTask._id, 
-                        selectedTask.watchers.some(w => w._id === selectedTask.createdBy._id) ? 'remove' : 'add'
-                      )}
-                      className="px-3 py-1 border rounded hover:bg-gray-50 text-sm"
-                    >
-                      👁 Watch
-                    </button>
-                    <button
                       onClick={() => setShowTaskDetail(false)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 hover:text-gray-600 text-xl"
                     >
                       ✕
                     </button>
@@ -1044,93 +1144,165 @@ export default function ProjectPage() {
                   <div className="space-y-6">
                     {/* Assignees */}
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-gray-900">Assignees</h3>
-                        {!isEditing.assignees && (
-                          <button
-                            onClick={() => startEditing('assignees')}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            ✏️ Edit
-                          </button>
-                        )}
-                      </div>
+                      <h3 className="font-medium text-gray-900 mb-3">👤 Assignees</h3>
                       
-                      {isEditing.assignees ? (
-                        <div className="space-y-2">
-                          <div className="space-y-2 max-h-32 overflow-y-auto">
-                            {allMembers.map(member => (
-                              <label key={member._id} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={editValues.assignees.includes(member._id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setEditValues(prev => ({
-                                        ...prev,
-                                        assignees: [...prev.assignees, member._id]
-                                      }));
-                                    } else {
-                                      setEditValues(prev => ({
-                                        ...prev,
-                                        assignees: prev.assignees.filter(id => id !== member._id)
-                                      }));
-                                    }
-                                  }}
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">{member.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => saveField('assignees')}
-                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => cancelEditing('assignees')}
-                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
-                            >
-                              Cancel
-                            </button>
-                          </div>
+                      {/* Add Assignee Search */}
+                      <div className="mb-4">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search for users to assign..."
+                            value={assigneeSearchQuery}
+                            onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          
+                          {/* Search Results Dropdown */}
+                          {assigneeSearchResults.length > 0 && (
+                            <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 z-10 max-h-40 overflow-y-auto">
+                              {assigneeSearchResults.map(user => (
+                                <button
+                                  key={user._id}
+                                  onClick={() => addAssignee(selectedTask._id, user._id)}
+                                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0"
+                                  disabled={selectedTask.assignees.some(a => a._id === user._id)}
+                                >
+                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                                    <p className="text-xs text-gray-600">{user.email}</p>
+                                  </div>
+                                  {selectedTask.assignees.some(a => a._id === user._id) && (
+                                    <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Already assigned</span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {selectedTask.assignees.length > 0 ? (
-                            selectedTask.assignees.map(assignee => (
-                              <div key={assignee._id} className="flex items-center gap-2">
+                      </div>
+
+                      {/* Current Assignees */}
+                      <div className="space-y-2">
+                        {selectedTask.assignees.length > 0 ? (
+                          selectedTask.assignees.map(assignee => (
+                            <div key={assignee._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
                                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
                                   {assignee.name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="text-sm">{assignee.name}</span>
+                                <span className="text-sm font-medium">{assignee.name}</span>
+                                {currentUser && assignee._id === currentUser._id && (
+                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Me</span>
+                                )}
                               </div>
-                            ))
-                          ) : (
-                            <p className="text-gray-500 text-sm">No assignees</p>
-                          )}
-                        </div>
-                      )}
+                              <button
+                                onClick={() => removeAssignee(selectedTask._id, assignee._id)}
+                                className="text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-sm py-2">No assignees</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Watchers */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Watchers</h3>
+                      <h3 className="font-medium text-gray-900 mb-3">👀 Watchers</h3>
+                      
+                      {/* Current User Watch/Unwatch Toggle - Only show if not watching */}
+                      {currentUser && !selectedTask.watchers.some(w => w._id === currentUser._id) && (
+                        <div className="mb-4">
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="text-lg">👁</span>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Watch</p>
+                                <p className="text-xs text-gray-600">Get notified of all activity on this task.</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => toggleWatcher(selectedTask._id, 'add')}
+                              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Watch
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Add Watchers Search */}
+                      <div className="mb-4">
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-400">🔍</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search or enter name/email..."
+                            value={watcherSearchQuery}
+                            onChange={(e) => setWatcherSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        
+                        {/* Watcher Search Results */}
+                        {watcherSearchResults.length > 0 && (
+                          <div className="mt-2 border border-gray-200 rounded-lg bg-white shadow-sm">
+                            {watcherSearchResults.map(user => (
+                              <button
+                                key={user._id}
+                                onClick={() => addWatcher(selectedTask._id, user._id)}
+                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+                                disabled={selectedTask.watchers.some(w => w._id === user._id)}
+                              >
+                                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">{user.name}</p>
+                                  <p className="text-xs text-gray-500">{user.email}</p>
+                                </div>
+                                {selectedTask.watchers.some(w => w._id === user._id) && (
+                                  <span className="ml-auto text-xs text-gray-400">Already watching</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Current Watchers List */}
                       <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Watchers</h4>
                         {selectedTask.watchers.length > 0 ? (
                           selectedTask.watchers.map(watcher => (
-                            <div key={watcher._id} className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
-                                {watcher.name.charAt(0).toUpperCase()}
+                            <div key={watcher._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
+                                  {watcher.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-sm font-medium">{watcher.name}</span>
+                                {currentUser && watcher._id === currentUser._id && (
+                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Me</span>
+                                )}
                               </div>
-                              <span className="text-sm">{watcher.name}</span>
+                              <button
+                                onClick={() => removeWatcher(selectedTask._id, watcher._id)}
+                                className="text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                              >
+                                ✕
+                              </button>
                             </div>
                           ))
                         ) : (
-                          <p className="text-gray-500 text-sm">No watchers</p>
+                          <p className="text-gray-500 text-sm py-2">No watchers</p>
                         )}
                       </div>
                     </div>

@@ -93,7 +93,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query) {
-        api.get(`/users/search`, { params: { email: query } })
+        api.get(`/users/search`, { params: { q: query } })
           .then(r => setSearchResults(r.data))
           .catch(() => setSearchResults([]));
       } else {
@@ -248,12 +248,6 @@ export default function WorkspacePage() {
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   + New Project
-                </button>
-                <button 
-                  onClick={logout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Logout
                 </button>
               </div>
             </div>
@@ -448,7 +442,7 @@ export default function WorkspacePage() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Search members by email"
+                        placeholder="Search members by name or email"
                       />
                       
                       {searchResults.length > 0 && (

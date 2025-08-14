@@ -145,13 +145,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
             onClick={() => setShowDropdown(false)}
           />
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-20 max-h-96 overflow-hidden">
-            <div className="p-4 border-b flex-shrink-0">
+            <div className="p-4 border-b flex-shrink-0 bg-white sticky top-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-gray-900">Notifications</h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-700 flex-shrink-0"
+                    className="text-sm text-blue-600 hover:text-blue-700 flex-shrink-0 whitespace-nowrap"
                   >
                     Mark all read
                   </button>
@@ -173,7 +173,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                   <div
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    className={`p-4 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                       !notification.read ? 'bg-blue-50' : ''
                     }`}
                   >
@@ -181,9 +181,9 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                       <span className="text-lg flex-shrink-0 mt-0.5">
                         {getNotificationIcon(notification.type)}
                       </span>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <h4 className="font-medium text-sm text-gray-900 truncate pr-2">
+                          <h4 className="font-medium text-sm text-gray-900 truncate flex-1">
                             {notification.title}
                           </h4>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -195,7 +195,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words leading-relaxed">
+                        <p className="text-sm text-gray-600 mb-2 break-words overflow-hidden" 
+                           style={{ 
+                             display: '-webkit-box',
+                             WebkitLineClamp: 2,
+                             WebkitBoxOrient: 'vertical' as const,
+                             overflow: 'hidden'
+                           }}>
                           {notification.message}
                         </p>
                         <span className="text-xs text-gray-500 truncate block">
