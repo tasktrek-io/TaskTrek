@@ -22,6 +22,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     loadWorkspaces();
@@ -62,7 +63,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('selectedWorkspaceId');
-    router.push('/login');
+    router.push('/');
   };
 
   const menuItems = [
@@ -99,7 +100,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
@@ -107,13 +108,29 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
             <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold">
               🔧
             </div>
-            <span className="font-semibold text-lg">TaskTrek</span>
+            {!isCollapsed && <span className="font-semibold text-lg">TaskTrek</span>}
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            {!isCollapsed && <NotificationBell />}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <svg 
+                className={`w-4 h-4 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Workspace Selector */}
-        {currentWorkspace && (
+        {currentWorkspace && !isCollapsed && (
           <div className="relative">
             <button
               onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
@@ -132,31 +149,46 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
             {showWorkspaceDropdown && (
               <>
                 <div 
-                  className="fixed inset-0 z-10" 
+                  className="fixed inset-0 z-10"
                   onClick={() => setShowWorkspaceDropdown(false)}
                 />
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                  <div className="py-1">
-                    {workspaces.map(workspace => (
-                      <button
-                        key={workspace._id}
-                        onClick={() => handleWorkspaceChange(workspace)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: workspace.color }}
-                        />
-                        <span>{workspace.name}</span>
-                        {workspace._id === currentWorkspace._id && (
-                          <span className="ml-auto text-orange-500">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                  {workspaces.map((workspace) => (
+                    <button
+                      key={workspace._id}
+                      onClick={() => handleWorkspaceChange(workspace)}
+                      className={`w-full flex items-center gap-2 p-3 text-left hover:bg-gray-50 ${
+                        currentWorkspace._id === workspace._id ? 'bg-orange-50' : ''
+                      }`}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: workspace.color }}
+                      />
+                      <span className="font-medium">{workspace.name}</span>
+                      {workspace._id === currentWorkspace._id && (
+                        <span className="ml-auto text-orange-500">✓</span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {/* Workspace indicator for collapsed state */}
+        {currentWorkspace && isCollapsed && (
+          <div className="flex justify-center mt-2">
+            <div 
+              className="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
+              style={{ backgroundColor: currentWorkspace.color }}
+              title={currentWorkspace.name}
+            >
+              <span className="text-white text-xs font-bold">
+                {currentWorkspace.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -170,14 +202,22 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group relative ${
                     isActive
                       ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
+                  title={isCollapsed ? item.name : undefined}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span className="font-medium">{item.name}</span>
+                  {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                  
+                  {/* Tooltip for collapsed state */}
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                      {item.name}
+                    </div>
+                  )}
                 </Link>
               </li>
             );
@@ -189,10 +229,18 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors group relative"
+          title={isCollapsed ? 'Logout' : undefined}
         >
           <span className="text-lg">🚪</span>
-          <span className="font-medium">Logout</span>
+          {!isCollapsed && <span className="font-medium">Logout</span>}
+          
+          {/* Tooltip for collapsed state */}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+              Logout
+            </div>
+          )}
         </button>
       </div>
     </div>

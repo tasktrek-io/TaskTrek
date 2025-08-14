@@ -757,16 +757,6 @@ export default function ProjectPage() {
     return filteredTasks;
   };
 
-  const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (err) {
-      // Even if logout fails on server, still clear local token
-    }
-    localStorage.removeItem('token');
-    router.push('/auth/login');
-  };
-
   const allMembers = useMemo(() => {
     if (!project) return [];
     
@@ -942,13 +932,6 @@ export default function ProjectPage() {
                     )}
                   </div>
                 )}
-                
-                <button 
-                  onClick={logout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
               </div>
             </div>
           </div>
