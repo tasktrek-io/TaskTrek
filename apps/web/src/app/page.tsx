@@ -1,15 +1,25 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function HomePage() {
   const [email, setEmail] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
 
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, redirect to register page
-    window.location.href = '/auth/register';
+    if (isLoggedIn) {
+      window.location.href = '/dashboard';
+    } else {
+      window.location.href = '/auth/register';
+    }
   };
 
   return (
@@ -24,18 +34,29 @@ export default function HomePage() {
         </div>
         
         <div className="flex items-center gap-4">
-          <Link 
-            href="/auth/login"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Log In
-          </Link>
-          <Link 
-            href="/auth/register"
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
-          >
-            Sign Up
-          </Link>
+          {isLoggedIn ? (
+            <Link 
+              href="/dashboard"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link 
+                href="/auth/login"
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Log In
+              </Link>
+              <Link 
+                href="/auth/register"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -51,14 +72,16 @@ export default function HomePage() {
         
         <div className="flex justify-center items-center gap-4 mb-4">
           <Link
-            href="/auth/register"
+            href={isLoggedIn ? "/dashboard" : "/auth/register"}
             className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all font-medium text-lg"
           >
-            Start Managing Projects →
+            {isLoggedIn ? "Go to Dashboard →" : "Start Managing Projects →"}
           </Link>
         </div>
         
-        <p className="text-sm text-gray-500">Free to use • No credit card required</p>
+        <p className="text-sm text-gray-500">
+          {isLoggedIn ? "Welcome back! Continue managing your projects." : "Free to use • No credit card required"}
+        </p>
       </section>
 
       {/* Features Section */}

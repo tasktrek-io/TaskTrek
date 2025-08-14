@@ -189,13 +189,16 @@ export default function Dashboard() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50">
         <Sidebar 
           currentWorkspace={currentWorkspace || undefined} 
           onWorkspaceChange={setCurrentWorkspace}
         />
         
-        <main className="flex-1 p-6">
+        <main 
+          className="p-6 transition-all duration-300" 
+          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+        >
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>

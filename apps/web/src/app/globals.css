@@ -2,8 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light dark; }
+:root { 
+  color-scheme: light dark;
+  --sidebar-width: 16rem;
+}
 
 html, body {
   height: 100%;
+}
+
+/* Ensure main content transitions smoothly when sidebar changes */
+main {
+  transition: margin-left 300ms ease-in-out;
 }

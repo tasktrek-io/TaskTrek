@@ -154,9 +154,12 @@ export default function MyTasksPage() {
   if (loading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="min-h-screen bg-gray-50">
           <Sidebar currentWorkspace={currentWorkspace || undefined} onWorkspaceChange={setCurrentWorkspace} />
-          <div className="flex-1 flex items-center justify-center">
+          <div 
+            className="flex items-center justify-center min-h-screen transition-all duration-300" 
+            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+          >
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         </div>
@@ -166,10 +169,13 @@ export default function MyTasksPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50">
         <Sidebar currentWorkspace={currentWorkspace || undefined} onWorkspaceChange={setCurrentWorkspace} />
         
-        <main className="flex-1 p-6">
+        <main 
+          className="p-6 transition-all duration-300" 
+          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+        >
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">

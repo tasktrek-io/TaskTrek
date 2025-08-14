@@ -27,6 +27,18 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   useEffect(() => {
     loadWorkspaces();
   }, []);
+  
+  useEffect(() => {
+    // Update CSS custom property for sidebar width
+    const updateSidebarWidth = () => {
+      document.documentElement.style.setProperty(
+        '--sidebar-width', 
+        isCollapsed ? '4rem' : '16rem'
+      );
+    };
+    
+    updateSidebarWidth();
+  }, [isCollapsed]);
 
   useEffect(() => {
     // Load saved workspace from localStorage
@@ -100,7 +112,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   ];
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300`}>
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
@@ -202,15 +214,15 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group relative ${
+                  className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 rounded-lg transition-colors group relative ${
                     isActive
                       ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                  <span className={`${isCollapsed ? 'text-xl' : 'text-lg'} flex-shrink-0`}>{item.icon}</span>
+                  {!isCollapsed && <span className="font-medium ml-3">{item.name}</span>}
                   
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (
@@ -229,11 +241,13 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors group relative"
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors group relative`}
           title={isCollapsed ? 'Logout' : undefined}
         >
-          <span className="text-lg">🚪</span>
-          {!isCollapsed && <span className="font-medium">Logout</span>}
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          {!isCollapsed && <span className="font-medium ml-3">Logout</span>}
           
           {/* Tooltip for collapsed state */}
           {isCollapsed && (

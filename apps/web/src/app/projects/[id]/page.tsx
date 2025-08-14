@@ -823,59 +823,62 @@ export default function ProjectPage() {
 
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <Sidebar />
-        <main className="flex-1 p-6 overflow-auto space-y-8">
+        <main 
+          className="p-3 sm:p-6 space-y-6 sm:space-y-8 transition-all duration-300" 
+          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+        >
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap">
             <button 
               onClick={() => router.push('/dashboard')}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-blue-600 transition-colors flex-shrink-0"
             >
               Dashboard
             </button>
-            <span>›</span>
+            <span className="flex-shrink-0">›</span>
             <button 
               onClick={() => router.push('/workspaces')}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-blue-600 transition-colors flex-shrink-0"
             >
               Workspaces
             </button>
-            <span>›</span>
+            <span className="flex-shrink-0">›</span>
             {project?.workspace && (
               <>
                 <button 
                   onClick={() => router.push(`/workspaces/${project.workspace._id}`)}
-                  className="hover:text-blue-600 transition-colors"
+                  className="hover:text-blue-600 transition-colors flex-shrink-0"
                 >
                   {project.workspace.name}
                 </button>
-                <span>›</span>
+                <span className="flex-shrink-0">›</span>
               </>
             )}
-            <span className="text-gray-900 font-medium">{project?.name}</span>
+            <span className="text-gray-900 font-medium truncate">{project?.name}</span>
           </nav>
 
           {/* Project Header */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{project?.name || 'Project'}</h1>
+          <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 truncate">{project?.name || 'Project'}</h1>
                 {project?.description && (
-                  <p className="text-gray-600 mb-2">{project.description}</p>
+                  <p className="text-gray-600 mb-2 text-sm sm:text-base">{project.description}</p>
                 )}
-                <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                   {project?.workspace && (
-                    <span>Workspace: {project.workspace.name}</span>
+                    <span className="truncate">Workspace: {project.workspace.name}</span>
                   )}
                   {project?.startDate && (
-                    <span>Start: {new Date(project.startDate).toLocaleDateString()}</span>
+                    <span className="whitespace-nowrap">Start: {new Date(project.startDate).toLocaleDateString()}</span>
                   )}
                   {project?.endDate && (
-                    <span>End: {new Date(project.endDate).toLocaleDateString()}</span>
+                    <span className="whitespace-nowrap">End: {new Date(project.endDate).toLocaleDateString()}</span>
                   )}
                   {project?.status && (
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
                       project.status === 'active' ? 'bg-green-100 text-green-800' :
                       project.status === 'planning' ? 'bg-blue-100 text-blue-800' :
                       project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
@@ -887,9 +890,9 @@ export default function ProjectPage() {
                     </span>
                   )}
                   {project?.tags && project.tags.length > 0 && (
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {project.tags.map(tag => (
-                        <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                        <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs whitespace-nowrap">
                           {tag}
                         </span>
                       ))}
@@ -897,10 +900,10 @@ export default function ProjectPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-3 items-center flex-shrink-0">
                 <button
                   onClick={() => setShowTaskModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap"
                 >
                   + Add Task
                 </button>
@@ -937,31 +940,31 @@ export default function ProjectPage() {
           </div>
 
           {/* Project Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-blue-600">{tasksByStatus.todo.length}</div>
-            <div className="text-sm text-gray-600">To Do</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white p-3 sm:p-4 rounded-lg border">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">{tasksByStatus.todo.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600">To Do</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-yellow-600">{tasksByStatus.in_progress.length}</div>
-            <div className="text-sm text-gray-600">In Progress</div>
+          <div className="bg-white p-3 sm:p-4 rounded-lg border">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600">{tasksByStatus.in_progress.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600">In Progress</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-green-600">{tasksByStatus.done.length}</div>
-            <div className="text-sm text-gray-600">Done</div>
+          <div className="bg-white p-3 sm:p-4 rounded-lg border">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{tasksByStatus.done.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Done</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-gray-600">{tasks.length}</div>
-            <div className="text-sm text-gray-600">Total Tasks</div>
+          <div className="bg-white p-3 sm:p-4 rounded-lg border">
+            <div className="text-xl sm:text-2xl font-bold text-gray-600">{tasks.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Total Tasks</div>
           </div>
         </div>
 
         {/* Members Section */}
-        <section className="bg-white rounded-lg border p-6">
-          <div className="font-medium mb-4">Team Members</div>
+        <section className="bg-white rounded-lg border p-4 sm:p-6">
+          <div className="font-medium mb-4 text-sm sm:text-base">Team Members</div>
           <div className="flex flex-wrap gap-2 mb-4">
             {allMembers.map(m => (
-              <span key={m._id} className="px-3 py-1 rounded-full bg-gray-100 text-sm">
+              <span key={m._id} className="px-2 sm:px-3 py-1 rounded-full bg-gray-100 text-xs sm:text-sm truncate max-w-full">
                 {m.name} ({m.email})
               </span>
             ))}
@@ -971,15 +974,15 @@ export default function ProjectPage() {
               value={query} 
               onChange={e=>setQuery(e.target.value)} 
               placeholder="Search for new team members to add..." 
-              className="border rounded-lg p-2 w-full max-w-md" 
+              className="border rounded-lg p-2 w-full text-sm sm:text-base" 
             />
             {!!searchResults.length && (
-              <div className="absolute top-full left-0 border rounded-lg mt-1 w-full max-w-md bg-white shadow-lg z-10 divide-y">
+              <div className="absolute top-full left-0 border rounded-lg mt-1 w-full bg-white shadow-lg z-10 divide-y max-h-48 overflow-y-auto">
                 {searchResults.map(u => (
                   <button 
                     key={u._id} 
                     onClick={()=>addMember(u._id)} 
-                    className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm truncate"
                   >
                     {u.name} ({u.email})
                   </button>
@@ -990,75 +993,77 @@ export default function ProjectPage() {
         </section>
 
         {/* Tasks Kanban Board */}
-        <section className="bg-white rounded-lg border p-6">
+        <section className="bg-white rounded-lg border p-3 sm:p-6">
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Tasks</h2>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-lg sm:text-xl font-semibold">Tasks</h2>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-x-auto">
                 {/* Search */}
-                <div className="relative">
+                <div className="relative min-w-0 flex-shrink-0">
                   <input
                     type="text"
                     placeholder="Search tasks..."
                     value={taskSearchQuery}
                     onChange={(e) => setTaskSearchQuery(e.target.value)}
-                    className="w-64 pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full sm:w-64 pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <svg className="w-4 h-4 absolute left-2.5 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
 
-                {/* Filter Button */}
-                <div className="relative">
-                  <button
-                    data-filter-button
-                    onClick={() => setShowTaskFilters(!showTaskFilters)}
-                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
-                      showTaskFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
-                    </svg>
-                    Filter
-                    {(taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length) > 0 && (
-                      <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
-                        {taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                {/* Filter Buttons Row */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {/* Filter Button */}
+                  <div className="relative flex-shrink-0">
+                    <button
+                      data-filter-button
+                      onClick={() => setShowTaskFilters(!showTaskFilters)}
+                      className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
+                        showTaskFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+                      </svg>
+                      <span className="hidden sm:inline">Filter</span>
+                      {(taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length) > 0 && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+                          {taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
 
                 {/* Sort Button */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <button
                     data-filter-button
                     onClick={() => setShowTaskSort(!showTaskSort)}
-                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
                       showTaskSort ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                     </svg>
-                    Sort
+                    <span className="hidden sm:inline">Sort</span>
                   </button>
                 </div>
 
                 {/* Assignee Filter Button */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <button
                     data-filter-button
                     onClick={() => setShowAssigneeFilter(!showAssigneeFilter)}
-                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
                       showAssigneeFilter ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
-                    Assignee
+                    <span className="hidden sm:inline">Assignee</span>
                     {taskFilters.assignees.length > 0 && (
                       <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
                         {taskFilters.assignees.length}
@@ -1071,13 +1076,14 @@ export default function ProjectPage() {
                 {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
                   <button
                     onClick={clearAllFilters}
-                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 whitespace-nowrap flex-shrink-0"
                   >
                     Clear all
                   </button>
                 )}
               </div>
             </div>
+          </div>
 
             {/* Results Summary */}
             {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
@@ -1273,9 +1279,9 @@ export default function ProjectPage() {
           
           {isClient ? (
             <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex flex-col md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-x-visible">
                 {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-                  <div key={status} className="space-y-3">
+                  <div key={status} className="space-y-3 min-w-[280px] md:min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-gray-900 capitalize">
                         {status.replace('_', ' ')}
@@ -1299,17 +1305,17 @@ export default function ProjectPage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white border rounded-lg p-4 transition-shadow cursor-pointer select-none ${
+                                  className={`bg-white border rounded-lg p-3 sm:p-4 transition-shadow cursor-pointer select-none ${
                                     snapshot.isDragging 
                                       ? 'shadow-lg rotate-2 border-blue-300' 
                                       : 'hover:shadow-md'
                                   }`}
                                   onClick={() => openTaskDetail(task)}
                                 >
-                                  <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
+                                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{task.title}</h4>
                                   
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-3">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium w-fit ${getPriorityColor(task.priority)}`}>
                                       {task.priority}
                                     </span>
                                     {task.dueDate && (
@@ -1337,14 +1343,14 @@ export default function ProjectPage() {
                                     </div>
                                   )}
                                   
-                                  <div className="flex gap-2 mt-3">
+                                  <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
                                     {status !== 'todo' && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'todo');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                                       >
                                         Todo
                                       </button>
@@ -1355,7 +1361,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'in_progress');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                                       >
                                         In Progress
                                       </button>
@@ -1366,7 +1372,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'done');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
                                       >
                                         Done
                                       </button>
@@ -1394,7 +1400,7 @@ export default function ProjectPage() {
               </div>
             </DragDropContext>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-col md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-x-visible">
               {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
                 <div key={status} className="space-y-3">
                   <div className="flex items-center justify-between">

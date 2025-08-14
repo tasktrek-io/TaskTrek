@@ -168,9 +168,12 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <AuthGuard>
-        <div className="flex h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
           <Sidebar />
-          <div className="flex-1 p-6">
+          <div 
+            className="p-6 transition-all duration-300" 
+            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+          >
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
@@ -190,9 +193,12 @@ export default function WorkspacePage() {
 
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <Sidebar />
-        <main className="flex-1 p-6 overflow-auto">
+        <main 
+          className="p-6 overflow-auto transition-all duration-300" 
+          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
+        >
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
             <button 

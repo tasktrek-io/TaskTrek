@@ -9,10 +9,36 @@ pnpm-debug.log*
 apps/**/.next
 apps/**/dist
 
-# Env
-*.env
+# Environment files with secrets
+.env
+.env.local
+.env.production
+.env.development
 apps/**/.env
 apps/**/.env.local
+apps/**/.env.production
+apps/**/.env.development
+
+# But keep environment examples and public configs
+!.env.example
+!.env.public
 
 # MacOS
 .DS_Store
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
