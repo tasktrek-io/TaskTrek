@@ -78,7 +78,7 @@ router.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.user!;
   const user = await User.findById(id).select('_id email name');
   if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json({ user: { id: user.id, email: user.email, name: user.name } });
+  res.json({ user: { _id: user._id, id: user.id, email: user.email, name: user.name } });
 });
 
 export default router;
