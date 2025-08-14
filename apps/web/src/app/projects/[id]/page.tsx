@@ -1,13 +1,31 @@
 "use client";
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { DropResult } from 'react-beautiful-dnd';
 import AuthGuard from '../../../components/AuthGuard';
 import Sidebar from '../../../components/Sidebar';
 import TaskActivity from '../../../components/TaskActivity';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { api } from '../../../lib/api';
 
-interface Member { _id: string; email: string; name: string }
+// Dynamically import DragDropContext with no SSR
+const DragDropContext = dynamic(
+  () => import('react-beautiful-dnd').then(mod => mod.DragDropContext),
+  { ssr: false }
+);
+
+const Droppable = dynamic(
+  () => import('react-beautiful-dnd').then(mod => mod.Droppable),
+  { ssr: false }
+);
+
+const Draggable = dynamic(
+  () => import('react-beautiful-dnd').then(mod => mod.Draggable),
+  { ssr: false }
+);
+
+interface Member { _id: string; email: string; name: string; id?: string }
 interface Project { 
   _id: string; 
   name: string; 
@@ -99,6 +117,8 @@ export default function ProjectPage() {
   // Member search
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Member[]>([]);
+  const [isClient, setIsClient] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const loadProject = () => api.get(`/projects/${projectId}`).then(r=>setProject(r.data));
   const loadTasks = () => api.get(`/tasks/project/${projectId}`).then(r=>setTasks(r.data));
@@ -106,13 +126,15 @@ export default function ProjectPage() {
 
   useEffect(()=>{ 
     loadCurrentUser();
-    if(projectId){ 
+    if(projectId){
       loadProject(); 
-      loadTasks(); 
+      loadTasks();
     } 
   }, [projectId]);
 
-  // Search for watchers
+  useEffect(() => {
+    setIsClient(true);
+  }, []);  // Search for watchers
   useEffect(() => {
     const t = setTimeout(() => {
       if (watcherSearchQuery) {
@@ -203,6 +225,52 @@ export default function ProjectPage() {
       loadTasks();
     } catch (err) {
       console.error('Failed to update task status:', err);
+    }
+  };
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = async (result: DropResult) => {
+    setIsDragging(false);
+    
+    const { destination, source, draggableId } = result;
+
+    // If dropped outside a droppable area
+    if (!destination) {
+      return;
+    }
+
+    // If dropped in the same position
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    // Convert droppableId to task status
+    const newStatus = destination.droppableId as Task['status'];
+    
+    // Optimistically update the UI first
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task => 
+        task._id === draggableId 
+          ? { ...task, status: newStatus }
+          : task
+      );
+      return updatedTasks;
+    });
+
+    // Then update the server
+    try {
+      await api.patch(`/tasks/${draggableId}`, { status: newStatus });
+      // Don't call loadTasks() here as it would cause re-render during drag
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+      // Revert the optimistic update on error
+      loadTasks();
     }
   };
 
@@ -487,11 +555,11 @@ export default function ProjectPage() {
     }
   };
 
-  const tasksByStatus = {
+  const tasksByStatus = useMemo(() => ({
     todo: tasks.filter(t => t.status === 'todo'),
     in_progress: tasks.filter(t => t.status === 'in_progress'),
     done: tasks.filter(t => t.status === 'done')
-  };
+  }), [tasks]);
 
   return (
     <AuthGuard>
@@ -616,101 +684,222 @@ export default function ProjectPage() {
         <section className="bg-white rounded-lg border p-6">
           <h2 className="text-xl font-semibold mb-6">Tasks</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-              <div key={status} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-gray-900 capitalize">
-                    {status.replace('_', ' ')}
-                  </h3>
-                  <span className="text-sm text-gray-500">{statusTasks.length}</span>
-                </div>
-                
-                <div className="space-y-3 min-h-[200px]">
-                  {statusTasks.map(task => (
-                    <div
-                      key={task._id}
-                      className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => openTaskDetail(task)}
-                    >
-                      <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
-                      
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                          {task.priority}
-                        </span>
-                        {task.dueDate && (
-                          <span className="text-xs text-gray-500">
-                            Due {new Date(task.dueDate).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {task.assignees.length > 0 && (
-                        <div className="flex gap-1 mb-2">
-                          {task.assignees.slice(0, 3).map(assignee => (
-                            <div
-                              key={assignee._id}
-                              className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
-                            >
-                              {assignee.name.charAt(0).toUpperCase()}
-                            </div>
+          {isClient ? (
+            <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
+                  <div key={status} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900 capitalize">
+                        {status.replace('_', ' ')}
+                      </h3>
+                      <span className="text-sm text-gray-500">{statusTasks.length}</span>
+                    </div>
+                    
+                    <Droppable droppableId={status}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`space-y-3 min-h-[200px] p-2 rounded-lg transition-colors ${
+                            snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-200 border-dashed' : 'bg-gray-50'
+                          }`}
+                        >
+                          {statusTasks.map((task, index) => (
+                            <Draggable key={task._id} draggableId={task._id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white border rounded-lg p-4 transition-shadow cursor-pointer select-none ${
+                                    snapshot.isDragging 
+                                      ? 'shadow-lg rotate-2 border-blue-300' 
+                                      : 'hover:shadow-md'
+                                  }`}
+                                  onClick={() => openTaskDetail(task)}
+                                >
+                                  <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
+                                  
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                                      {task.priority}
+                                    </span>
+                                    {task.dueDate && (
+                                      <span className="text-xs text-gray-500">
+                                        Due {new Date(task.dueDate).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {task.assignees.length > 0 && (
+                                    <div className="flex gap-1 mb-2">
+                                      {task.assignees.slice(0, 3).map(assignee => (
+                                        <div
+                                          key={assignee._id}
+                                          className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
+                                        >
+                                          {assignee.name.charAt(0).toUpperCase()}
+                                        </div>
+                                      ))}
+                                      {task.assignees.length > 3 && (
+                                        <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
+                                          +{task.assignees.length - 3}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex gap-2 mt-3">
+                                    {status !== 'todo' && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateTaskStatus(task._id, 'todo');
+                                        }}
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                      >
+                                        Todo
+                                      </button>
+                                    )}
+                                    {status !== 'in_progress' && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateTaskStatus(task._id, 'in_progress');
+                                        }}
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                      >
+                                        In Progress
+                                      </button>
+                                    )}
+                                    {status !== 'done' && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateTaskStatus(task._id, 'done');
+                                        }}
+                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                                      >
+                                        Done
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
                           ))}
-                          {task.assignees.length > 3 && (
-                            <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
-                              +{task.assignees.length - 3}
+                          
+                          {statusTasks.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              No tasks
                             </div>
                           )}
+                          {provided.placeholder}
                         </div>
                       )}
-                      
-                      <div className="flex gap-2 mt-3">
-                        {status !== 'todo' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateTaskStatus(task._id, 'todo');
-                            }}
-                            className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                          >
-                            Todo
-                          </button>
-                        )}
-                        {status !== 'in_progress' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateTaskStatus(task._id, 'in_progress');
-                            }}
-                            className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                          >
-                            In Progress
-                          </button>
-                        )}
-                        {status !== 'done' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateTaskStatus(task._id, 'done');
-                            }}
-                            className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                          >
-                            Done
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {statusTasks.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      No tasks
-                    </div>
-                  )}
-                </div>
+                    </Droppable>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </DragDropContext>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
+                <div key={status} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-gray-900 capitalize">
+                      {status.replace('_', ' ')}
+                    </h3>
+                    <span className="text-sm text-gray-500">{statusTasks.length}</span>
+                  </div>
+                  
+                  <div className="space-y-3 min-h-[200px] p-2 rounded-lg bg-gray-50">
+                    {statusTasks.map((task) => (
+                      <div
+                        key={task._id}
+                        className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => openTaskDetail(task)}
+                      >
+                        <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
+                        
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                            {task.priority}
+                          </span>
+                          {task.dueDate && (
+                            <span className="text-xs text-gray-500">
+                              Due {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {task.assignees.length > 0 && (
+                          <div className="flex gap-1 mb-2">
+                            {task.assignees.slice(0, 3).map(assignee => (
+                              <div
+                                key={assignee._id}
+                                className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
+                              >
+                                {assignee.name.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                            {task.assignees.length > 3 && (
+                              <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
+                                +{task.assignees.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2 mt-3">
+                          {status !== 'todo' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTaskStatus(task._id, 'todo');
+                              }}
+                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                            >
+                              Todo
+                            </button>
+                          )}
+                          {status !== 'in_progress' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTaskStatus(task._id, 'in_progress');
+                              }}
+                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                            >
+                              In Progress
+                            </button>
+                          )}
+                          {status !== 'done' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTaskStatus(task._id, 'done');
+                              }}
+                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                            >
+                              Done
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {statusTasks.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        No tasks
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Create Task Modal */}
