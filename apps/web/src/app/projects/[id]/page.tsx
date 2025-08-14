@@ -45,6 +45,8 @@ interface Task {
   status: 'todo'|'in_progress'|'done'; 
   priority: 'low'|'medium'|'high'|'urgent';
   dueDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
   assignees: Member[];
   watchers: Member[];
   createdBy: Member;
@@ -134,6 +136,23 @@ export default function ProjectPage() {
     tags: [] as string[]
   });
 
+  // Task filtering and search states
+  const [taskSearchQuery, setTaskSearchQuery] = useState('');
+  const [showTaskFilters, setShowTaskFilters] = useState(false);
+  const [showTaskSort, setShowTaskSort] = useState(false);
+  const [showAssigneeFilter, setShowAssigneeFilter] = useState(false);
+  const [taskFilters, setTaskFilters] = useState({
+    status: [] as string[],
+    priority: [] as string[],
+    assignees: [] as string[],
+    tags: [] as string[],
+    dueDateRange: { start: '', end: '' }
+  });
+  const [taskSort, setTaskSort] = useState({
+    field: 'dateCreated' as 'status' | 'title' | 'assignee' | 'priority' | 'dueDate' | 'startDate' | 'dateCreated' | 'dateUpdated' | 'dateClosed',
+    direction: 'desc' as 'asc' | 'desc'
+  });
+
   const loadProject = () => api.get(`/projects/${projectId}`).then(r=>setProject(r.data));
   const loadTasks = () => api.get(`/tasks/project/${projectId}`).then(r=>setTasks(r.data));
   const loadCurrentUser = () => api.get('/auth/me').then(r=>setCurrentUser(r.data.user));
@@ -190,6 +209,11 @@ export default function ProjectPage() {
       }
       if (!target.closest('.project-menu-container')) {
         setShowProjectMenu(false);
+      }
+      if (!target.closest('.task-filters-container') && !target.closest('[data-filter-button]')) {
+        setShowTaskFilters(false);
+        setShowTaskSort(false);
+        setShowAssigneeFilter(false);
       }
     };
 
@@ -608,6 +632,131 @@ export default function ProjectPage() {
     }));
   };
 
+  // Task filtering and sorting functions
+  const toggleTaskFilter = (filterType: 'status' | 'priority' | 'assignees' | 'tags', value: string) => {
+    setTaskFilters(prev => ({
+      ...prev,
+      [filterType]: (prev[filterType] as string[]).includes(value)
+        ? (prev[filterType] as string[]).filter((item: string) => item !== value)
+        : [...(prev[filterType] as string[]), value]
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setTaskFilters({
+      status: [],
+      priority: [],
+      assignees: [],
+      tags: [],
+      dueDateRange: { start: '', end: '' }
+    });
+    setTaskSearchQuery('');
+  };
+
+  const toggleTaskSort = (field: typeof taskSort.field) => {
+    setTaskSort(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const filterAndSortTasks = (tasks: Task[]) => {
+    let filteredTasks = [...tasks];
+
+    // Apply search filter
+    if (taskSearchQuery) {
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(taskSearchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(taskSearchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (taskFilters.status.length > 0) {
+      filteredTasks = filteredTasks.filter(task =>
+        taskFilters.status.includes(task.status)
+      );
+    }
+
+    // Apply priority filter
+    if (taskFilters.priority.length > 0) {
+      filteredTasks = filteredTasks.filter(task =>
+        taskFilters.priority.includes(task.priority)
+      );
+    }
+
+    // Apply assignee filter
+    if (taskFilters.assignees.length > 0) {
+      filteredTasks = filteredTasks.filter(task => {
+        if (taskFilters.assignees.includes('unassigned')) {
+          return task.assignees.length === 0 || task.assignees.some(assignee =>
+            taskFilters.assignees.includes(assignee._id)
+          );
+        }
+        return task.assignees.some(assignee =>
+          taskFilters.assignees.includes(assignee._id)
+        );
+      });
+    }
+
+    // Apply due date range filter
+    if (taskFilters.dueDateRange.start || taskFilters.dueDateRange.end) {
+      filteredTasks = filteredTasks.filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        const startDate = taskFilters.dueDateRange.start ? new Date(taskFilters.dueDateRange.start) : null;
+        const endDate = taskFilters.dueDateRange.end ? new Date(taskFilters.dueDateRange.end) : null;
+        
+        if (startDate && endDate) {
+          return taskDate >= startDate && taskDate <= endDate;
+        } else if (startDate) {
+          return taskDate >= startDate;
+        } else if (endDate) {
+          return taskDate <= endDate;
+        }
+        return true;
+      });
+    }
+
+    // Apply sorting
+    filteredTasks.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (taskSort.field) {
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'priority':
+          const priorityOrder = { low: 1, medium: 2, high: 3, urgent: 4 };
+          aValue = priorityOrder[a.priority];
+          bValue = priorityOrder[b.priority];
+          break;
+        case 'dueDate':
+          aValue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+          bValue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+          break;
+        case 'assignee':
+          aValue = a.assignees[0]?.name?.toLowerCase() || 'zzz';
+          bValue = b.assignees[0]?.name?.toLowerCase() || 'zzz';
+          break;
+        case 'dateCreated':
+          aValue = new Date(a.createdAt || 0).getTime();
+          bValue = new Date(b.createdAt || 0).getTime();
+          break;
+        default:
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+      }
+
+      if (aValue < bValue) return taskSort.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return taskSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filteredTasks;
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -673,11 +822,14 @@ export default function ProjectPage() {
     }
   };
 
-  const tasksByStatus = useMemo(() => ({
-    todo: tasks.filter(t => t.status === 'todo'),
-    in_progress: tasks.filter(t => t.status === 'in_progress'),
-    done: tasks.filter(t => t.status === 'done')
-  }), [tasks]);
+  const tasksByStatus = useMemo(() => {
+    const filteredTasks = filterAndSortTasks(tasks);
+    return {
+      todo: filteredTasks.filter(t => t.status === 'todo'),
+      in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
+      done: filteredTasks.filter(t => t.status === 'done')
+    };
+  }, [tasks, taskSearchQuery, taskFilters, taskSort]);
 
   return (
     <AuthGuard>
@@ -856,7 +1008,285 @@ export default function ProjectPage() {
 
         {/* Tasks Kanban Board */}
         <section className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-semibold mb-6">Tasks</h2>
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Tasks</h2>
+              <div className="flex items-center gap-2">
+                {/* Search */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search tasks..."
+                    value={taskSearchQuery}
+                    onChange={(e) => setTaskSearchQuery(e.target.value)}
+                    className="w-64 pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <svg className="w-4 h-4 absolute left-2.5 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {/* Filter Button */}
+                <div className="relative">
+                  <button
+                    data-filter-button
+                    onClick={() => setShowTaskFilters(!showTaskFilters)}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                      showTaskFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+                    </svg>
+                    Filter
+                    {(taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length) > 0 && (
+                      <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+                        {taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Sort Button */}
+                <div className="relative">
+                  <button
+                    data-filter-button
+                    onClick={() => setShowTaskSort(!showTaskSort)}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                      showTaskSort ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Sort
+                  </button>
+                </div>
+
+                {/* Assignee Filter Button */}
+                <div className="relative">
+                  <button
+                    data-filter-button
+                    onClick={() => setShowAssigneeFilter(!showAssigneeFilter)}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                      showAssigneeFilter ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                    Assignee
+                    {taskFilters.assignees.length > 0 && (
+                      <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+                        {taskFilters.assignees.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Clear Filters */}
+                {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Results Summary */}
+            {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
+              <div className="text-sm text-gray-600 px-2">
+                Showing {filterAndSortTasks(tasks).length} of {tasks.length} tasks
+                {taskSearchQuery && <span> matching "{taskSearchQuery}"</span>}
+              </div>
+            )}
+
+            {/* Filter Panels */}
+            {showTaskFilters && (
+              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Status Filter */}
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">Status</h4>
+                    <div className="space-y-2">
+                      {['todo', 'in_progress', 'done'].map(status => (
+                        <label key={status} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={taskFilters.status.includes(status)}
+                            onChange={() => toggleTaskFilter('status', status)}
+                            className="mr-2"
+                          />
+                          <span className="text-sm capitalize">{status.replace('_', ' ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Priority Filter */}
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">Priority</h4>
+                    <div className="space-y-2">
+                      {['low', 'medium', 'high', 'urgent'].map(priority => (
+                        <label key={priority} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={taskFilters.priority.includes(priority)}
+                            onChange={() => toggleTaskFilter('priority', priority)}
+                            className="mr-2"
+                          />
+                          <span className="text-sm capitalize">{priority}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Due Date Range */}
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">Due Date</h4>
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        placeholder="Start date"
+                        value={taskFilters.dueDateRange.start}
+                        onChange={(e) => setTaskFilters(prev => ({
+                          ...prev,
+                          dueDateRange: { ...prev.dueDateRange, start: e.target.value }
+                        }))}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      />
+                      <input
+                        type="date"
+                        placeholder="End date"
+                        value={taskFilters.dueDateRange.end}
+                        onChange={(e) => setTaskFilters(prev => ({
+                          ...prev,
+                          dueDateRange: { ...prev.dueDateRange, end: e.target.value }
+                        }))}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Filters */}
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">Quick Filters</h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setTaskFilters(prev => ({
+                          ...prev,
+                          dueDateRange: {
+                            start: new Date().toISOString().split('T')[0],
+                            end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                          }
+                        }))}
+                        className="w-full text-left px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        Due this week
+                      </button>
+                      <button
+                        onClick={() => toggleTaskFilter('assignees', 'unassigned')}
+                        className="w-full text-left px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        Unassigned
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sort Panel */}
+            {showTaskSort && (
+              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <h4 className="font-medium text-sm text-gray-700 mb-3">Sort By</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { field: 'title', label: 'Task Name' },
+                    { field: 'priority', label: 'Priority' },
+                    { field: 'dueDate', label: 'Due Date' },
+                    { field: 'assignee', label: 'Assignee' },
+                    { field: 'dateCreated', label: 'Date Created' },
+                    { field: 'dateUpdated', label: 'Date Updated' }
+                  ].map(({ field, label }) => (
+                    <button
+                      key={field}
+                      onClick={() => toggleTaskSort(field as any)}
+                      className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        taskSort.field === field
+                          ? 'bg-blue-100 border-blue-300 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>{label}</span>
+                      {taskSort.field === field && (
+                        <svg
+                          className={`w-4 h-4 transition-transform ${
+                            taskSort.direction === 'desc' ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assignee Filter Panel */}
+            {showAssigneeFilter && (
+              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <h4 className="font-medium text-sm text-gray-700 mb-3">Assignees</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={taskFilters.assignees.includes('unassigned')}
+                      onChange={() => toggleTaskFilter('assignees', 'unassigned')}
+                      className="mr-2"
+                    />
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm">Unassigned</span>
+                      <span className="text-xs text-gray-500">
+                        ({tasks.filter(t => t.assignees.length === 0).length})
+                      </span>
+                    </div>
+                  </label>
+                  {allMembers.map(member => (
+                    <label key={member._id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={taskFilters.assignees.includes(member._id)}
+                        onChange={() => toggleTaskFilter('assignees', member._id)}
+                        className="mr-2"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm">{member.name}</span>
+                        <span className="text-xs text-gray-500">
+                          ({tasks.filter(t => t.assignees.some(a => a._id === member._id)).length})
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           
           {isClient ? (
             <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -966,7 +1396,10 @@ export default function ProjectPage() {
                           
                           {statusTasks.length === 0 && (
                             <div className="text-center py-8 text-gray-500">
-                              No tasks
+                              {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                                ? `No ${status.replace('_', ' ')} tasks match your filters`
+                                : `No ${status.replace('_', ' ')} tasks`
+                              }
                             </div>
                           )}
                           {provided.placeholder}
@@ -1066,7 +1499,10 @@ export default function ProjectPage() {
                     
                     {statusTasks.length === 0 && (
                       <div className="text-center py-8 text-gray-500">
-                        No tasks
+                        {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                          ? `No ${status.replace('_', ' ')} tasks match your filters`
+                          : `No ${status.replace('_', ' ')} tasks`
+                        }
                       </div>
                     )}
                   </div>
