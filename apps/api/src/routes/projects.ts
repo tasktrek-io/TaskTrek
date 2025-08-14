@@ -162,12 +162,20 @@ router.post('/:id/members', requireAuth, async (req: AuthedRequest, res: Respons
   const member = await User.findById(memberId);
   if (!member) return res.status(404).json({ error: 'User not found' });
 
+  // Check if user is already owner
+  if (project.owner.toString() === memberId) {
+    return res.status(400).json({ error: 'User is already the project owner' });
+  }
+
+  // Check if user is already a member
   if (!project.members.some(m => m.toString() === memberId)) {
     project.members.push(new Types.ObjectId(memberId) as any);
     await project.save();
     
     // Add user to workspace automatically
     await WorkspaceService.addUserToWorkspaceForProject(memberId, id);
+  } else {
+    return res.status(400).json({ error: 'User is already a member of this project' });
   }
   res.json({ ok: true });
 });

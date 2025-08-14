@@ -167,14 +167,6 @@ export default function ProjectPage() {
     } 
   }, [projectId]);
 
-  useEffect(()=>{
-    const t = setTimeout(()=>{
-      if(query) api.get(`/users/search`, { params: { q: query } }).then(r=>setSearchResults(r.data));
-      else setSearchResults([]);
-    }, 250);
-    return ()=>clearTimeout(t);
-  }, [query]);
-
   // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -518,10 +510,31 @@ export default function ProjectPage() {
   };
 
   const addMember = async (memberId: string) => {
-    await api.post(`/projects/${projectId}/members`, { memberId });
-    setQuery(''); 
-    setSearchResults([]); 
-    loadProject();
+    // Check if member is already in the project (either as owner or member)
+    if (project) {
+      const isAlreadyMember = project.owner._id === memberId || 
+                             project.members.some(member => member._id === memberId);
+      
+      if (isAlreadyMember) {
+        setQuery(''); 
+        setSearchResults([]);
+        return; // Don't add if already a member
+      }
+    }
+    
+    try {
+      await api.post(`/projects/${projectId}/members`, { memberId });
+      setQuery(''); 
+      setSearchResults([]); 
+      loadProject();
+    } catch (err: any) {
+      console.error('Failed to add member:', err);
+      // Show error message to user if available
+      if (err.response?.data?.error) {
+        // You could set an error state here to display to the user
+        console.log('Error:', err.response.data.error);
+      }
+    }
   };
 
   const logout = async () => {
@@ -534,7 +547,41 @@ export default function ProjectPage() {
     router.push('/auth/login');
   };
 
-  const allMembers = useMemo(()=> project ? [project.owner, ...project.members] : [], [project]);
+  const allMembers = useMemo(() => {
+    if (!project) return [];
+    
+    // Create a Set to track unique member IDs and avoid duplicates
+    const uniqueMembers = new Map();
+    
+    // Add owner first
+    uniqueMembers.set(project.owner._id, project.owner);
+    
+    // Add members, but skip if already exists (i.e., owner is also in members array)
+    project.members.forEach(member => {
+      if (!uniqueMembers.has(member._id)) {
+        uniqueMembers.set(member._id, member);
+      }
+    });
+    
+    return Array.from(uniqueMembers.values());
+  }, [project]);
+
+  // Enhanced member search that excludes existing members
+  useEffect(()=>{
+    const t = setTimeout(()=>{
+      if(query) {
+        api.get(`/users/search`, { params: { q: query } }).then(r=>{
+          // Filter out users who are already members of the project
+          const currentMemberIds = new Set(allMembers.map(m => m._id));
+          const filteredResults = r.data.filter((user: Member) => !currentMemberIds.has(user._id));
+          setSearchResults(filteredResults);
+        });
+      } else {
+        setSearchResults([]);
+      }
+    }, 250);
+    return ()=>clearTimeout(t);
+  }, [query, allMembers]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -661,7 +708,7 @@ export default function ProjectPage() {
             <input 
               value={query} 
               onChange={e=>setQuery(e.target.value)} 
-              placeholder="Add member by name or email" 
+              placeholder="Search for new team members to add..." 
               className="border rounded-lg p-2 w-full max-w-md" 
             />
             {!!searchResults.length && (
