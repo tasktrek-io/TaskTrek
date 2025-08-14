@@ -30,7 +30,9 @@ interface Project {
   _id: string; 
   name: string; 
   description?: string; 
-  status: string;
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  startDate?: string;
+  endDate?: string;
   tags: string[];
   owner: Member; 
   members: Member[];
@@ -120,6 +122,18 @@ export default function ProjectPage() {
   const [isClient, setIsClient] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Project editing states
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
+  const [projectEditForm, setProjectEditForm] = useState({
+    name: '',
+    description: '',
+    status: 'planning' as 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled',
+    startDate: '',
+    endDate: '',
+    tags: [] as string[]
+  });
+
   const loadProject = () => api.get(`/projects/${projectId}`).then(r=>setProject(r.data));
   const loadTasks = () => api.get(`/tasks/project/${projectId}`).then(r=>setTasks(r.data));
   const loadCurrentUser = () => api.get('/auth/me').then(r=>setCurrentUser(r.data.user));
@@ -173,6 +187,9 @@ export default function ProjectPage() {
       const target = event.target as Element;
       if (!target.closest('.emoji-picker-container')) {
         setShowEmojiPicker({});
+      }
+      if (!target.closest('.project-menu-container')) {
+        setShowProjectMenu(false);
       }
     };
 
@@ -537,6 +554,60 @@ export default function ProjectPage() {
     }
   };
 
+  const openEditProjectModal = () => {
+    if (project) {
+      setProjectEditForm({
+        name: project.name,
+        description: project.description || '',
+        status: project.status || 'planning',
+        startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+        endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+        tags: project.tags || []
+      });
+    }
+    setShowEditProjectModal(true);
+    setShowProjectMenu(false);
+  };
+
+  const updateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!project) return;
+    
+    try {
+      const updateData = {
+        name: projectEditForm.name.trim(),
+        description: projectEditForm.description.trim() || undefined,
+        status: projectEditForm.status,
+        startDate: projectEditForm.startDate || undefined,
+        endDate: projectEditForm.endDate || undefined,
+        tags: projectEditForm.tags
+      };
+
+      const response = await api.patch(`/projects/${projectId}`, updateData);
+      setProject(response.data);
+      setShowEditProjectModal(false);
+    } catch (err: any) {
+      console.error('Failed to update project:', err);
+      // You could show an error message here
+    }
+  };
+
+  const addTag = (tag: string) => {
+    if (tag.trim() && !projectEditForm.tags.includes(tag.trim())) {
+      setProjectEditForm(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag.trim()]
+      }));
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setProjectEditForm(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -651,19 +722,75 @@ export default function ProjectPage() {
                 {project?.description && (
                   <p className="text-gray-600 mb-2">{project.description}</p>
                 )}
-                {project?.workspace && (
-                  <p className="text-sm text-gray-500">
-                    Workspace: {project.workspace.name}
-                  </p>
-                )}
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  {project?.workspace && (
+                    <span>Workspace: {project.workspace.name}</span>
+                  )}
+                  {project?.startDate && (
+                    <span>Start: {new Date(project.startDate).toLocaleDateString()}</span>
+                  )}
+                  {project?.endDate && (
+                    <span>End: {new Date(project.endDate).toLocaleDateString()}</span>
+                  )}
+                  {project?.status && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      project.status === 'active' ? 'bg-green-100 text-green-800' :
+                      project.status === 'planning' ? 'bg-blue-100 text-blue-800' :
+                      project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
+                      project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      project.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {project.status.replace('_', ' ').toUpperCase()}
+                    </span>
+                  )}
+                  {project?.tags && project.tags.length > 0 && (
+                    <div className="flex gap-1">
+                      {project.tags.map(tag => (
+                        <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
                 <button
                   onClick={() => setShowTaskModal(true)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   + Add Task
                 </button>
+
+                {/* Project Menu */}
+                {project && currentUser && project.owner._id === currentUser._id && (
+                  <div className="relative project-menu-container">
+                    <button
+                      onClick={() => setShowProjectMenu(!showProjectMenu)}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+                    
+                    {showProjectMenu && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[160px]">
+                        <button
+                          onClick={openEditProjectModal}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit Project
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <button 
                   onClick={logout}
                   className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
@@ -1591,6 +1718,151 @@ export default function ProjectPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Project Modal */}
+        {showEditProjectModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold">Edit Project</h2>
+                  <button
+                    onClick={() => setShowEditProjectModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={updateProject} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Project Name
+                    </label>
+                    <input
+                      type="text"
+                      value={projectEditForm.name}
+                      onChange={(e) => setProjectEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter project name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={projectEditForm.description}
+                      onChange={(e) => setProjectEditForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter project description"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={projectEditForm.status}
+                        onChange={(e) => setProjectEditForm(prev => ({ ...prev, status: e.target.value as any }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="planning">Planning</option>
+                        <option value="active">Active</option>
+                        <option value="on_hold">On Hold</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={projectEditForm.startDate}
+                        onChange={(e) => setProjectEditForm(prev => ({ ...prev, startDate: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={projectEditForm.endDate}
+                        onChange={(e) => setProjectEditForm(prev => ({ ...prev, endDate: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {projectEditForm.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Add a tag and press Enter"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const input = e.target as HTMLInputElement;
+                          if (input.value.trim()) {
+                            addTag(input.value);
+                            input.value = '';
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditProjectModal(false)}
+                      className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                    >
+                      Update Project
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
