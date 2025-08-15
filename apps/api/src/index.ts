@@ -11,6 +11,7 @@ import projectRouter from './routes/projects';
 import taskRouter from './routes/tasks';
 import userRouter from './routes/users';
 import notificationRouter from './routes/notifications';
+import contextsRouter from './routes/contexts';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api/tasks', taskRouter);
 app.use('/api/users', userRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/contexts', contextsRouter);
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/project_mgmt';

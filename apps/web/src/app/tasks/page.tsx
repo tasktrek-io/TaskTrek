@@ -13,6 +13,14 @@ interface Workspace {
   color: string;
 }
 
+interface SidebarWorkspace {
+  _id: string;
+  name: string;
+  color: string;
+  contextId: string;
+  contextType: 'personal' | 'organization';
+}
+
 interface Task {
   _id: string;
   title: string;
@@ -44,6 +52,15 @@ export default function MyTasksPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'todo' | 'in_progress' | 'done'>('all');
+
+  // Convert workspace to the format expected by Sidebar
+  const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
+    _id: currentWorkspace._id,
+    name: currentWorkspace.name,
+    color: currentWorkspace.color,
+    contextId: currentWorkspace._id, // Use workspace ID as context ID for now
+    contextType: 'organization' as const // We know this is an organization context
+  } : undefined;
 
   useEffect(() => {
     loadInitialData();
@@ -155,7 +172,7 @@ export default function MyTasksPage() {
     return (
       <AuthGuard>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar currentWorkspace={currentWorkspace || undefined} onWorkspaceChange={setCurrentWorkspace} />
+          <Sidebar currentWorkspace={sidebarWorkspace} onWorkspaceChange={setCurrentWorkspace} />
           <div 
             className="flex items-center justify-center min-h-screen transition-all duration-300" 
             style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
@@ -170,7 +187,7 @@ export default function MyTasksPage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar currentWorkspace={currentWorkspace || undefined} onWorkspaceChange={setCurrentWorkspace} />
+        <Sidebar currentWorkspace={sidebarWorkspace} onWorkspaceChange={setCurrentWorkspace} />
         
         <main 
           className="p-6 transition-all duration-300" 

@@ -76,9 +76,9 @@ router.post('/logout', (_req: Request, res: Response) => {
 
 router.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.user!;
-  const user = await User.findById(id).select('_id email name');
+  const user = await User.findById(id).select('_id email name lastActiveContext');
   if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json({ user: { _id: user._id, id: user.id, email: user.email, name: user.name } });
+  res.json({ user: { _id: user._id, id: user.id, email: user.email, name: user.name, lastActiveContext: user.lastActiveContext } });
 });
 
 export default router;

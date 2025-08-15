@@ -156,19 +156,34 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     }
   };
 
-  const handleContextChange = (context: Context) => {
-    setCurrentContext(context);
-    localStorage.setItem('lastActiveContext', JSON.stringify({ id: context._id, type: context.type }));
-    setShowContextDropdown(false);
-    
-    // Notify parent component of context change
-    if (onContextChange) {
-      onContextChange(context);
-    }
-    
-    // Clear current workspace when changing context
-    if (onWorkspaceChange) {
-      onWorkspaceChange(undefined as any);
+  const handleContextChange = async (context: Context) => {
+    try {
+      // Update context in backend
+      await api.put('/contexts/context', {
+        type: context.type,
+        id: context._id
+      });
+      
+      setCurrentContext(context);
+      localStorage.setItem('lastActiveContext', JSON.stringify({ id: context._id, type: context.type }));
+      setShowContextDropdown(false);
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('contextChanged', { 
+        detail: { context } 
+      }));
+      
+      // Notify parent component of context change
+      if (onContextChange) {
+        onContextChange(context);
+      }
+      
+      // Clear current workspace when changing context
+      if (onWorkspaceChange) {
+        onWorkspaceChange(undefined as any);
+      }
+    } catch (error) {
+      console.error('Failed to update context:', error);
     }
   };
   
@@ -245,38 +260,51 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     router.push('/');
   };
 
-  const menuItems = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: '📊',
-    },
-    {
-      name: 'Workspaces',
-      href: '/workspaces',
-      icon: '🏢',
-    },
-    {
-      name: 'My Tasks',
-      href: '/tasks',
-      icon: '✅',
-    },
-    {
-      name: 'Members',
-      href: '/members',
-      icon: '👥',
-    },
-    {
-      name: 'Achieved',
-      href: '/achieved',
-      icon: '🏆',
-    },
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: '⚙️',
-    },
-  ];
+  const getMenuItems = () => {
+    const baseItems = [
+      {
+        name: 'Dashboard',
+        href: '/dashboard',
+        icon: '📊',
+      },
+      {
+        name: 'Workspaces',
+        href: '/workspaces',
+        icon: '🏢',
+      },
+      {
+        name: 'My Tasks',
+        href: '/tasks',
+        icon: '✅',
+      }
+    ];
+
+    // Add Members only for organization contexts
+    if (currentContext && currentContext.type === 'organization') {
+      baseItems.push({
+        name: 'Members',
+        href: '/members',
+        icon: '👥',
+      });
+    }
+
+    baseItems.push(
+      {
+        name: 'Achieved',
+        href: '/achieved',
+        icon: '🏆',
+      },
+      {
+        name: 'Settings',
+        href: '/settings',
+        icon: '⚙️',
+      }
+    );
+
+    return baseItems;
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}>

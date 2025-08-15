@@ -112,7 +112,7 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.params as { id: string };
   const userId = req.user!.id;
   const project = await Project.findOne({ _id: id, $or: [{ owner: userId }, { members: userId }] })
-    .populate('workspace', 'name')
+    .populate('workspace', 'name contextType contextId')
     .populate('owner', '_id email name')
     .populate('members', '_id email name');
   if (!project) return res.status(404).json({ error: 'Not found' });

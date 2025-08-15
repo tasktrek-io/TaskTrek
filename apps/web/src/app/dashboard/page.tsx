@@ -19,6 +19,14 @@ interface Workspace {
   color: string;
 }
 
+interface SidebarWorkspace {
+  _id: string;
+  name: string;
+  color: string;
+  contextId: string;
+  contextType: 'personal' | 'organization';
+}
+
 interface Project {
   _id: string;
   name: string;
@@ -47,6 +55,15 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Convert workspace to the format expected by Sidebar
+  const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
+    _id: currentWorkspace._id,
+    name: currentWorkspace.name,
+    color: currentWorkspace.color,
+    contextId: currentWorkspace._id, // Use workspace ID as context ID for now
+    contextType: 'organization' as const // We know this is an organization context
+  } : undefined;
 
   useEffect(() => {
     loadDashboardData();
@@ -191,7 +208,7 @@ export default function Dashboard() {
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar 
-          currentWorkspace={currentWorkspace || undefined} 
+          currentWorkspace={sidebarWorkspace} 
           onWorkspaceChange={setCurrentWorkspace}
         />
         
