@@ -191,16 +191,23 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
           <div className="relative">
             <button
               onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className="w-full flex items-center justify-between p-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="w-full flex items-center justify-between p-3 bg-orange-500 dark:bg-orange-600 text-white rounded-lg hover:bg-orange-600 dark:hover:bg-orange-700 transition-colors shadow-sm"
             >
               <div className="flex items-center gap-2">
                 <div 
-                  className="w-3 h-3 rounded-full"
+                  className="w-3 h-3 rounded-full border border-white/20"
                   style={{ backgroundColor: currentWorkspace.color }}
                 />
-                <span className="font-medium">{currentWorkspace.name}</span>
+                <span className="font-medium text-white">{currentWorkspace.name}</span>
               </div>
-              <span className="text-white">▼</span>
+              <svg 
+                className={`w-4 h-4 text-white transition-transform duration-200 ${showWorkspaceDropdown ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
 
             {showWorkspaceDropdown && (
@@ -209,22 +216,30 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
                   className="fixed inset-0 z-10"
                   onClick={() => setShowWorkspaceDropdown(false)}
                 />
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-2xl z-20 max-h-64 overflow-y-auto">
                   {workspaces.map((workspace) => (
                     <button
                       key={workspace._id}
                       onClick={() => handleWorkspaceChange(workspace)}
-                      className={`w-full flex items-center gap-2 p-3 text-left hover:bg-gray-50 ${
-                        currentWorkspace._id === workspace._id ? 'bg-orange-50' : ''
+                      className={`w-full flex items-center gap-2 p-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        currentWorkspace._id === workspace._id 
+                          ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <div 
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
                         style={{ backgroundColor: workspace.color }}
                       />
-                      <span className="font-medium">{workspace.name}</span>
+                      <span className="font-medium flex-1">{workspace.name}</span>
                       {workspace._id === currentWorkspace._id && (
-                        <span className="ml-auto text-orange-500">✓</span>
+                        <svg 
+                          className="w-4 h-4 text-orange-500 dark:text-orange-400 ml-auto" 
+                          fill="currentColor" 
+                          viewBox="0 0 20 20"
+                        >
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
                       )}
                     </button>
                   ))}
