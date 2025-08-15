@@ -160,10 +160,10 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
           // Expanded layout - horizontal
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center   font-bold">
                 🔧
               </div>
-              <span className="font-semibold text-lg">TaskTrek</span>
+              <span className="font-semibold text-lg text-gray-900 dark:text-white">TaskTrek</span>
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />
@@ -262,7 +262,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
                   className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 rounded-lg transition-colors group relative ${
                     isActive
                       ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >
@@ -292,7 +292,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          {!isCollapsed && <span className="font-medium ml-3">Logout</span>}
+          {!isCollapsed && <span className="font-medium ml-3 text-gray-600 dark:text-gray-400">Logout</span>}
           
           {/* Tooltip for collapsed state */}
           {isCollapsed && (

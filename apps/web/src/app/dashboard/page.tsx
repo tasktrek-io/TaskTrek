@@ -153,28 +153,28 @@ export default function Dashboard() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'todo': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'done': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'todo': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   if (loading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
       </AuthGuard>
     );
@@ -189,7 +189,7 @@ export default function Dashboard() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar 
           currentWorkspace={currentWorkspace || undefined} 
           onWorkspaceChange={setCurrentWorkspace}
@@ -201,11 +201,11 @@ export default function Dashboard() {
         >
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-            <p className="text-lg text-gray-700 mb-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+            <p className="text-lg text-gray-700 dark:text-gray-300 mb-1">
               {getGreeting()}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {getMotivationalMessage()}
             </p>
           </div>
@@ -213,51 +213,51 @@ export default function Dashboard() {
           {/* Analytics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Total Projects */}
-            <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow cursor-pointer" 
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/20 transition-shadow cursor-pointer" 
                  onClick={() => router.push('/workspaces')}>
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-gray-600">Total Projects</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Projects</div>
                 <span className="text-xl">📊</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{projects.length}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{projects.length}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {inProgressProjects.length} in progress • {planningProjects.length} planning
               </div>
             </div>
 
             {/* Total Tasks */}
-            <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow cursor-pointer"
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/20 transition-shadow cursor-pointer"
                  onClick={() => router.push('/tasks')}>
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-gray-600">Total Tasks</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
                 <span className="text-xl">✅</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{assignedTasks.length}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{assignedTasks.length}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {doneTasks.length} completed • {assignedTasks.length - doneTasks.length} remaining
               </div>
             </div>
 
             {/* To Do */}
-            <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/20 transition-shadow">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-gray-600">To Do</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">To Do</div>
                 <span className="text-xl">⏳</span>
               </div>
-              <div className="text-2xl font-bold text-orange-600 mb-1">{todoTasks.length}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">{todoTasks.length}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {assignedTasks.filter(t => t.priority === 'urgent' && t.status === 'todo').length} urgent tasks
               </div>
             </div>
 
             {/* In Progress */}
-            <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/20 transition-shadow">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-gray-600">In Progress</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
                 <span className="text-xl">🚀</span>
               </div>
-              <div className="text-2xl font-bold text-blue-600 mb-1">{inProgressTasks.length}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{inProgressTasks.length}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {Math.round((inProgressTasks.length / Math.max(assignedTasks.length, 1)) * 100)}% of total tasks
               </div>
             </div>
@@ -266,12 +266,12 @@ export default function Dashboard() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Task Priority Chart */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-gray-900">Task Priority</h3>
-                <span className="text-gray-400">�</span>
+                <h3 className="font-medium text-gray-900 dark:text-white">Task Priority</h3>
+                <span className="text-gray-400 dark:text-gray-500">📊</span>
               </div>
-              <div className="text-sm text-gray-600 mb-6">Priority distribution</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-6">Priority distribution</div>
               
               {(() => {
                 const urgentTasks = assignedTasks.filter(t => t.priority === 'urgent').length;
@@ -283,7 +283,7 @@ export default function Dashboard() {
                 if (totalTasks === 0) {
                   return (
                     <div className="flex items-center justify-center h-32">
-                      <p className="text-gray-500">No tasks assigned yet</p>
+                      <p className="text-gray-500 dark:text-gray-400">No tasks assigned yet</p>
                     </div>
                   );
                 }
@@ -295,16 +295,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">Urgent</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Urgent</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-red-500 h-2 rounded-full" 
                                 style={{ width: `${(urgentTasks / totalTasks) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{urgentTasks}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{urgentTasks}</span>
                           </div>
                         </div>
                       )}
@@ -313,16 +313,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">High</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">High</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-orange-500 h-2 rounded-full" 
                                 style={{ width: `${(highTasks / totalTasks) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{highTasks}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{highTasks}</span>
                           </div>
                         </div>
                       )}
@@ -331,16 +331,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">Medium</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Medium</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-yellow-500 h-2 rounded-full" 
                                 style={{ width: `${(mediumTasks / totalTasks) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{mediumTasks}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{mediumTasks}</span>
                           </div>
                         </div>
                       )}
@@ -349,23 +349,23 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">Low</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Low</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-green-500 h-2 rounded-full" 
                                 style={{ width: `${(lowTasks / totalTasks) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{lowTasks}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{lowTasks}</span>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="mt-4 pt-3 border-t border-gray-100">
-                      <div className="flex justify-between text-xs text-gray-500">
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>Total: {totalTasks} tasks</span>
                         <span>Most: {Math.max(urgentTasks, highTasks, mediumTasks, lowTasks)} {
                           urgentTasks === Math.max(urgentTasks, highTasks, mediumTasks, lowTasks) ? 'urgent' :
@@ -380,12 +380,12 @@ export default function Dashboard() {
             </div>
 
             {/* Project Status Chart */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-gray-900">Project Status</h3>
-                <span className="text-gray-400">�</span>
+                <h3 className="font-medium text-gray-900 dark:text-white">Project Status</h3>
+                <span className="text-gray-400 dark:text-gray-500">📈</span>
               </div>
-              <div className="text-sm text-gray-600 mb-6">Status breakdown</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-6">Status breakdown</div>
               
               {(() => {
                 const completedProjects = projects.filter(p => p.status === 'completed').length;
@@ -397,7 +397,7 @@ export default function Dashboard() {
                 if (totalProjects === 0) {
                   return (
                     <div className="flex items-center justify-center h-32">
-                      <p className="text-gray-500">No projects available yet</p>
+                      <p className="text-gray-500 dark:text-gray-400">No projects available yet</p>
                     </div>
                   );
                 }
@@ -409,16 +409,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">Completed</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Completed</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-green-500 h-2 rounded-full" 
                                 style={{ width: `${(completedProjects / totalProjects) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{completedProjects}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{completedProjects}</span>
                           </div>
                         </div>
                       )}
@@ -427,16 +427,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">In Progress</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">In Progress</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-blue-500 h-2 rounded-full" 
                                 style={{ width: `${(inProgressProjects / totalProjects) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{inProgressProjects}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{inProgressProjects}</span>
                           </div>
                         </div>
                       )}
@@ -445,16 +445,16 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">Planning</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Planning</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-purple-500 h-2 rounded-full" 
                                 style={{ width: `${(planningProjects / totalProjects) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{planningProjects}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{planningProjects}</span>
                           </div>
                         </div>
                       )}
@@ -463,23 +463,23 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                            <span className="text-sm text-gray-700">On Hold</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">On Hold</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div 
                                 className="bg-orange-500 h-2 rounded-full" 
                                 style={{ width: `${(onHoldProjects / totalProjects) * 100}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm font-medium text-gray-900 w-8 text-right">{onHoldProjects}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white w-8 text-right">{onHoldProjects}</span>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="mt-4 pt-3 border-t border-gray-100">
-                      <div className="flex justify-between text-xs text-gray-500">
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>Total: {totalProjects} projects</span>
                         <span>{Math.round((completedProjects / totalProjects) * 100)}% completed</span>
                       </div>
@@ -493,8 +493,8 @@ export default function Dashboard() {
           {/* Recent Projects & Upcoming Tasks */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Projects */}
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="font-medium text-gray-900 mb-4">Recent Projects</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-4">Recent Projects</h3>
               
               <div className="space-y-4">
                 {projects.slice(0, 2).map(project => {
@@ -506,22 +506,22 @@ export default function Dashboard() {
                     : 0;
                   
                   return (
-                    <div key={project._id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                    <div key={project._id} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{project.name}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-white">{project.name}</h4>
                         <span className={`px-2 py-1 rounded text-xs ${
-                          project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-                          project.status === 'on_hold' ? 'bg-orange-100 text-orange-800' :
-                          'bg-purple-100 text-purple-800'
+                          project.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                          project.status === 'in_progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : 
+                          project.status === 'on_hold' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
+                          'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                         }`}>
                           {project.status === 'in_progress' ? 'In Progress' : 
                            project.status === 'completed' ? 'Completed' :
                            project.status === 'on_hold' ? 'On Hold' : 'Planning'}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">Progress ({projectTasks.length} tasks)</div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Progress ({projectTasks.length} tasks)</div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
                         <div 
                           className={`h-2 rounded-full ${
                             project.status === 'completed' ? 'bg-green-500' :
@@ -532,7 +532,7 @@ export default function Dashboard() {
                           style={{ width: `${progressPercentage}%` }}
                         ></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">{progressPercentage}%</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{progressPercentage}%</div>
                     </div>
                   );
                 })}
@@ -540,16 +540,16 @@ export default function Dashboard() {
               
               <button 
                 onClick={() => router.push('/workspaces')}
-                className="w-full text-center text-sm text-blue-600 hover:text-blue-700 mt-4 py-2 hover:bg-blue-50 rounded transition-colors"
+                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mt-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
               >
                 View All Projects →
               </button>
             </div>
 
             {/* Upcoming Tasks */}
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="font-medium text-gray-900 mb-4">Upcoming Tasks</h3>
-              <div className="text-sm text-gray-600 mb-4">Tasks due soon or high priority</div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="font-medium text-gray-900 dark:text-white mb-4">Upcoming Tasks</h3>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">Tasks due soon or high priority</div>
               
               <div className="space-y-3">
                 {(() => {
@@ -591,8 +591,8 @@ export default function Dashboard() {
                   if (upcomingTasks.length === 0) {
                     return (
                       <div className="text-center py-4">
-                        <p className="text-gray-500">No urgent tasks at the moment! 🎉</p>
-                        <p className="text-xs text-gray-400 mt-1">You're all caught up</p>
+                        <p className="text-gray-500 dark:text-gray-400">No urgent tasks at the moment! 🎉</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">You're all caught up</p>
                       </div>
                     );
                   }
@@ -602,11 +602,11 @@ export default function Dashboard() {
                     const isDueSoon = task.dueDate && new Date(task.dueDate) <= sevenDaysFromNow;
                     
                     return (
-                      <div key={task._id} className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 transition-colors">
+                      <div key={task._id} className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 ${
-                          task.priority === 'urgent' ? 'bg-red-100' :
-                          task.priority === 'high' ? 'bg-orange-100' :
-                          task.priority === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                          task.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30' :
+                          task.priority === 'high' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                          task.priority === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-green-100 dark:bg-green-900/30'
                         }`}>
                           <div className={`w-2 h-2 rounded-full ${
                             task.priority === 'urgent' ? 'bg-red-500' :
@@ -615,8 +615,8 @@ export default function Dashboard() {
                           }`}></div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
-                          <p className="text-xs text-gray-600 mt-1">in {task.project.name}</p>
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm">{task.title}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">in {task.project.name}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(task.priority)}`}>
                               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -626,8 +626,8 @@ export default function Dashboard() {
                             </span>
                             {task.dueDate && (
                               <span className={`text-xs px-2 py-1 rounded ${
-                                isOverdue ? 'bg-red-100 text-red-700' :
-                                isDueSoon ? 'bg-yellow-100 text-yellow-700' : 'text-gray-500'
+                                isOverdue ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                                isDueSoon ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-gray-500 dark:text-gray-400'
                               }`}>
                                 {isOverdue ? '⚠️ Overdue' : 
                                  isDueSoon ? '⏰ Due ' + new Date(task.dueDate).toLocaleDateString() :
@@ -644,7 +644,7 @@ export default function Dashboard() {
               
               <button 
                 onClick={() => router.push('/tasks')}
-                className="w-full text-center text-sm text-blue-600 hover:text-blue-700 mt-4 py-2 hover:bg-blue-50 rounded transition-colors"
+                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mt-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
               >
                 View All My Tasks →
               </button>
