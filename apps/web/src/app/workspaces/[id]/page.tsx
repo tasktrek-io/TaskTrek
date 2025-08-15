@@ -13,6 +13,8 @@ interface Workspace {
   color: string;
   owner: { _id: string; name: string; email: string };
   members: { _id: string; name: string; email: string }[];
+  contextType: 'personal' | 'organization';
+  contextId: string;
 }
 
 interface Project {
@@ -89,11 +91,17 @@ export default function WorkspacePage() {
     }
   }, [workspaceId]);
 
-  // Search for users
+  // Search for users within the current workspace's context
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query) {
-        api.get(`/users/search`, { params: { q: query } })
+      if (query && workspace) {
+        api.get(`/contexts/users/search`, { 
+          params: { 
+            q: query,
+            contextType: workspace.contextType,
+            contextId: workspace.contextId
+          } 
+        })
           .then(r => setSearchResults(r.data))
           .catch(() => setSearchResults([]));
       } else {
@@ -101,7 +109,7 @@ export default function WorkspacePage() {
       }
     }, 250);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, workspace]);
 
   const createProject = async (e: React.FormEvent) => {
     e.preventDefault();

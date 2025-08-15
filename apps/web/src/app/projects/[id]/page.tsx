@@ -36,7 +36,12 @@ interface Project {
   tags: string[];
   owner: Member; 
   members: Member[];
-  workspace: { _id: string; name: string };
+  workspace: { 
+    _id: string; 
+    name: string; 
+    contextType: 'personal' | 'organization'; 
+    contextId: string; 
+  };
 }
 interface Task { 
   _id: string; 
@@ -170,28 +175,40 @@ export default function ProjectPage() {
   }, []);  // Search for watchers
   useEffect(() => {
     const t = setTimeout(() => {
-      if (watcherSearchQuery) {
-        api.get(`/users/search`, { params: { q: watcherSearchQuery } })
+      if (watcherSearchQuery && project?.workspace) {
+        api.get(`/contexts/users/search`, { 
+          params: { 
+            q: watcherSearchQuery,
+            contextType: project.workspace.contextType,
+            contextId: project.workspace.contextId
+          } 
+        })
           .then(r => setWatcherSearchResults(r.data.slice(0, 5)));
       } else {
         setWatcherSearchResults([]);
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [watcherSearchQuery]);
+  }, [watcherSearchQuery, project]);
 
   // Search for assignees  
   useEffect(() => {
     const t = setTimeout(() => {
-      if (assigneeSearchQuery) {
-        api.get(`/users/search`, { params: { q: assigneeSearchQuery } })
+      if (assigneeSearchQuery && project?.workspace) {
+        api.get(`/contexts/users/search`, { 
+          params: { 
+            q: assigneeSearchQuery,
+            contextType: project.workspace.contextType,
+            contextId: project.workspace.contextId
+          } 
+        })
           .then(r => setAssigneeSearchResults(r.data.slice(0, 5)));
       } else {
         setAssigneeSearchResults([]);
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [assigneeSearchQuery]);
+  }, [assigneeSearchQuery, project]);
 
   useEffect(()=>{ 
     if(projectId){ 
@@ -779,8 +796,14 @@ export default function ProjectPage() {
   // Enhanced member search that excludes existing members
   useEffect(()=>{
     const t = setTimeout(()=>{
-      if(query) {
-        api.get(`/users/search`, { params: { q: query } }).then(r=>{
+      if(query && project?.workspace) {
+        api.get(`/contexts/users/search`, { 
+          params: { 
+            q: query,
+            contextType: project.workspace.contextType,
+            contextId: project.workspace.contextId
+          } 
+        }).then(r=>{
           // Filter out users who are already members of the project
           const currentMemberIds = new Set(allMembers.map(m => m._id));
           const filteredResults = r.data.filter((user: Member) => !currentMemberIds.has(user._id));
@@ -791,7 +814,7 @@ export default function ProjectPage() {
       }
     }, 250);
     return ()=>clearTimeout(t);
-  }, [query, allMembers]);
+  }, [query, allMembers, project]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

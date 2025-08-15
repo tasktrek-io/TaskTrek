@@ -13,7 +13,19 @@ interface Workspace {
   color: string;
   owner: { _id: string; name: string; email: string };
   members: { _id: string; name: string; email: string }[];
+  contextId: string;
+  contextType: 'personal' | 'organization';
   createdAt: string;
+}
+
+interface Context {
+  _id: string;
+  name: string;
+  type: 'personal' | 'organization';
+}
+
+interface SidebarInstance {
+  getCurrentContext: () => Context | null;
 }
 
 export default function WorkspacesPage() {
@@ -22,6 +34,7 @@ export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentContext, setCurrentContext] = useState<Context | null>(null);
   
   // Form state
   const [name, setName] = useState('');
@@ -36,7 +49,19 @@ export default function WorkspacesPage() {
 
   const loadWorkspaces = async () => {
     try {
-      const response = await api.get('/workspaces');
+      let response;
+      if (currentContext) {
+        // Load workspaces for the current context
+        response = await api.get('/workspaces', {
+          params: {
+            contextType: currentContext.type,
+            contextId: currentContext._id
+          }
+        });
+      } else {
+        // Fallback to all workspaces if no context
+        response = await api.get('/workspaces');
+      }
       setWorkspaces(response.data);
     } catch (err) {
       console.error('Failed to load workspaces:', err);
@@ -47,7 +72,7 @@ export default function WorkspacesPage() {
 
   useEffect(() => {
     loadWorkspaces();
-  }, []);
+  }, [currentContext]);
 
   const createWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +83,18 @@ export default function WorkspacesPage() {
       return;
     }
 
+    if (!currentContext) {
+      setError('No context selected. Please try refreshing the page.');
+      return;
+    }
+
     try {
       const response = await api.post('/workspaces', {
         name: name.trim(),
         description: description.trim() || undefined,
-        color
+        color,
+        contextType: currentContext.type,
+        contextId: currentContext._id
       });
       
       setWorkspaces(prev => [response.data, ...prev]);
@@ -104,8 +136,9 @@ export default function WorkspacesPage() {
       <AuthGuard>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Sidebar 
-            currentWorkspace={currentWorkspace || undefined} 
-            onWorkspaceChange={setCurrentWorkspace}
+            currentWorkspace={undefined} 
+            onWorkspaceChange={undefined}
+            onContextChange={setCurrentContext}
           />
           <div 
             className="flex items-center justify-center min-h-screen transition-all duration-300" 
@@ -122,8 +155,9 @@ export default function WorkspacesPage() {
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar 
-          currentWorkspace={currentWorkspace || undefined} 
-          onWorkspaceChange={setCurrentWorkspace}
+          currentWorkspace={undefined} 
+          onWorkspaceChange={undefined}
+          onContextChange={setCurrentContext}
         />
         
         <main 
@@ -137,6 +171,11 @@ export default function WorkspacesPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Organize your projects in workspaces for better collaboration
             </p>
+            {currentContext && (
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                Current context: {currentContext.name} ({currentContext.type})
+              </p>
+            )}
           </div>
 
           {/* Action Bar */}
@@ -231,6 +270,12 @@ export default function WorkspacesPage() {
                   {error && (
                     <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-200 px-4 py-3 rounded">
                       {error}
+                    </div>
+                  )}
+
+                  {currentContext && (
+                    <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-200 px-4 py-3 rounded">
+                      Creating workspace in: <strong>{currentContext.name}</strong> ({currentContext.type === 'personal' ? 'Personal' : 'Organization'})
                     </div>
                   )}
 

@@ -6,23 +6,41 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
+import CreateOrganizationModal from './CreateOrganizationModal';
+import OrganizationMembersModal from './OrganizationMembersModal';
 
 interface Workspace {
   _id: string;
   name: string;
   color: string;
+  contextId: string;
+  contextType: 'personal' | 'organization';
+}
+
+interface Context {
+  _id: string;
+  name: string;
+  type: 'personal' | 'organization';
+  logo?: string;
 }
 
 interface SidebarProps {
   currentWorkspace?: Workspace;
   onWorkspaceChange?: (workspace: Workspace) => void;
+  onContextChange?: (context: Context | null) => void;
 }
 
-export default function Sidebar({ currentWorkspace, onWorkspaceChange }: SidebarProps) {
+export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContextChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [contexts, setContexts] = useState<Context[]>([]);
+  const [currentContext, setCurrentContext] = useState<Context | null>(null);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const [showContextDropdown, setShowContextDropdown] = useState(false);
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [selectedOrgForMembers, setSelectedOrgForMembers] = useState<any>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
@@ -45,8 +63,114 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   }, []);
 
   useEffect(() => {
-    loadWorkspaces();
+    loadContexts();
   }, []);
+
+  useEffect(() => {
+    if (currentContext) {
+      loadWorkspaces();
+      // Notify parent of context change
+      if (onContextChange) {
+        onContextChange(currentContext);
+      }
+    }
+  }, [currentContext, onContextChange]);
+
+  const loadContexts = async () => {
+    try {
+      // Load personal space and organizations
+      const [personalResponse, orgsResponse] = await Promise.all([
+        api.get('/contexts/personal-space'),
+        api.get('/contexts/organizations')
+      ]);
+
+      const allContexts: Context[] = [
+        {
+          _id: personalResponse.data._id,
+          name: 'Personal',
+          type: 'personal',
+          logo: '👤'
+        },
+        ...orgsResponse.data.map((org: any) => ({
+          _id: org._id,
+          name: org.name,
+          type: 'organization' as const,
+          logo: org.logo || '🏢'
+        }))
+      ];
+
+      setContexts(allContexts);
+
+      // Load last active context or default to personal
+      const lastActiveContext = localStorage.getItem('lastActiveContext');
+      if (lastActiveContext) {
+        const savedContext = JSON.parse(lastActiveContext);
+        const foundContext = allContexts.find(c => c._id === savedContext.id);
+        if (foundContext) {
+          setCurrentContext(foundContext);
+        } else if (allContexts.length > 0) {
+          setCurrentContext(allContexts[0]);
+        }
+      } else if (allContexts.length > 0) {
+        setCurrentContext(allContexts[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load contexts:', err);
+      // Create a default personal context if API fails
+      const defaultContext: Context = {
+        _id: 'personal-default',
+        name: 'Personal',
+        type: 'personal',
+        logo: '👤'
+      };
+      setContexts([defaultContext]);
+      setCurrentContext(defaultContext);
+    }
+  };
+
+  const loadWorkspaces = async () => {
+    if (!currentContext) return;
+
+    try {
+      const response = await api.get('/workspaces', {
+        params: {
+          contextType: currentContext.type,
+          contextId: currentContext._id
+        }
+      });
+      setWorkspaces(response.data);
+
+      // Auto-select first workspace if none selected and workspaces exist
+      if (response.data.length > 0 && !currentWorkspace && onWorkspaceChange) {
+        onWorkspaceChange(response.data[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load workspaces:', err);
+      // Fallback to old API for backward compatibility
+      try {
+        const response = await api.get('/workspaces');
+        setWorkspaces(response.data);
+      } catch (fallbackErr) {
+        console.error('Fallback workspace loading failed:', fallbackErr);
+      }
+    }
+  };
+
+  const handleContextChange = (context: Context) => {
+    setCurrentContext(context);
+    localStorage.setItem('lastActiveContext', JSON.stringify({ id: context._id, type: context.type }));
+    setShowContextDropdown(false);
+    
+    // Notify parent component of context change
+    if (onContextChange) {
+      onContextChange(context);
+    }
+    
+    // Clear current workspace when changing context
+    if (onWorkspaceChange) {
+      onWorkspaceChange(undefined as any);
+    }
+  };
   
   useEffect(() => {
     // Update CSS custom property for sidebar width
@@ -68,20 +192,11 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
       if (savedWorkspace && onWorkspaceChange) {
         onWorkspaceChange(savedWorkspace);
       }
-    } else if (workspaces.length > 0 && onWorkspaceChange) {
+    } else if (workspaces.length > 0 && onWorkspaceChange && !currentWorkspace) {
       // Set first workspace as default if none saved
       onWorkspaceChange(workspaces[0]);
     }
-  }, [workspaces, onWorkspaceChange]);
-
-  const loadWorkspaces = async () => {
-    try {
-      const response = await api.get('/workspaces');
-      setWorkspaces(response.data);
-    } catch (err) {
-      console.error('Failed to load workspaces:', err);
-    }
-  };
+  }, [workspaces, onWorkspaceChange, currentWorkspace]);
 
   const handleWorkspaceChange = (workspace: Workspace) => {
     if (onWorkspaceChange) {
@@ -90,6 +205,38 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
     // Save selected workspace to localStorage
     localStorage.setItem('selectedWorkspaceId', workspace._id);
     setShowWorkspaceDropdown(false);
+  };
+
+  const handleOrganizationCreated = (newOrg: any) => {
+    const newContext: Context = {
+      _id: newOrg._id,
+      name: newOrg.name,
+      type: 'organization',
+      logo: newOrg.logo || '🏢'
+    };
+    
+    setContexts(prev => [...prev, newContext]);
+    setCurrentContext(newContext);
+    localStorage.setItem('lastActiveContext', JSON.stringify({ id: newContext._id, type: newContext.type }));
+  };
+
+  const handleManageMembers = (context: Context) => {
+    if (context.type === 'organization') {
+      setSelectedOrgForMembers({
+        _id: context._id,
+        name: context.name,
+        slug: context.name.toLowerCase().replace(/\s+/g, '-'),
+        ownerId: '', // Will be populated by the modal
+        members: []
+      });
+      setShowMembersModal(true);
+      setShowContextDropdown(false);
+    }
+  };
+
+  const handleMembersUpdated = () => {
+    // Refresh contexts to get updated member counts if needed
+    loadContexts();
   };
 
   const logout = () => {
@@ -186,8 +333,102 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
           </div>
         )}
 
+        {/* Context Switcher */}
+        {!isCollapsed && currentContext && (
+          <div className="relative mb-3">
+            <button
+              onClick={() => setShowContextDropdown(!showContextDropdown)}
+              className="w-full flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{currentContext.logo}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {currentContext.name}
+                </span>
+              </div>
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showContextDropdown ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showContextDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowContextDropdown(false)}
+                />
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-2xl z-20 max-h-80 overflow-y-auto">
+                  {contexts.map(context => (
+                    <button
+                      key={context._id}
+                      onClick={() => handleContextChange(context)}
+                      className={`w-full flex items-center gap-3 p-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        currentContext._id === context._id
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <span className="text-xl flex-shrink-0">{context.logo}</span>
+                      <div className="flex flex-col flex-1">
+                        <span className="font-medium">{context.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {context.type === 'personal' ? 'Personal Space' : 'Organization'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {context.type === 'organization' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleManageMembers(context);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                            title="Manage Members"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                            </svg>
+                          </button>
+                        )}
+                        {currentContext._id === context._id && (
+                          <svg className="w-4 h-4 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {/* Create New Organization button */}
+                  <button
+                    onClick={() => {
+                      setShowContextDropdown(false);
+                      setShowCreateOrgModal(true);
+                    }}
+                    className="w-full flex items-center gap-2 p-3 text-left border-t border-gray-200 dark:border-gray-600 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>Create New Organization</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Workspace Selector */}
-        {currentWorkspace && !isCollapsed && (
+        {currentContext && workspaces.length > 0 && currentWorkspace && !isCollapsed && (
           <div className="relative">
             <button
               onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
@@ -317,6 +558,24 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
           )}
         </button>
       </div>
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationModal
+        isOpen={showCreateOrgModal}
+        onClose={() => setShowCreateOrgModal(false)}
+        onOrganizationCreated={handleOrganizationCreated}
+      />
+
+      {/* Organization Members Modal */}
+      <OrganizationMembersModal
+        isOpen={showMembersModal}
+        onClose={() => {
+          setShowMembersModal(false);
+          setSelectedOrgForMembers(null);
+        }}
+        organization={selectedOrgForMembers}
+        onUpdate={handleMembersUpdated}
+      />
     </div>
   );
 }
