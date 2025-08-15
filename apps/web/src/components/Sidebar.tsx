@@ -25,6 +25,25 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
+    // Check if device is mobile and set default collapsed state
+    const checkMobileAndSetCollapsed = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      setIsCollapsed(isMobile);
+    };
+
+    // Set initial state
+    checkMobileAndSetCollapsed();
+
+    // Listen for window resize
+    window.addEventListener('resize', checkMobileAndSetCollapsed);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkMobileAndSetCollapsed);
+    };
+  }, []);
+
+  useEffect(() => {
     loadWorkspaces();
   }, []);
   
@@ -115,22 +134,19 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+        {isCollapsed ? (
+          // Collapsed layout - stack vertically
+          <div className="flex flex-col items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold">
               🔧
             </div>
-            {!isCollapsed && <span className="font-semibold text-lg">TaskTrek</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            {!isCollapsed && <NotificationBell />}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title="Expand sidebar"
             >
               <svg 
-                className={`w-4 h-4 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`} 
+                className="w-4 h-4 transform rotate-180" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -139,7 +155,34 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
               </svg>
             </button>
           </div>
-        </div>
+        ) : (
+          // Expanded layout - horizontal
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold">
+                🔧
+              </div>
+              <span className="font-semibold text-lg">TaskTrek</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                title="Collapse sidebar"
+              >
+                <svg 
+                  className="w-4 h-4" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Workspace Selector */}
         {currentWorkspace && !isCollapsed && (
