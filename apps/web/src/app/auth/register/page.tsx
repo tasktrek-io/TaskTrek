@@ -3,6 +3,15 @@ import { useState } from 'react';
 import { api } from '../../../lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Paper,
+  Container
+} from '@mui/material';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -10,10 +19,69 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+
+  const validateField = (field: string, value: string) => {
+    switch (field) {
+      case 'name':
+        if (value.length < 3) return 'Name must be at least 3 characters long';
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name must contain only letters and spaces';
+        return '';
+      case 'email':
+        if (!value) return 'Email is required';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return 'Please enter a valid email address';
+        return '';
+      case 'password':
+        if (value.length < 8) return 'Password must be at least 8 characters long';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    switch (field) {
+      case 'name':
+        setName(value);
+        setValidationErrors(prev => ({ ...prev, name: validateField('name', value) }));
+        break;
+      case 'email':
+        setEmail(value);
+        setValidationErrors(prev => ({ ...prev, email: validateField('email', value) }));
+        break;
+      case 'password':
+        setPassword(value);
+        setValidationErrors(prev => ({ ...prev, password: validateField('password', value) }));
+        break;
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {
+      name: validateField('name', name),
+      email: validateField('email', email),
+      password: validateField('password', password)
+    };
+
+    setValidationErrors(errors);
+    return !errors.name && !errors.email && !errors.password;
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setValidationErrors({ name: '', email: '', password: '' });
+
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const response = await api.post('/auth/register', { email, name, password });
       // Store the token in localStorage
@@ -27,16 +95,81 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-3 border rounded p-4">
-        <h1 className="text-xl font-semibold">Create account</h1>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <input className="w-full border rounded p-2" placeholder="Name" value={name} onChange={e=>setName(e.target.value)} />
-        <input className="w-full border rounded p-2" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input className="w-full border rounded p-2" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} />
-        <button className="w-full bg-blue-600 text-white rounded p-2">Sign up</button>
-        <div className="text-sm">Already have an account? <Link className="text-blue-600 underline" href="/auth/login">Login</Link></div>
-      </form>
-    </main>
+    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 400, p: 4 }}>
+        <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Typography variant="h4" component="h1" textAlign="center" fontWeight="600">
+            Create Account
+          </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <TextField
+            fullWidth
+            label="Full Name"
+            placeholder="Enter your full name"
+            value={name}
+            onChange={(e) => handleFieldChange('name', e.target.value)}
+            error={!!validationErrors.name}
+            helperText={validationErrors.name}
+            required
+            variant="outlined"
+          />
+
+          <TextField
+            fullWidth
+            label="Email Address"
+            placeholder="Enter your email"
+            type="email"
+            value={email}
+            onChange={(e) => handleFieldChange('email', e.target.value)}
+            error={!!validationErrors.email}
+            helperText={validationErrors.email}
+            required
+            variant="outlined"
+          />
+
+          <TextField
+            fullWidth
+            label="Password"
+            placeholder="Enter password (min 8 characters)"
+            type="password"
+            value={password}
+            onChange={(e) => handleFieldChange('password', e.target.value)}
+            error={!!validationErrors.password}
+            helperText={validationErrors.password}
+            required
+            variant="outlined"
+          />
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            sx={{ 
+              py: 1.5,
+              mt: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}
+          >
+            Sign Up
+          </Button>
+
+          <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
+            Already have an account?{' '}
+            <Link href="/auth/login" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}>
+              Login here
+            </Link>
+          </Typography>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

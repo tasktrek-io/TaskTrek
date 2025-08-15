@@ -25,7 +25,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
       {/* Header */}
-      <header className="w-full px-6 py-4 flex items-center justify-between border-b border-gray-100">
+      <header className="sticky top-0 z-50 w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 bg-white/95 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">T</span>
