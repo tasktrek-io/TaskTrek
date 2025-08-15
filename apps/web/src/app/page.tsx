@@ -23,14 +23,14 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">T</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">TaskTrek</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">TaskTrek</span>
         </div>
         
         <div className="flex items-center gap-4">
@@ -45,7 +45,7 @@ export default function HomePage() {
             <>
               <Link 
                 href="/auth/login"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
               >
                 Log In
               </Link>
@@ -62,11 +62,11 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
+        <h1 className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
           The complete project management <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500">platform</span>
         </h1>
         
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
           Organize projects, manage tasks with drag-and-drop boards, collaborate with your team, and track progress all in one place.
         </p>
         
@@ -79,7 +79,7 @@ export default function HomePage() {
           </Link>
         </div>
         
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {isLoggedIn ? "Welcome back! Continue managing your projects." : "Free to use • No credit card required"}
         </p>
       </section>
@@ -87,10 +87,10 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Everything you need to manage projects
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-600 dark:text-gray-400">
             TaskTrek brings together all the tools your team needs. <span className="font-medium">Built for real project management.</span>
           </p>
         </div>
@@ -267,84 +267,84 @@ export default function HomePage() {
       </section>
 
       {/* Demo Preview Section */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-50 dark:bg-gray-800 py-20">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               See TaskTrek in action
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-400">
               Experience the power of visual project management
             </p>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-xl p-8 border">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
             <div className="grid md:grid-cols-3 gap-6">
               {/* To Do Column */}
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">To Do</h3>
-                  <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm">3</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">To Do</h3>
+                  <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-sm">3</span>
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-white p-3 rounded-lg border shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Design Homepage</span>
-                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">High</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Design Homepage</span>
+                      <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded text-xs">High</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">JD</div>
-                      <span className="text-xs text-gray-500">Due: Jan 15</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 15</span>
                     </div>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Setup Database</span>
-                      <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">Medium</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Setup Database</span>
+                      <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded text-xs">Medium</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">AS</div>
-                      <span className="text-xs text-gray-500">Due: Jan 18</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 18</span>
                     </div>
                   </div>
                 </div>
               </div>
               
               {/* In Progress Column */}
-              <div className="bg-blue-50 rounded-xl p-4">
+              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">In Progress</h3>
-                  <span className="bg-blue-200 text-blue-700 px-2 py-1 rounded-full text-sm">2</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">In Progress</h3>
+                  <span className="bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-sm">2</span>
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-white p-3 rounded-lg border shadow-sm">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">API Development</span>
-                      <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">High</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">API Development</span>
+                      <span className="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded text-xs">High</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">MK</div>
-                      <span className="text-xs text-gray-500">Due: Jan 20</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 20</span>
                     </div>
                   </div>
                 </div>
               </div>
               
               {/* Done Column */}
-              <div className="bg-green-50 rounded-xl p-4">
+              <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">Done</h3>
-                  <span className="bg-green-200 text-green-700 px-2 py-1 rounded-full text-sm">4</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Done</h3>
+                  <span className="bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-sm">4</span>
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-white p-3 rounded-lg border shadow-sm opacity-75">
+                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm opacity-75">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium line-through">Project Planning</span>
-                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Low</span>
+                      <span className="text-sm font-medium line-through text-gray-900 dark:text-gray-100">Project Planning</span>
+                      <span className="bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs">Low</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">RP</div>
-                      <span className="text-xs text-gray-500">Completed</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Completed</span>
                     </div>
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export default function HomePage() {
             </div>
             
             <div className="mt-6 text-center">
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 ✨ Drag and drop tasks between columns • Filter by assignee, priority, or due date • Real-time collaboration
               </p>
             </div>
@@ -465,21 +465,21 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-12">
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">T</span>
               </div>
-              <span className="text-lg font-bold text-gray-900">The app, for work.</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">The app, for work.</span>
             </div>
             
-            <div className="flex items-center gap-6 text-sm text-gray-600">
+            <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
               <span>© 2025 TaskTrek</span>
-              <Link href="#" className="hover:text-gray-900">Security</Link>
-              <Link href="#" className="hover:text-gray-900">Privacy</Link>
-              <Link href="#" className="hover:text-gray-900">Terms</Link>
+              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Security</Link>
+              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Privacy</Link>
+              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Terms</Link>
             </div>
           </div>
         </div>

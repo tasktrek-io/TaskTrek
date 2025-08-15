@@ -128,7 +128,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
     <div className="relative">
       <button
         onClick={toggleDropdown}
-        className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
+        className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none"
       >
         <span className="text-xl">🔔</span>
         {unreadCount > 0 && (
@@ -144,15 +144,15 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
             className="fixed inset-0 z-10" 
             onClick={() => setShowDropdown(false)}
           />
-          <div className="absolute mt-2 w-72 sm:w-80 md:w-96 bg-white rounded-lg shadow-lg border z-20 max-h-96 overflow-hidden max-w-[95vw] sm:max-w-none 
+          <div className="absolute mt-2 w-72 sm:w-80 md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 max-h-96 overflow-hidden max-w-[95vw] sm:max-w-none 
                           sm:min-w-[320px] transform -translate-x-2 sm:translate-x-0">
-            <div className="p-3 sm:p-4 border-b flex-shrink-0 bg-white sticky top-0">
+            <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800 sticky top-0">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-medium text-gray-900 text-sm sm:text-base">Notifications</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base">Notifications</h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 flex-shrink-0 whitespace-nowrap"
+                    className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex-shrink-0 whitespace-nowrap"
                   >
                     Mark all read
                   </button>
@@ -163,10 +163,10 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
             <div className="max-h-80 overflow-y-auto">
               {loading ? (
                 <div className="p-3 sm:p-4 text-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="p-3 sm:p-4 text-center text-gray-500 text-sm">
+                <div className="p-3 sm:p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                   No notifications yet
                 </div>
               ) : (
@@ -174,8 +174,8 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                   <div
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-3 sm:p-4 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50' : ''
+                    className={`p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                      !notification.read ? 'bg-blue-50 dark:bg-blue-900/30' : ''
                     }`}
                   >
                     <div className="flex items-start gap-2 sm:gap-3">
@@ -184,19 +184,19 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                       </span>
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-start justify-between gap-1 sm:gap-2 mb-1">
-                          <h4 className="font-medium text-xs sm:text-sm text-gray-900 leading-tight">
+                          <h4 className="font-medium text-xs sm:text-sm text-gray-900 dark:text-gray-100 leading-tight">
                             {notification.title}
                           </h4>
                           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             {!notification.read && (
                               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full"></div>
                             )}
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                               {getTimeAgo(notification.createdAt)}
                             </span>
                           </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-2 leading-tight" 
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 leading-tight" 
                            style={{ 
                              display: '-webkit-box',
                              WebkitLineClamp: 2,
@@ -205,7 +205,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                            }}>
                           {notification.message}
                         </p>
-                        <span className="text-xs text-gray-500 block leading-tight" 
+                        <span className="text-xs text-gray-500 dark:text-gray-400 block leading-tight" 
                               style={{ 
                                 display: '-webkit-box',
                                 WebkitLineClamp: 1,

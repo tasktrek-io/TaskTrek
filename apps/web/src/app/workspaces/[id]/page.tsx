@@ -146,12 +146,12 @@ export default function WorkspacePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planning': return 'bg-blue-50 text-blue-700';
-      case 'active': return 'bg-green-50 text-green-700';
-      case 'on_hold': return 'bg-yellow-50 text-yellow-700';
-      case 'completed': return 'bg-gray-50 text-gray-700';
-      case 'cancelled': return 'bg-red-50 text-red-700';
-      default: return 'bg-gray-50 text-gray-700';
+      case 'planning': return 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
+      case 'active': return 'bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300';
+      case 'on_hold': return 'bg-yellow-50 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300';
+      case 'completed': return 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      case 'cancelled': return 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300';
+      default: return 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
     }
   };
 
@@ -168,18 +168,18 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Sidebar />
           <div 
             className="p-6 transition-all duration-300" 
             style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
           >
             <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-8"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1,2,3].map(i => (
-                  <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
+                  <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                 ))}
               </div>
             </div>
@@ -193,43 +193,43 @@ export default function WorkspacePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar />
         <main 
           className="p-6 overflow-auto transition-all duration-300" 
           style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
         >
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
             <button 
               onClick={() => router.push('/dashboard')}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               Dashboard
             </button>
             <span>›</span>
             <button 
               onClick={() => router.push('/workspaces')}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               Workspaces
             </button>
             <span>›</span>
-            <span className="text-gray-900 font-medium">{workspace?.name}</span>
+            <span className="text-gray-900 dark:text-gray-100 font-medium">{workspace?.name}</span>
           </nav>
 
           {/* Greeting Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               {getGreeting()}! Welcome to {workspace?.name}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Manage your projects and collaborate with your team
             </p>
           </div>
 
           {/* Workspace Info */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div
@@ -239,11 +239,11 @@ export default function WorkspacePage() {
                   {workspace?.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{workspace?.name}</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{workspace?.name}</h2>
                   {workspace?.description && (
-                    <p className="text-gray-600 mt-1">{workspace.description}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">{workspace.description}</p>
                   )}
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {allMembers.length} member{allMembers.length !== 1 ? 's' : ''}
                   </p>
                 </div>
@@ -251,7 +251,7 @@ export default function WorkspacePage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 >
                   + New Project
                 </button>
@@ -264,10 +264,10 @@ export default function WorkspacePage() {
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Projects</h3>
           
           {projects.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-lg border">
-              <div className="text-gray-400 text-6xl mb-4">📂</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-              <p className="text-gray-600 mb-6">Get started by creating your first project in this workspace</p>
+            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">📂</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No projects yet</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">Get started by creating your first project in this workspace</p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
@@ -281,11 +281,11 @@ export default function WorkspacePage() {
                 <div
                   key={project._id}
                   onClick={() => router.push(`/projects/${project._id}`)}
-                  className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 dark:text-gray-100">
                         {project.name}
                       </h3>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(project.status)}`}>
@@ -294,7 +294,7 @@ export default function WorkspacePage() {
                     </div>
                     
                     {project.description && (
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2 dark:text-gray-400">
                         {project.description}
                       </p>
                     )}
@@ -302,19 +302,19 @@ export default function WorkspacePage() {
                     {project.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
                         {project.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded dark:bg-gray-700 dark:text-gray-300">
                             {tag}
                           </span>
                         ))}
                         {project.tags.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded dark:bg-gray-700 dark:text-gray-300">
                             +{project.tags.length - 3}
                           </span>
                         )}
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                       <span>{project.members.length + 1} members</span>
                       {project.endDate && (
                         <span>
@@ -332,16 +332,16 @@ export default function WorkspacePage() {
         {/* Create Project Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Create Project</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create Project</h2>
                   <button
                     onClick={() => {
                       setShowCreateModal(false);
                       resetForm();
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     ✕
                   </button>

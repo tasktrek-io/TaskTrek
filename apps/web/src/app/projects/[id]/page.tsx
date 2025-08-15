@@ -795,20 +795,20 @@ export default function ProjectPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'urgent': return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+      case 'high': return 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200';
+      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+      case 'low': return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'todo': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'done': return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+      case 'in_progress': return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+      case 'todo': return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
@@ -823,24 +823,24 @@ export default function ProjectPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar />
         <main 
           className="p-3 sm:p-6 space-y-6 sm:space-y-8 transition-all duration-300" 
           style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
         >
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center gap-2 text-sm text-gray-600 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap">
+          <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap">
             <button 
               onClick={() => router.push('/dashboard')}
-              className="hover:text-blue-600 transition-colors flex-shrink-0"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0"
             >
               Dashboard
             </button>
             <span className="flex-shrink-0">›</span>
             <button 
               onClick={() => router.push('/workspaces')}
-              className="hover:text-blue-600 transition-colors flex-shrink-0"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0"
             >
               Workspaces
             </button>
@@ -849,25 +849,25 @@ export default function ProjectPage() {
               <>
                 <button 
                   onClick={() => router.push(`/workspaces/${project.workspace._id}`)}
-                  className="hover:text-blue-600 transition-colors flex-shrink-0"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0"
                 >
                   {project.workspace.name}
                 </button>
                 <span className="flex-shrink-0">›</span>
               </>
             )}
-            <span className="text-gray-900 font-medium truncate">{project?.name}</span>
+            <span className="text-gray-900 dark:text-gray-100 font-medium truncate">{project?.name}</span>
           </nav>
 
           {/* Project Header */}
-          <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 truncate">{project?.name || 'Project'}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2 truncate">{project?.name || 'Project'}</h1>
                 {project?.description && (
-                  <p className="text-gray-600 mb-2 text-sm sm:text-base">{project.description}</p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-2 text-sm sm:text-base">{project.description}</p>
                 )}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {project?.workspace && (
                     <span className="truncate">Workspace: {project.workspace.name}</span>
                   )}
@@ -879,12 +879,12 @@ export default function ProjectPage() {
                   )}
                   {project?.status && (
                     <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                      project.status === 'active' ? 'bg-green-100 text-green-800' :
-                      project.status === 'planning' ? 'bg-blue-100 text-blue-800' :
-                      project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
-                      project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      project.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
+                      project.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                      project.status === 'planning' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
+                      project.status === 'on_hold' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                      project.status === 'completed' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                      project.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                      'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                     }`}>
                       {project.status.replace('_', ' ').toUpperCase()}
                     </span>
@@ -892,7 +892,7 @@ export default function ProjectPage() {
                   {project?.tags && project.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {project.tags.map(tag => (
-                        <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs whitespace-nowrap">
+                        <span key={tag} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs whitespace-nowrap">
                           {tag}
                         </span>
                       ))}
@@ -903,7 +903,7 @@ export default function ProjectPage() {
               <div className="flex gap-3 items-center flex-shrink-0">
                 <button
                   onClick={() => setShowTaskModal(true)}
-                  className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap"
+                  className="bg-blue-600 dark:bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm sm:text-base whitespace-nowrap"
                 >
                   + Add Task
                 </button>
@@ -913,7 +913,7 @@ export default function ProjectPage() {
                   <div className="relative project-menu-container">
                     <button
                       onClick={() => setShowProjectMenu(!showProjectMenu)}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -921,10 +921,10 @@ export default function ProjectPage() {
                     </button>
                     
                     {showProjectMenu && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[160px]">
+                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
                         <button
                           onClick={openEditProjectModal}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -941,30 +941,30 @@ export default function ProjectPage() {
 
           {/* Project Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white p-3 sm:p-4 rounded-lg border">
-            <div className="text-xl sm:text-2xl font-bold text-blue-600">{tasksByStatus.todo.length}</div>
-            <div className="text-xs sm:text-sm text-gray-600">To Do</div>
+          <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{tasksByStatus.todo.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">To Do</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg border">
-            <div className="text-xl sm:text-2xl font-bold text-yellow-600">{tasksByStatus.in_progress.length}</div>
-            <div className="text-xs sm:text-sm text-gray-600">In Progress</div>
+          <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{tasksByStatus.in_progress.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">In Progress</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg border">
-            <div className="text-xl sm:text-2xl font-bold text-green-600">{tasksByStatus.done.length}</div>
-            <div className="text-xs sm:text-sm text-gray-600">Done</div>
+          <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{tasksByStatus.done.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Done</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg border">
-            <div className="text-xl sm:text-2xl font-bold text-gray-600">{tasks.length}</div>
-            <div className="text-xs sm:text-sm text-gray-600">Total Tasks</div>
+          <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-gray-400">{tasks.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
           </div>
         </div>
 
         {/* Members Section */}
-        <section className="bg-white rounded-lg border p-4 sm:p-6">
-          <div className="font-medium mb-4 text-sm sm:text-base">Team Members</div>
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+          <div className="font-medium mb-4 text-sm sm:text-base text-gray-900 dark:text-gray-100">Team Members</div>
           <div className="flex flex-wrap gap-2 mb-4">
             {allMembers.map(m => (
-              <span key={m._id} className="px-2 sm:px-3 py-1 rounded-full bg-gray-100 text-xs sm:text-sm truncate max-w-full">
+              <span key={m._id} className="px-2 sm:px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm truncate max-w-full">
                 {m.name} ({m.email})
               </span>
             ))}
@@ -974,15 +974,15 @@ export default function ProjectPage() {
               value={query} 
               onChange={e=>setQuery(e.target.value)} 
               placeholder="Search for new team members to add..." 
-              className="border rounded-lg p-2 w-full text-sm sm:text-base" 
+              className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 w-full text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400" 
             />
             {!!searchResults.length && (
-              <div className="absolute top-full left-0 border rounded-lg mt-1 w-full bg-white shadow-lg z-10 divide-y max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 w-full bg-white dark:bg-gray-800 shadow-lg z-10 divide-y divide-gray-200 dark:divide-gray-700 max-h-48 overflow-y-auto">
                 {searchResults.map(u => (
                   <button 
                     key={u._id} 
                     onClick={()=>addMember(u._id)} 
-                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm truncate"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm truncate text-gray-900 dark:text-gray-100"
                   >
                     {u.name} ({u.email})
                   </button>
@@ -993,10 +993,10 @@ export default function ProjectPage() {
         </section>
 
         {/* Tasks Kanban Board */}
-        <section className="bg-white rounded-lg border p-3 sm:p-6">
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6">
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-lg sm:text-xl font-semibold">Tasks</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-x-auto">
                 {/* Search */}
                 <div className="relative min-w-0 flex-shrink-0">
@@ -1005,9 +1005,9 @@ export default function ProjectPage() {
                     placeholder="Search tasks..."
                     value={taskSearchQuery}
                     onChange={(e) => setTaskSearchQuery(e.target.value)}
-                    className="w-full sm:w-64 pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full sm:w-64 pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   />
-                  <svg className="w-4 h-4 absolute left-2.5 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 absolute left-2.5 top-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -1020,7 +1020,7 @@ export default function ProjectPage() {
                       data-filter-button
                       onClick={() => setShowTaskFilters(!showTaskFilters)}
                       className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
-                        showTaskFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        showTaskFilters ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1028,7 +1028,7 @@ export default function ProjectPage() {
                       </svg>
                       <span className="hidden sm:inline">Filter</span>
                       {(taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length) > 0 && (
-                        <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+                        <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-1.5 py-0.5 rounded-full">
                           {taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length}
                         </span>
                       )}
@@ -1041,7 +1041,7 @@ export default function ProjectPage() {
                     data-filter-button
                     onClick={() => setShowTaskSort(!showTaskSort)}
                     className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
-                      showTaskSort ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      showTaskSort ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1057,7 +1057,7 @@ export default function ProjectPage() {
                     data-filter-button
                     onClick={() => setShowAssigneeFilter(!showAssigneeFilter)}
                     className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors whitespace-nowrap ${
-                      showAssigneeFilter ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      showAssigneeFilter ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1065,7 +1065,7 @@ export default function ProjectPage() {
                     </svg>
                     <span className="hidden sm:inline">Assignee</span>
                     {taskFilters.assignees.length > 0 && (
-                      <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
+                      <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-1.5 py-0.5 rounded-full">
                         {taskFilters.assignees.length}
                       </span>
                     )}
@@ -1076,7 +1076,7 @@ export default function ProjectPage() {
                 {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
                   <button
                     onClick={clearAllFilters}
-                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 whitespace-nowrap flex-shrink-0"
+                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap flex-shrink-0"
                   >
                     Clear all
                   </button>
@@ -1087,7 +1087,7 @@ export default function ProjectPage() {
 
             {/* Results Summary */}
             {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) && (
-              <div className="text-sm text-gray-600 px-2">
+              <div className="text-sm text-gray-600 dark:text-gray-400 px-2">
                 Showing {filterAndSortTasks(tasks).length} of {tasks.length} tasks
                 {taskSearchQuery && <span> matching "{taskSearchQuery}"</span>}
               </div>
@@ -1095,11 +1095,11 @@ export default function ProjectPage() {
 
             {/* Filter Panels */}
             {showTaskFilters && (
-              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="task-filters-container border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* Status Filter */}
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Status</h4>
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Status</h4>
                     <div className="space-y-2">
                       {['todo', 'in_progress', 'done'].map(status => (
                         <label key={status} className="flex items-center">
@@ -1109,7 +1109,7 @@ export default function ProjectPage() {
                             onChange={() => toggleTaskFilter('status', status)}
                             className="mr-2"
                           />
-                          <span className="text-sm capitalize">{status.replace('_', ' ')}</span>
+                          <span className="text-sm capitalize text-gray-900 dark:text-gray-100">{status.replace('_', ' ')}</span>
                         </label>
                       ))}
                     </div>
@@ -1117,7 +1117,7 @@ export default function ProjectPage() {
 
                   {/* Priority Filter */}
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Priority</h4>
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Priority</h4>
                     <div className="space-y-2">
                       {['low', 'medium', 'high', 'urgent'].map(priority => (
                         <label key={priority} className="flex items-center">
@@ -1127,7 +1127,7 @@ export default function ProjectPage() {
                             onChange={() => toggleTaskFilter('priority', priority)}
                             className="mr-2"
                           />
-                          <span className="text-sm capitalize">{priority}</span>
+                          <span className="text-sm capitalize text-gray-900 dark:text-gray-100">{priority}</span>
                         </label>
                       ))}
                     </div>
@@ -1135,7 +1135,7 @@ export default function ProjectPage() {
 
                   {/* Due Date Range */}
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Due Date</h4>
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Due Date</h4>
                     <div className="space-y-2">
                       <input
                         type="date"
@@ -1145,7 +1145,7 @@ export default function ProjectPage() {
                           ...prev,
                           dueDateRange: { ...prev.dueDateRange, start: e.target.value }
                         }))}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                        className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded text-sm"
                       />
                       <input
                         type="date"
@@ -1155,14 +1155,14 @@ export default function ProjectPage() {
                           ...prev,
                           dueDateRange: { ...prev.dueDateRange, end: e.target.value }
                         }))}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                        className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded text-sm"
                       />
                     </div>
                   </div>
 
                   {/* Quick Filters */}
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Quick Filters</h4>
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Quick Filters</h4>
                     <div className="space-y-2">
                       <button
                         onClick={() => setTaskFilters(prev => ({
@@ -1172,13 +1172,13 @@ export default function ProjectPage() {
                             end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
                           }
                         }))}
-                        className="w-full text-left px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                        className="w-full text-left px-2 py-1 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
                       >
                         Due this week
                       </button>
                       <button
                         onClick={() => toggleTaskFilter('assignees', 'unassigned')}
-                        className="w-full text-left px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                        className="w-full text-left px-2 py-1 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
                       >
                         Unassigned
                       </button>
@@ -1190,8 +1190,8 @@ export default function ProjectPage() {
 
             {/* Sort Panel */}
             {showTaskSort && (
-              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h4 className="font-medium text-sm text-gray-700 mb-3">Sort By</h4>
+              <div className="task-filters-container border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">Sort By</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[
                     { field: 'title', label: 'Task Name' },
@@ -1206,8 +1206,8 @@ export default function ProjectPage() {
                       onClick={() => toggleTaskSort(field as any)}
                       className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg border transition-colors ${
                         taskSort.field === field
-                          ? 'bg-blue-100 border-blue-300 text-blue-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                          ? 'bg-blue-100 dark:bg-blue-800 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-200'
+                          : 'bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500'
                       }`}
                     >
                       <span>{label}</span>
@@ -1231,8 +1231,8 @@ export default function ProjectPage() {
 
             {/* Assignee Filter Panel */}
             {showAssigneeFilter && (
-              <div className="task-filters-container border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h4 className="font-medium text-sm text-gray-700 mb-3">Assignees</h4>
+              <div className="task-filters-container border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">Assignees</h4>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -1242,13 +1242,13 @@ export default function ProjectPage() {
                       className="mr-2"
                     />
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <span className="text-sm">Unassigned</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-900 dark:text-gray-100">Unassigned</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         ({tasks.filter(t => t.assignees.length === 0).length})
                       </span>
                     </div>
@@ -1265,8 +1265,8 @@ export default function ProjectPage() {
                         <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm">{member.name}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{member.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           ({tasks.filter(t => t.assignees.some(a => a._id === member._id)).length})
                         </span>
                       </div>
@@ -1283,10 +1283,10 @@ export default function ProjectPage() {
                 {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
                   <div key={status} className="space-y-3 min-w-[280px] md:min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900 capitalize">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                         {status.replace('_', ' ')}
                       </h3>
-                      <span className="text-sm text-gray-500">{statusTasks.length}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
                     </div>
                     
                     <Droppable droppableId={status}>
@@ -1295,7 +1295,7 @@ export default function ProjectPage() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}
                           className={`space-y-3 min-h-[200px] p-2 rounded-lg transition-colors ${
-                            snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-200 border-dashed' : 'bg-gray-50'
+                            snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-600 border-dashed' : 'bg-gray-50 dark:bg-gray-700'
                           }`}
                         >
                           {statusTasks.map((task, index) => (
@@ -1305,21 +1305,21 @@ export default function ProjectPage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white border rounded-lg p-3 sm:p-4 transition-shadow cursor-pointer select-none ${
+                                  className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 transition-shadow cursor-pointer select-none ${
                                     snapshot.isDragging 
-                                      ? 'shadow-lg rotate-2 border-blue-300' 
+                                      ? 'shadow-lg rotate-2 border-blue-300 dark:border-blue-500' 
                                       : 'hover:shadow-md'
                                   }`}
                                   onClick={() => openTaskDetail(task)}
                                 >
-                                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{task.title}</h4>
+                                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm sm:text-base">{task.title}</h4>
                                   
                                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-3">
                                     <span className={`px-2 py-1 rounded text-xs font-medium w-fit ${getPriorityColor(task.priority)}`}>
                                       {task.priority}
                                     </span>
                                     {task.dueDate && (
-                                      <span className="text-xs text-gray-500">
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
                                         Due {new Date(task.dueDate).toLocaleDateString()}
                                       </span>
                                     )}
@@ -1350,7 +1350,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'todo');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
                                       >
                                         Todo
                                       </button>
@@ -1361,7 +1361,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'in_progress');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
                                       >
                                         In Progress
                                       </button>
@@ -1372,7 +1372,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'done');
                                         }}
-                                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap"
+                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
                                       >
                                         Done
                                       </button>
@@ -1384,7 +1384,7 @@ export default function ProjectPage() {
                           ))}
                           
                           {statusTasks.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                               {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
                                 ? `No ${status.replace('_', ' ')} tasks match your filters`
                                 : `No ${status.replace('_', ' ')} tasks`
@@ -1404,27 +1404,27 @@ export default function ProjectPage() {
               {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
                 <div key={status} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-gray-900 capitalize">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                       {status.replace('_', ' ')}
                     </h3>
-                    <span className="text-sm text-gray-500">{statusTasks.length}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
                   </div>
                   
-                  <div className="space-y-3 min-h-[200px] p-2 rounded-lg bg-gray-50">
+                  <div className="space-y-3 min-h-[200px] p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
                     {statusTasks.map((task) => (
                       <div
                         key={task._id}
-                        className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => openTaskDetail(task)}
                       >
-                        <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{task.title}</h4>
                         
                         <div className="flex items-center gap-2 mb-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
                             {task.priority}
                           </span>
                           {task.dueDate && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               Due {new Date(task.dueDate).toLocaleDateString()}
                             </span>
                           )}
@@ -1455,7 +1455,7 @@ export default function ProjectPage() {
                                 e.stopPropagation();
                                 updateTaskStatus(task._id, 'todo');
                               }}
-                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
                             >
                               Todo
                             </button>
@@ -1466,7 +1466,7 @@ export default function ProjectPage() {
                                 e.stopPropagation();
                                 updateTaskStatus(task._id, 'in_progress');
                               }}
-                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
                             >
                               In Progress
                             </button>
@@ -1477,7 +1477,7 @@ export default function ProjectPage() {
                                 e.stopPropagation();
                                 updateTaskStatus(task._id, 'done');
                               }}
-                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
                             >
                               Done
                             </button>
@@ -1487,7 +1487,7 @@ export default function ProjectPage() {
                     ))}
                     
                     {statusTasks.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                         {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
                           ? `No ${status.replace('_', ' ')} tasks match your filters`
                           : `No ${status.replace('_', ' ')} tasks`
@@ -1639,7 +1639,7 @@ export default function ProjectPage() {
         {/* Task Detail Modal */}
         {showTaskDetail && selectedTask && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-8">
                   <div className="flex-1">
@@ -1650,7 +1650,7 @@ export default function ProjectPage() {
                           <select
                             value={editValues.priority}
                             onChange={(e) => setEditValues(prev => ({ ...prev, priority: e.target.value as Task['priority'] }))}
-                            className="px-3 py-1 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="low">Low</option>
                             <option value="medium">Medium</option>
@@ -1659,13 +1659,13 @@ export default function ProjectPage() {
                           </select>
                           <button
                             onClick={() => saveField('priority')}
-                            className="text-green-600 hover:text-green-700 text-sm p-1 hover:bg-green-50 rounded"
+                            className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm p-1 hover:bg-green-50 dark:hover:bg-green-900 rounded"
                           >
                             ✓
                           </button>
                           <button
                             onClick={() => cancelEditing('priority')}
-                            className="text-red-600 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                           >
                             ✕
                           </button>
@@ -1685,7 +1685,7 @@ export default function ProjectPage() {
                           <select
                             value={editValues.status}
                             onChange={(e) => setEditValues(prev => ({ ...prev, status: e.target.value as Task['status'] }))}
-                            className="px-3 py-1 border rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="todo">To Do</option>
                             <option value="in_progress">In Progress</option>
@@ -1693,13 +1693,13 @@ export default function ProjectPage() {
                           </select>
                           <button
                             onClick={() => saveField('status')}
-                            className="text-green-600 hover:text-green-700 text-sm p-1 hover:bg-green-50 rounded"
+                            className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm p-1 hover:bg-green-50 dark:hover:bg-green-900 rounded"
                           >
                             ✓
                           </button>
                           <button
                             onClick={() => cancelEditing('status')}
-                            className="text-red-600 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                           >
                             ✕
                           </button>
@@ -1721,18 +1721,18 @@ export default function ProjectPage() {
                           type="text"
                           value={editValues.title}
                           onChange={(e) => setEditValues(prev => ({ ...prev, title: e.target.value }))}
-                          className="text-3xl font-bold text-gray-900 border-none focus:outline-none bg-transparent flex-1 focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                          className="text-3xl font-bold text-gray-900 dark:text-gray-100 border-none focus:outline-none bg-transparent flex-1 focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
                           autoFocus
                         />
                         <button
                           onClick={() => saveField('title')}
-                          className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded"
+                          className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-2 hover:bg-green-50 dark:hover:bg-green-900 rounded"
                         >
                           ✓
                         </button>
                         <button
                           onClick={() => cancelEditing('title')}
-                          className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded"
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                         >
                           ✕
                         </button>
@@ -1740,16 +1740,16 @@ export default function ProjectPage() {
                     ) : (
                       <button
                         onClick={() => startEditing('title')}
-                        className="text-left hover:bg-gray-50 rounded-lg p-2 w-full group mb-4 transition-colors"
+                        className="text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-2 w-full group mb-4 transition-colors"
                       >
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                           {selectedTask.title} 
-                          <span className="opacity-0 group-hover:opacity-100 text-lg ml-2 text-gray-400">✏️</span>
+                          <span className="opacity-0 group-hover:opacity-100 text-lg ml-2 text-gray-400 dark:text-gray-500">✏️</span>
                         </h1>
                       </button>
                     )}
                     
-                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                       <span>Created by</span>
                       <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
                         {selectedTask.createdBy.name.charAt(0).toUpperCase()}
@@ -1760,7 +1760,7 @@ export default function ProjectPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowTaskDetail(false)}
-                      className="text-gray-400 hover:text-gray-600 text-xl"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl"
                     >
                       ✕
                     </button>
@@ -1772,13 +1772,13 @@ export default function ProjectPage() {
                   <div className="lg:col-span-2 space-y-6">
                     {/* Description */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-2">Description</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Description</h3>
                       {isEditing.description ? (
                         <div className="space-y-2">
                           <textarea
                             value={editValues.description}
                             onChange={(e) => setEditValues(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             rows={4}
                             placeholder="Enter task description"
                             autoFocus
@@ -1801,10 +1801,10 @@ export default function ProjectPage() {
                       ) : (
                         <button
                           onClick={() => startEditing('description')}
-                          className="w-full text-left bg-gray-50 rounded-lg p-4 hover:bg-gray-100 group"
+                          className="w-full text-left bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 group"
                         >
                           <div className="flex justify-between items-start">
-                            <span className="text-gray-700">
+                            <span className="text-gray-700 dark:text-gray-300">
                               {selectedTask.description || 'No description provided'}
                             </span>
                             <span className="opacity-0 group-hover:opacity-100 text-sm">✏️</span>
@@ -1815,33 +1815,33 @@ export default function ProjectPage() {
 
                     {/* Comments */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-4">Comments</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Comments</h3>
                       
                       <form onSubmit={addComment} className="mb-4 relative">
                         <textarea
                           value={newComment}
                           onChange={handleCommentChange}
                           placeholder="Add a comment... (type @ to mention someone)"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           rows={3}
                         />
                         
                         {/* Mention Suggestions */}
                         {showMentions && mentionSuggestions.length > 0 && (
-                          <div className="absolute bottom-16 left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg max-h-32 overflow-y-auto z-10">
+                          <div className="absolute bottom-16 left-0 right-0 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-32 overflow-y-auto z-10">
                             {mentionSuggestions.map(member => (
                               <button
                                 key={member._id}
                                 type="button"
                                 onClick={() => insertMention(member)}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center gap-2"
                               >
                                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
                                   {member.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <div className="text-sm font-medium">{member.name}</div>
-                                  <div className="text-xs text-gray-500">{member.email}</div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{member.name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{member.email}</div>
                                 </div>
                               </button>
                             ))}
@@ -1858,19 +1858,19 @@ export default function ProjectPage() {
 
                       <div className="space-y-4">
                         {comments.map(comment => (
-                          <div key={comment._id} className="border rounded-lg p-4">
+                          <div key={comment._id} className="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
                                 {comment.author?.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                               <div>
-                                <div className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</div>
-                                <div className="text-xs text-gray-500">
+                                <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{comment.author?.name || 'Unknown User'}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {new Date(comment.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
-                            <p className="text-gray-700 mb-3">{renderCommentContent(comment.content)}</p>
+                            <p className="text-gray-700 dark:text-gray-300 mb-3">{renderCommentContent(comment.content)}</p>
                             
                             {/* Emoji Reactions */}
                             <div className="flex flex-wrap gap-2 items-center">
@@ -1879,10 +1879,10 @@ export default function ProjectPage() {
                                 <button
                                   key={`${reaction.emoji}-${index}`}
                                   onClick={() => addReaction(comment._id, reaction.emoji)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-full text-sm transition-colors"
                                 >
                                   <span>{reaction.emoji}</span>
-                                  <span className="text-xs text-gray-600">{reaction.count}</span>
+                                  <span className="text-xs text-gray-600 dark:text-gray-300">{reaction.count}</span>
                                 </button>
                               ))}
                               
@@ -1890,7 +1890,7 @@ export default function ProjectPage() {
                               <div className="relative emoji-picker-container">
                                 <button
                                   onClick={() => toggleEmojiPicker(comment._id)}
-                                  className="flex items-center gap-1 px-2 py-1 text-gray-500 hover:bg-gray-100 rounded-full text-sm transition-colors"
+                                  className="flex items-center gap-1 px-2 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full text-sm transition-colors"
                                   title="Add reaction"
                                 >
                                   <span>😊</span>
@@ -1899,13 +1899,13 @@ export default function ProjectPage() {
                                 
                                 {/* Emoji Picker Dropdown */}
                                 {showEmojiPicker[comment._id] && (
-                                  <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
+                                  <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
                                     <div className="grid grid-cols-5 gap-1">
                                       {['👍', '👎', '❤️', '😊', '😢', '😮', '😡', '🎉', '👏', '🔥'].map(emoji => (
                                         <button
                                           key={emoji}
                                           onClick={() => addReaction(comment._id, emoji)}
-                                          className="w-10 h-10 hover:bg-gray-100 rounded-md flex items-center justify-center text-xl transition-colors border-0 p-1"
+                                          className="w-10 h-10 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md flex items-center justify-center text-xl transition-colors border-0 p-1"
                                           title={`React with ${emoji}`}
                                         >
                                           {emoji}
@@ -1919,7 +1919,7 @@ export default function ProjectPage() {
                           </div>
                         ))}
                         {comments.length === 0 && (
-                          <p className="text-gray-500 text-center py-4">No comments yet</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-center py-4">No comments yet</p>
                         )}
                       </div>
                     </div>
@@ -1932,7 +1932,7 @@ export default function ProjectPage() {
                   <div className="space-y-6">
                     {/* Assignees */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-3">👤 Assignees</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">👤 Assignees</h3>
                       
                       {/* Add Assignee Search */}
                       <div className="mb-4">
@@ -1942,28 +1942,28 @@ export default function ProjectPage() {
                             placeholder="Search for users to assign..."
                             value={assigneeSearchQuery}
                             onChange={(e) => setAssigneeSearchQuery(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           
                           {/* Search Results Dropdown */}
                           {assigneeSearchResults.length > 0 && (
-                            <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 z-10 max-h-40 overflow-y-auto">
+                            <div className="absolute top-full left-0 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg mt-1 z-10 max-h-40 overflow-y-auto">
                               {assigneeSearchResults.map(user => (
                                 <button
                                   key={user._id}
                                   onClick={() => addAssignee(selectedTask._id, user._id)}
-                                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0"
+                                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-600 text-left border-b border-gray-100 dark:border-gray-600 last:border-b-0"
                                   disabled={selectedTask.assignees.some(a => a._id === user._id)}
                                 >
                                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
                                     {user.name.charAt(0).toUpperCase()}
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                                    <p className="text-xs text-gray-600">{user.email}</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
                                   </div>
                                   {selectedTask.assignees.some(a => a._id === user._id) && (
-                                    <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Already assigned</span>
+                                    <span className="ml-auto text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900 px-2 py-1 rounded">Already assigned</span>
                                   )}
                                 </button>
                               ))}
@@ -1976,43 +1976,43 @@ export default function ProjectPage() {
                       <div className="space-y-2">
                         {selectedTask.assignees.length > 0 ? (
                           selectedTask.assignees.map(assignee => (
-                            <div key={assignee._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div key={assignee._id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                               <div className="flex items-center gap-3">
                                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
                                   {assignee.name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="text-sm font-medium">{assignee.name}</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{assignee.name}</span>
                                 {currentUser && assignee._id === currentUser._id && (
-                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Me</span>
+                                  <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900 px-2 py-1 rounded">Me</span>
                                 )}
                               </div>
                               <button
                                 onClick={() => removeAssignee(selectedTask._id, assignee._id)}
-                                className="text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                                className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                               >
                                 ✕
                               </button>
                             </div>
                           ))
                         ) : (
-                          <p className="text-gray-500 text-sm py-2">No assignees</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm py-2">No assignees</p>
                         )}
                       </div>
                     </div>
 
                     {/* Watchers */}
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-3">👀 Watchers</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">👀 Watchers</h3>
                       
                       {/* Current User Watch/Unwatch Toggle - Only show if not watching */}
                       {currentUser && !selectedTask.watchers.some(w => w._id === currentUser._id) && (
                         <div className="mb-4">
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div className="flex items-center gap-2 flex-1">
                               <span className="text-lg">👁</span>
                               <div>
-                                <p className="text-sm font-medium text-gray-900">Watch</p>
-                                <p className="text-xs text-gray-600">Get notified of all activity on this task.</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Watch</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Get notified of all activity on this task.</p>
                               </div>
                             </div>
                             <button
@@ -2029,36 +2029,36 @@ export default function ProjectPage() {
                       <div className="mb-4">
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-400">🔍</span>
+                            <span className="text-gray-400 dark:text-gray-500">🔍</span>
                           </div>
                           <input
                             type="text"
                             placeholder="Search or enter name/email..."
                             value={watcherSearchQuery}
                             onChange={(e) => setWatcherSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
                         
                         {/* Watcher Search Results */}
                         {watcherSearchResults.length > 0 && (
-                          <div className="mt-2 border border-gray-200 rounded-lg bg-white shadow-sm">
+                          <div className="mt-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
                             {watcherSearchResults.map(user => (
                               <button
                                 key={user._id}
                                 onClick={() => addWatcher(selectedTask._id, user._id)}
-                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-600 text-left"
                                 disabled={selectedTask.watchers.some(w => w._id === user._id)}
                               >
                                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm">
                                   {user.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium">{user.name}</p>
-                                  <p className="text-xs text-gray-500">{user.email}</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                                 </div>
                                 {selectedTask.watchers.some(w => w._id === user._id) && (
-                                  <span className="ml-auto text-xs text-gray-400">Already watching</span>
+                                  <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">Already watching</span>
                                 )}
                               </button>
                             ))}
@@ -2068,29 +2068,29 @@ export default function ProjectPage() {
 
                       {/* Current Watchers List */}
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Watchers</h4>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Watchers</h4>
                         {selectedTask.watchers.length > 0 ? (
                           selectedTask.watchers.map(watcher => (
-                            <div key={watcher._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                            <div key={watcher._id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
                                   {watcher.name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="text-sm font-medium">{watcher.name}</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{watcher.name}</span>
                                 {currentUser && watcher._id === currentUser._id && (
-                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Me</span>
+                                  <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900 px-2 py-1 rounded">Me</span>
                                 )}
                               </div>
                               <button
                                 onClick={() => removeWatcher(selectedTask._id, watcher._id)}
-                                className="text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 rounded"
+                                className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                               >
                                 ✕
                               </button>
                             </div>
                           ))
                         ) : (
-                          <p className="text-gray-500 text-sm py-2">No watchers</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm py-2">No watchers</p>
                         )}
                       </div>
                     </div>
@@ -2098,11 +2098,11 @@ export default function ProjectPage() {
                     {/* Due Date */}
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-gray-900">Due Date</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">Due Date</h3>
                         {!isEditing.dueDate && (
                           <button
                             onClick={() => startEditing('dueDate')}
-                            className="text-sm text-blue-600 hover:text-blue-700"
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                           >
                             ✏️ Edit
                           </button>
@@ -2115,7 +2115,7 @@ export default function ProjectPage() {
                             type="date"
                             value={editValues.dueDate}
                             onChange={(e) => setEditValues(prev => ({ ...prev, dueDate: e.target.value }))}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <div className="flex gap-2">
                             <button
@@ -2133,7 +2133,7 @@ export default function ProjectPage() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {selectedTask.dueDate 
                             ? new Date(selectedTask.dueDate).toLocaleDateString()
                             : 'No due date set'
@@ -2151,13 +2151,13 @@ export default function ProjectPage() {
         {/* Edit Project Modal */}
         {showEditProjectModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Edit Project</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Edit Project</h2>
                   <button
                     onClick={() => setShowEditProjectModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     ✕
                   </button>
@@ -2165,27 +2165,27 @@ export default function ProjectPage() {
 
                 <form onSubmit={updateProject} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Project Name
                     </label>
                     <input
                       type="text"
                       value={projectEditForm.name}
                       onChange={(e) => setProjectEditForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter project name"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Description
                     </label>
                     <textarea
                       value={projectEditForm.description}
                       onChange={(e) => setProjectEditForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter project description"
                       rows={3}
                     />
@@ -2193,7 +2193,7 @@ export default function ProjectPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Status
                       </label>
                       <select

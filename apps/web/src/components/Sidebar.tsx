@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from './ThemeToggle';
 
 interface Workspace {
   _id: string;
@@ -131,7 +132,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
   ];
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}>
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         {isCollapsed ? (
@@ -166,6 +167,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />
+              <ThemeToggle />
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
@@ -207,7 +209,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange }: Sidebar
                   className="fixed inset-0 z-10"
                   onClick={() => setShowWorkspaceDropdown(false)}
                 />
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
                   {workspaces.map((workspace) => (
                     <button
                       key={workspace._id}

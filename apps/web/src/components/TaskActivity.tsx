@@ -95,26 +95,26 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
   const getActivityColor = (action: string) => {
     switch (action) {
       case 'created':
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
       case 'status_changed':
-        return 'text-blue-600';
+        return 'text-blue-600 dark:text-blue-400';
       case 'priority_changed':
-        return 'text-orange-600';
+        return 'text-orange-600 dark:text-orange-400';
       case 'assigned':
       case 'unassigned':
-        return 'text-purple-600';
+        return 'text-purple-600 dark:text-purple-400';
       case 'due_date_changed':
-        return 'text-red-600';
+        return 'text-red-600 dark:text-red-400';
       case 'title_changed':
       case 'description_changed':
-        return 'text-gray-600';
+        return 'text-gray-600 dark:text-gray-400';
       case 'comment_added':
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
       case 'comment_reaction_added':
       case 'comment_reaction_removed':
-        return 'text-yellow-600';
+        return 'text-yellow-600 dark:text-yellow-400';
       default:
-        return 'text-gray-600';
+        return 'text-gray-600 dark:text-gray-400';
     }
   };
 
@@ -147,9 +147,9 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
   if (loading && activities.length === 0) {
     return (
       <div className="space-y-4">
-        <h3 className="font-medium text-gray-900">Activity</h3>
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">Activity</h3>
         <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
       </div>
     );
@@ -157,19 +157,19 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium text-gray-900">Activity</h3>
+      <h3 className="font-medium text-gray-900 dark:text-gray-100">Activity</h3>
       
       <div className="space-y-3">
         {activities.map(activity => (
-          <div key={activity._id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+          <div key={activity._id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div className="text-lg">{getActivityIcon(activity.action)}</div>
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-gray-900">
+                <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                   {activity.performedBy.name}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {formatTimestamp(activity.createdAt)}
                 </span>
               </div>
@@ -180,7 +180,7 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
               
               {/* Show field changes for debugging/detailed view */}
               {activity.field && (activity.oldValue !== undefined || activity.newValue !== undefined) && (
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {activity.oldValue && (
                     <span>From: <em>{String(activity.oldValue)}</em></span>
                   )}
@@ -195,14 +195,14 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
         ))}
         
         {activities.length === 0 && (
-          <p className="text-gray-500 text-center py-4">No activity yet</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center py-4">No activity yet</p>
         )}
         
         {hasMore && (
           <button
             onClick={loadMore}
             disabled={loading}
-            className="w-full text-center py-2 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+            className="w-full text-center py-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium disabled:opacity-50"
           >
             {loading ? 'Loading...' : 'Load more activity'}
           </button>
