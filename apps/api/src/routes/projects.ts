@@ -3,7 +3,10 @@ import { requireAuth, AuthedRequest } from '../middleware/auth';
 import Project from '../models/Project';
 import Workspace from '../models/Workspace';
 import User from '../models/User';
+import Organization from '../models/Organization';
+import PersonalSpace from '../models/PersonalSpace';
 import WorkspaceService from '../services/WorkspaceService';
+import NotificationService from '../services/NotificationService';
 import { Types } from 'mongoose';
 
 const router = Router();
@@ -53,6 +56,40 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
     // Add all initial members to workspace
     if (members && members.length > 0) {
       await WorkspaceService.addUsersToWorkspaceForProject(members, (project._id as Types.ObjectId).toString());
+
+      // Send notifications to initial members
+      try {
+        let organizationName = '';
+        
+        // Get organization name if workspace is in an organization context
+        if (workspaceDoc.contextType === 'organization') {
+          const organization = await Organization.findById(workspaceDoc.contextId);
+          if (organization) {
+            organizationName = organization.name;
+          }
+        }
+
+        // Send notification to each member
+        for (const memberId of members) {
+          if (memberId !== ownerId) { // Don't notify the owner
+            try {
+              await NotificationService.notifyProjectMemberAdded(
+                (project._id as Types.ObjectId).toString(),
+                project.name,
+                workspaceDoc.name,
+                organizationName,
+                memberId,
+                ownerId
+              );
+            } catch (memberNotifError) {
+              console.error(`Failed to send notification to member ${memberId}:`, memberNotifError);
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to send notifications:', notifError);
+        // Don't fail the operation if notification fails
+      }
     }
     
     const populated = await Project.findById(project._id)
@@ -156,28 +193,61 @@ router.post('/:id/members', requireAuth, async (req: AuthedRequest, res: Respons
   const { memberId } = req.body as { memberId: string };
   const userId = req.user!.id;
 
-  const project = await Project.findById(id);
-  if (!project) return res.status(404).json({ error: 'Not found' });
-  if (project.owner.toString() !== userId) return res.status(403).json({ error: 'Forbidden' });
-  const member = await User.findById(memberId);
-  if (!member) return res.status(404).json({ error: 'User not found' });
-
-  // Check if user is already owner
-  if (project.owner.toString() === memberId) {
-    return res.status(400).json({ error: 'User is already the project owner' });
-  }
-
-  // Check if user is already a member
-  if (!project.members.some(m => m.toString() === memberId)) {
-    project.members.push(new Types.ObjectId(memberId) as any);
-    await project.save();
+  try {
+    const project = await Project.findById(id).populate('workspace');
+    if (!project) return res.status(404).json({ error: 'Not found' });
+    if (project.owner.toString() !== userId) return res.status(403).json({ error: 'Forbidden' });
     
-    // Add user to workspace automatically
-    await WorkspaceService.addUserToWorkspaceForProject(memberId, id);
-  } else {
-    return res.status(400).json({ error: 'User is already a member of this project' });
+    const member = await User.findById(memberId);
+    if (!member) return res.status(404).json({ error: 'User not found' });
+
+    // Check if user is already owner
+    if (project.owner.toString() === memberId) {
+      return res.status(400).json({ error: 'User is already the project owner' });
+    }
+
+    // Check if user is already a member
+    if (!project.members.some(m => m.toString() === memberId)) {
+      project.members.push(new Types.ObjectId(memberId) as any);
+      await project.save();
+      
+      // Add user to workspace automatically
+      await WorkspaceService.addUserToWorkspaceForProject(memberId, id);
+
+      // Send notification to the new member
+      try {
+        const workspace = project.workspace as any;
+        let organizationName = '';
+        
+        // Get organization name if workspace is in an organization context
+        if (workspace.contextType === 'organization') {
+          const organization = await Organization.findById(workspace.contextId);
+          if (organization) {
+            organizationName = organization.name;
+          }
+        }
+
+        await NotificationService.notifyProjectMemberAdded(
+          id,
+          project.name,
+          workspace.name,
+          organizationName,
+          memberId,
+          userId
+        );
+      } catch (notifError) {
+        console.error('Failed to send notification:', notifError);
+        // Don't fail the operation if notification fails
+      }
+    } else {
+      return res.status(400).json({ error: 'User is already a member of this project' });
+    }
+    
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  res.json({ ok: true });
 });
 
 export default router;

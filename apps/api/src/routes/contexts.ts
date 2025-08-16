@@ -4,6 +4,7 @@ import Organization from '../models/Organization';
 import User from '../models/User';
 import Workspace from '../models/Workspace';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
+import NotificationService from '../services/NotificationService';
 
 const router = express.Router();
 
@@ -360,6 +361,20 @@ router.post('/organizations/:orgId/members', requireAuth, async (req: AuthedRequ
 
     await organization.save();
 
+    // Send notification to the new member
+    try {
+      await NotificationService.notifyOrganizationMemberAdded(
+        orgId,
+        organization.name,
+        String(userToAdd._id),
+        userId,
+        role
+      );
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+      // Don't fail the operation if notification fails
+    }
+
     // Return the updated member list
     const updatedOrg = await Organization.findById(orgId)
       .populate('members.userId', '_id email name');
@@ -449,9 +464,27 @@ router.patch('/organizations/:orgId/members/:memberId', requireAuth, async (req:
       return res.status(400).json({ message: 'Cannot change the owner role' });
     }
 
+    // Store old role for notification
+    const oldRole = memberToUpdate.role;
+
     // Update the role
     memberToUpdate.role = role;
     await organization.save();
+
+    // Send notification to the member about role change
+    try {
+      await NotificationService.notifyOrganizationRoleUpdated(
+        orgId,
+        organization.name,
+        memberId,
+        userId,
+        oldRole,
+        role
+      );
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+      // Don't fail the operation if notification fails
+    }
 
     res.json({ message: 'Member role updated successfully' });
   } catch (err) {

@@ -12,6 +12,8 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     })
     .populate('sender', 'name email')
     .populate('relatedTask', 'title')
+    .populate('relatedOrganization', 'name')
+    .populate('relatedProject', 'name')
     .sort({ createdAt: -1 })
     .limit(50);
 

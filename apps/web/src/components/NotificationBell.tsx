@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 
 interface Notification {
   _id: string;
-  type: 'task_assigned' | 'task_updated' | 'mentioned' | 'comment_added';
+  type: 'task_assigned' | 'task_updated' | 'mentioned' | 'comment_added' | 'org_member_added' | 'org_role_updated' | 'project_member_added';
   title: string;
   message: string;
   read: boolean;
@@ -18,6 +18,14 @@ interface Notification {
   relatedTask?: {
     _id: string;
     title: string;
+  };
+  relatedOrganization?: {
+    _id: string;
+    name: string;
+  };
+  relatedProject?: {
+    _id: string;
+    name: string;
   };
 }
 
@@ -105,6 +113,9 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
       case 'task_updated': return '🔄';
       case 'mentioned': return '@';
       case 'comment_added': return '💬';
+      case 'org_member_added': return '🏢';
+      case 'org_role_updated': return '👤';
+      case 'project_member_added': return '📁';
       default: return '🔔';
     }
   };
