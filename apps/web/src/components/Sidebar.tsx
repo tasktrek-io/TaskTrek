@@ -140,9 +140,19 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       });
       setWorkspaces(response.data);
 
-      // Auto-select first workspace if none selected and workspaces exist
-      if (response.data.length > 0 && !currentWorkspace && onWorkspaceChange) {
-        onWorkspaceChange(response.data[0]);
+      // Auto-select first workspace if workspaces exist and no workspace is currently selected
+      if (response.data.length > 0 && onWorkspaceChange) {
+        // Check if current workspace belongs to the new context
+        const workspaceBelongsToContext = currentWorkspace && 
+          response.data.some((w: Workspace) => w._id === currentWorkspace._id);
+        
+        if (!currentWorkspace || !workspaceBelongsToContext) {
+          // Select first workspace of the new context
+          onWorkspaceChange(response.data[0]);
+        }
+      } else if (response.data.length === 0 && onWorkspaceChange) {
+        // Clear workspace if no workspaces exist for this context
+        onWorkspaceChange(null as any);
       }
     } catch (err) {
       console.error('Failed to load workspaces:', err);
@@ -168,6 +178,9 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       localStorage.setItem('lastActiveContext', JSON.stringify({ id: context._id, type: context.type }));
       setShowContextDropdown(false);
       
+      // Clear workspaces first
+      setWorkspaces([]);
+      
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('contextChanged', { 
         detail: { context } 
@@ -180,8 +193,11 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       
       // Clear current workspace when changing context
       if (onWorkspaceChange) {
-        onWorkspaceChange(undefined as any);
+        onWorkspaceChange(null as any);
       }
+      
+      // Load workspaces for the new context
+      await loadWorkspaces();
     } catch (error) {
       console.error('Failed to update context:', error);
     }

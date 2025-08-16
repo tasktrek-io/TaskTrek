@@ -39,12 +39,27 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     name: currentWorkspace.name,
     color: currentWorkspace.color,
     contextId: currentWorkspace._id, // Use workspace ID as context ID for now
-    contextType: 'organization' as const // We know this is an organization context
+    contextType: 'organization' as const // Default to organization context
   } : undefined;
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Listen for context changes to update workspace
+  useEffect(() => {
+    const handleContextChange = (event: CustomEvent) => {
+      console.log('Layout: Context changed, clearing workspace');
+      // Clear current workspace when context changes
+      setCurrentWorkspace(null);
+    };
+
+    window.addEventListener('contextChanged', handleContextChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('contextChanged', handleContextChange as EventListener);
+    };
+  }, [setCurrentWorkspace]);
 
   const loadUserData = async () => {
     try {
