@@ -223,7 +223,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                                 WebkitBoxOrient: 'vertical' as const,
                                 overflow: 'hidden'
                               }}>
-                          From: {notification.sender.name}
+                          From: {notification?.sender?.name || 'Deleted User'}
                         </span>
                       </div>
                     </div>

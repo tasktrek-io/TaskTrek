@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '../../components/AuthGuard';
 import Sidebar from '../../components/Sidebar';
+import DeleteAccountModal from '../../components/DeleteAccountModal';
 import { api } from '../../lib/api';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 
@@ -57,6 +58,7 @@ export default function ProfilePage() {
   });
   const [updating, setUpdating] = useState(false);
   const [leavingOrgId, setLeavingOrgId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Convert workspace to the format expected by Sidebar
   const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
@@ -168,6 +170,13 @@ export default function ProfilePage() {
     } finally {
       setLeavingOrgId(null);
     }
+  };
+
+  const handleAccountDeleted = () => {
+    // Clear any local storage, cookies, etc.
+    localStorage.clear();
+    // Redirect to home/login page
+    router.push('/auth/login');
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -454,9 +463,39 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Danger Zone */}
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 border-l-4 border-red-400">
+                <h2 className="text-lg font-medium text-red-600 dark:text-red-400 mb-4">
+                  Danger Zone
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Delete Account
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Permanently delete your account and all associated data. This action cannot be undone.
+                    </p>
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-sm font-medium"
+                    >
+                      Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>
+
+        {/* Delete Account Modal */}
+        <DeleteAccountModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onAccountDeleted={handleAccountDeleted}
+        />
       </div>
     </AuthGuard>
   );

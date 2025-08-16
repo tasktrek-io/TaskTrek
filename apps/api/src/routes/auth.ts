@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User';
+import Organization from '../models/Organization';
 import EmailVerification from '../models/EmailVerification';
 import EmailService from '../services/EmailService';
+import UserDeletionService from '../services/UserDeletionService';
 
 // Create email service instance after env is loaded
 const emailService = new EmailService();
@@ -20,8 +22,11 @@ router.post('/register', async (req: Request, res: Response) => {
     name = (name || '').trim();
     if (!email || !name || !password) return res.status(400).json({ error: 'Missing fields' });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ error: 'Email already in use' });
+    // Check if email is available for registration
+    const emailCheck = await UserDeletionService.checkEmailAvailability(email);
+    if (!emailCheck.available && !emailCheck.previouslyDeleted) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
 
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({ 
@@ -296,6 +301,144 @@ router.get('/test-email', async (req, res) => {
   } catch (error) {
     console.error('Email test error:', error);
     return res.status(500).json({ error: 'Email test failed' });
+  }
+});
+
+// Get organizations owned by user (for delete account check)
+router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const Organization = require('../models/Organization').default;
+    const ownedOrgs = await Organization.find({ ownerId: userId }).select('_id name members');
+    
+    return res.json({ organizations: ownedOrgs });
+  } catch (err) {
+    console.error('Error fetching owned organizations:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Transfer organization ownership
+router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { organizationId, newOwnerId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!organizationId || !newOwnerId) {
+      return res.status(400).json({ error: 'Organization ID and new owner ID are required' });
+    }
+
+    const Organization = require('../models/Organization').default;
+    const organization = await Organization.findById(organizationId);
+
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    // Check if current user is the owner
+    if (organization.ownerId.toString() !== userId) {
+      return res.status(403).json({ error: 'Only organization owner can transfer ownership' });
+    }
+
+    // Check if new owner is a member of the organization
+    const newOwnerMember = organization.members.find(
+      (member: any) => member.userId.toString() === newOwnerId
+    );
+
+    if (!newOwnerMember) {
+      return res.status(400).json({ error: 'New owner must be a member of the organization' });
+    }
+
+    // Update ownership
+    organization.ownerId = newOwnerId;
+    
+    // Update roles in members array
+    organization.members = organization.members.map((member: any) => {
+      if (member.userId.toString() === newOwnerId) {
+        return { ...member, role: 'owner' };
+      } else if (member.userId.toString() === userId) {
+        return { ...member, role: 'admin' };
+      }
+      return member;
+    });
+
+    await organization.save();
+
+    return res.json({ message: 'Ownership transferred successfully' });
+  } catch (err) {
+    console.error('Error transferring ownership:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get owned organizations for deletion assessment
+router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const organizations = await UserDeletionService.getOwnedOrganizations(req.user!.id);
+    res.json({ organizations });
+  } catch (error: any) {
+    console.error('Error getting owned organizations:', error);
+    res.status(500).json({ message: error.message || 'Internal server error' });
+  }
+});
+
+// Transfer organization ownership
+router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { organizationId, newOwnerId } = req.body;
+    
+    if (!organizationId || !newOwnerId) {
+      return res.status(400).json({ message: 'Organization ID and new owner ID are required' });
+    }
+
+    await UserDeletionService.transferOwnership(organizationId, req.user!.id, newOwnerId);
+    res.json({ message: 'Ownership transferred successfully' });
+  } catch (error: any) {
+    console.error('Error transferring ownership:', error);
+    res.status(500).json({ message: error.message || 'Failed to transfer ownership' });
+  }
+});
+
+// Get deletion assessment
+router.get('/deletion-assessment', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const assessment = await UserDeletionService.assessDeletionImpact(req.user!.id);
+    res.json(assessment);
+  } catch (error: any) {
+    console.error('Error assessing deletion impact:', error);
+    res.status(500).json({ message: error.message || 'Internal server error' });
+  }
+});
+
+// Delete user account
+router.delete('/delete-account', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    // Final safety check - ensure user doesn't own any organizations
+    const ownedOrgs = await Organization.find({ owner: req.user!.id });
+    if (ownedOrgs.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete account: You still own ${ownedOrgs.length} organization(s). Please transfer ownership first.` 
+      });
+    }
+
+    // Perform soft delete
+    const result = await UserDeletionService.softDeleteUser(req.user!.id);
+    
+    // Clear the JWT cookie
+    res.clearCookie('token');
+    
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete account' });
   }
 });
 

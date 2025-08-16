@@ -310,6 +310,52 @@ router.get('/users/search', requireAuth, async (req: AuthedRequest, res: Respons
   }
 });
 
+// Get organization members
+router.get('/organizations/:orgId/members', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const userId = req.user!.id;
+
+    // Check if current user is a member of the organization
+    const organization = await Organization.findOne({
+      _id: orgId,
+      'members.userId': userId
+    });
+
+    if (!organization) {
+      return res.status(403).json({ message: 'Access denied to this organization' });
+    }
+
+    // Get user details for all members except the current user
+    const memberUserIds = organization.members
+      .filter(member => member.userId.toString() !== userId)
+      .map(member => member.userId);
+
+    const users = await User.find({
+      _id: { $in: memberUserIds }
+    }).select('_id email name');
+
+    // Combine user data with role information
+    const members = users.map(user => {
+      const userObj = user.toObject();
+      const memberInfo = organization.members.find(m => m.userId.toString() === String(userObj._id));
+      return {
+        _id: userObj._id,
+        userId: userObj._id,
+        email: userObj.email,
+        name: userObj.name,
+        role: memberInfo?.role || 'member',
+        joinedAt: memberInfo?.joinedAt
+      };
+    });
+
+    res.json({ members });
+  } catch (error) {
+    console.error('Error getting organization members:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Add member to organization
 router.post('/organizations/:orgId/members', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {

@@ -12,6 +12,10 @@ export interface IUser extends Document {
     type: 'personal' | 'organization';
     id: string;
   };
+  // Deletion fields
+  deleted: boolean;
+  deletedAt?: Date;
+  originalEmail?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,7 +39,11 @@ const UserSchema = new Schema<IUser>({
     id: {
       type: Schema.Types.ObjectId
     }
-  }
+  },
+  // Deletion fields
+  deleted: { type: Boolean, default: false },
+  deletedAt: { type: Date },
+  originalEmail: { type: String } // Store original email for potential reactivation
 }, {
   timestamps: true,
 });

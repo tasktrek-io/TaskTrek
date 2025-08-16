@@ -3,6 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface INotification extends Document {
   recipient: Schema.Types.ObjectId;
   sender: Schema.Types.ObjectId;
+  senderName?: string; // Fallback for deleted users
   type: 'task_assigned' | 'task_updated' | 'mentioned' | 'comment_added' | 'org_member_added' | 'org_role_updated' | 'project_member_added';
   title: string;
   message: string;
@@ -24,6 +25,10 @@ const notificationSchema = new Schema<INotification>({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  senderName: {
+    type: String,
+    // Fallback name for deleted users
   },
   type: {
     type: String,
