@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { Icons } from '../../../lib/icons';
 
 interface Workspace {
   _id: string;
@@ -177,9 +178,7 @@ export default function MyTasksPage() {
                 disabled={refreshing}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <span className={`text-lg ${refreshing ? 'animate-spin' : ''}`}>
-                  🔄
-                </span>
+                <Icons.RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Refreshing...' : 'Refresh'}
               </button>
             </div>
@@ -213,7 +212,7 @@ export default function MyTasksPage() {
           <div className="space-y-4">
             {filteredTasks.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
-                <div className="text-gray-400 dark:text-gray-500 text-4xl mb-4">📋</div>
+                <Icons.Clipboard className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No tasks found</h3>
                 <p className="text-gray-600 dark:text-gray-400">
                   {filter === 'all' 

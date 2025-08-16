@@ -8,6 +8,7 @@ import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import CreateOrganizationModal from './CreateOrganizationModal';
 import OrganizationMembersModal from './OrganizationMembersModal';
+import { Icons, getIcon } from '../lib/icons';
 
 interface Workspace {
   _id: string;
@@ -22,6 +23,12 @@ interface Context {
   name: string;
   type: 'personal' | 'organization';
   logo?: string;
+}
+
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: string | React.ReactElement;
 }
 
 interface SidebarProps {
@@ -95,7 +102,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
           _id: org._id,
           name: org.name,
           type: 'organization' as const,
-          logo: org.logo || '🏢'
+          logo: org.logo || <Icons.Building2 className="w-5 h-5" />
         }))
       ];
 
@@ -276,22 +283,22 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     router.push('/');
   };
 
-  const getMenuItems = () => {
+  const getMenuItems = (): MenuItem[] => {
     const baseItems = [
       {
         name: 'Dashboard',
         href: '/dashboard',
-        icon: '📊',
+        icon: <Icons.BarChart3 className="w-5 h-5" />,
       },
       {
         name: 'Workspaces',
         href: '/workspaces',
-        icon: '🏢',
+        icon: <Icons.Building2 className="w-5 h-5" />,
       },
       {
         name: 'My Tasks',
         href: '/tasks',
-        icon: '✅',
+        icon: <Icons.CheckCircle className="w-5 h-5" />,
       }
     ];
 
@@ -300,7 +307,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       baseItems.push({
         name: 'Members',
         href: '/members',
-        icon: '👥',
+        icon: <Icons.Users className="w-5 h-5" />,
       });
     }
 
@@ -308,7 +315,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       {
         name: 'Profile',
         href: '/profile',
-        icon: '👤',
+        icon: <Icons.User className="w-5 h-5" />,
       }
     );
 
@@ -325,7 +332,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
           // Collapsed layout - stack vertically
           <div className="flex flex-col items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold">
-              🔧
+              <Icons.Settings className="w-5 h-5" />
             </div>
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -346,8 +353,8 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
           // Expanded layout - horizontal
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center   font-bold">
-                🔧
+              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center font-bold">
+                <Icons.Settings className="w-5 h-5" />
               </div>
               <span className="font-semibold text-lg text-gray-900 dark:text-white">TaskTrek</span>
             </div>
@@ -412,7 +419,15 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <span className="text-xl flex-shrink-0">{context.logo}</span>
+                      <span className="text-xl flex-shrink-0">
+                        {context.logo === '👤' ? (
+                          <Icons.User className="w-5 h-5" />
+                        ) : context.logo === '🏢' ? (
+                          <Icons.Building2 className="w-5 h-5" />
+                        ) : (
+                          context.logo
+                        )}
+                      </span>
                       <div className="flex flex-col flex-1">
                         <span className="font-medium">{context.name}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -561,7 +576,11 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <span className={`${isCollapsed ? 'text-xl' : 'text-lg'} flex-shrink-0`}>{item.icon}</span>
+                  {typeof item.icon === 'string' ? (
+                    <span className={`${isCollapsed ? 'text-xl' : 'text-lg'} flex-shrink-0`}>{item.icon}</span>
+                  ) : (
+                    <span className="flex-shrink-0">{item.icon}</span>
+                  )}
                   {!isCollapsed && <span className="font-medium ml-3">{item.name}</span>}
                   
                   {/* Tooltip for collapsed state */}

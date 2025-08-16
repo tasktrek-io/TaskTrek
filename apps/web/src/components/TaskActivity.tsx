@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { Icons } from '../lib/icons';
 
 interface ActivityItem {
   _id: string;
@@ -66,29 +67,29 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
   const getActivityIcon = (action: string) => {
     switch (action) {
       case 'created':
-        return '🎯';
+        return <Icons.Target className="w-4 h-4" />;
       case 'status_changed':
-        return '📋';
+        return <Icons.Clipboard className="w-4 h-4" />;
       case 'priority_changed':
-        return '⚡';
+        return <Icons.Zap className="w-4 h-4" />;
       case 'assigned':
-        return '👤';
+        return <Icons.User className="w-4 h-4" />;
       case 'unassigned':
-        return '👤';
+        return <Icons.User className="w-4 h-4" />;
       case 'due_date_changed':
-        return '📅';
+        return <Icons.Calendar className="w-4 h-4" />;
       case 'title_changed':
-        return '✏️';
+        return <Icons.Edit className="w-4 h-4" />;
       case 'description_changed':
-        return '📝';
+        return <Icons.FileText className="w-4 h-4" />;
       case 'comment_added':
-        return '💬';
+        return <Icons.MessageSquare className="w-4 h-4" />;
       case 'comment_reaction_added':
-        return '👍';
+        return <Icons.ThumbsUp className="w-4 h-4" />;
       case 'comment_reaction_removed':
-        return '👎';
+        return <Icons.ThumbsDown className="w-4 h-4" />;
       default:
-        return '📌';
+        return <Icons.Bookmark className="w-4 h-4" />;
     }
   };
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { Icons } from '../lib/icons';
 
 interface Notification {
   _id: string;
@@ -109,14 +110,14 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'task_assigned': return '📋';
-      case 'task_updated': return '🔄';
-      case 'mentioned': return '@';
-      case 'comment_added': return '💬';
-      case 'org_member_added': return '🏢';
-      case 'org_role_updated': return '👤';
-      case 'project_member_added': return '📁';
-      default: return '🔔';
+      case 'task_assigned': return <Icons.Clipboard className="w-5 h-5" />;
+      case 'task_updated': return <Icons.RefreshCw className="w-5 h-5" />;
+      case 'mentioned': return <Icons.AtSign className="w-5 h-5" />;
+      case 'comment_added': return <Icons.MessageSquare className="w-5 h-5" />;
+      case 'org_member_added': return <Icons.Building2 className="w-5 h-5" />;
+      case 'org_role_updated': return <Icons.User className="w-5 h-5" />;
+      case 'project_member_added': return <Icons.Folder className="w-5 h-5" />;
+      default: return <Icons.Bell className="w-5 h-5" />;
     }
   };
 
@@ -141,7 +142,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
         onClick={toggleDropdown}
         className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none"
       >
-        <span className="text-xl">🔔</span>
+        <Icons.Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}

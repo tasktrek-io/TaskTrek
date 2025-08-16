@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { Icons } from '../../../lib/icons';
 
 interface User {
   _id: string;
@@ -115,13 +116,13 @@ export default function Dashboard() {
     const userName = user?.name?.split(' ')[0] || 'there'; // Use first name only
     
     if (hour >= 5 && hour < 12) {
-      return `Good morning, ${userName}! ☀️`;
+      return `Good morning, ${userName}!`;
     } else if (hour >= 12 && hour < 17) {
-      return `Good afternoon, ${userName}! 🌤️`;
+      return `Good afternoon, ${userName}!`;
     } else if (hour >= 17 && hour < 21) {
-      return `Good evening, ${userName}! 🌅`;
-    } else {
-      return `Good night, ${userName}! 🌙`;
+              return `Good evening, ${userName}!`;
+      } else {
+        return `Good night, ${userName}!`;
     }
   };
 
@@ -203,7 +204,7 @@ export default function Dashboard() {
              onClick={() => router.push('/workspaces')}>
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Projects</div>
-            <span className="text-xl">📊</span>
+                            <Icons.BarChart3 className="w-6 h-6" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{projects.length}</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -216,7 +217,7 @@ export default function Dashboard() {
              onClick={() => router.push('/tasks')}>
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
-            <span className="text-xl">✅</span>
+                            <Icons.CheckCircle className="w-6 h-6" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{assignedTasks.length}</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -240,7 +241,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/20 transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
-            <span className="text-xl">🚀</span>
+                            <Icons.Rocket className="w-6 h-6" />
           </div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{inProgressTasks.length}</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -255,7 +256,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-gray-900 dark:text-white">Task Priority</h3>
-            <span className="text-gray-400 dark:text-gray-500">📊</span>
+            <Icons.BarChart3 className="w-6 h-6 text-gray-400 dark:text-gray-500" />
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-6">Priority distribution</div>
           
@@ -369,7 +370,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-gray-900 dark:text-white">Project Status</h3>
-            <span className="text-gray-400 dark:text-gray-500">📈</span>
+            <Icons.TrendingUp className="w-6 h-6 text-gray-400 dark:text-gray-500" />
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-6">Status breakdown</div>
           
@@ -577,7 +578,7 @@ export default function Dashboard() {
               if (upcomingTasks.length === 0) {
                 return (
                   <div className="text-center py-4">
-                    <p className="text-gray-500 dark:text-gray-400">No urgent tasks at the moment! 🎉</p>
+                    <p className="text-gray-500 dark:text-gray-400">No urgent tasks at the moment!</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">You're all caught up</p>
                   </div>
                 );
@@ -615,8 +616,8 @@ export default function Dashboard() {
                             isOverdue ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
                             isDueSoon ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-gray-500 dark:text-gray-400'
                           }`}>
-                            {isOverdue ? '⚠️ Overdue' : 
-                             isDueSoon ? '⏰ Due ' + new Date(task.dueDate).toLocaleDateString() :
+                            {isOverdue ? <><Icons.AlertTriangle className="w-4 h-4 inline mr-1" />Overdue</> : 
+                                                            isDueSoon ? <><Icons.Clock className="w-4 h-4 inline mr-1" />Due {new Date(task.dueDate).toLocaleDateString()}</> :
                              'Due ' + new Date(task.dueDate).toLocaleDateString()}
                           </span>
                         )}

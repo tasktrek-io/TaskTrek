@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
 import { api } from '../../../lib/api';
 import { useRouter } from 'next/navigation';
+import { Icons } from '../../../lib/icons';
 
 interface Workspace {
   _id: string;
@@ -173,13 +174,13 @@ export default function WorkspacesPage() {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
-      return "Good morning! ☀️";
-    } else if (hour >= 12 && hour < 17) {
-      return "Good afternoon! 🌤️";
-    } else if (hour >= 17 && hour < 21) {
-      return "Good evening! 🌅";
-    } else {
-      return "Good night! 🌙";
+          return "Good morning!";
+  } else if (hour >= 12 && hour < 17) {
+    return "Good afternoon!";
+          } else if (hour >= 17 && hour < 21) {
+        return "Good evening!";
+      } else {
+        return "Good night!";
     }
   };
 
@@ -226,7 +227,7 @@ export default function WorkspacesPage() {
           {/* Workspaces Grid */}
           {workspaces.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-              <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">🏢</div>
+              <Icons.Building2 className="w-24 h-24 text-gray-400 dark:text-gray-500 mb-4" />
               <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No workspaces found</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">Create your first workspace to get started organizing projects</p>
               <button

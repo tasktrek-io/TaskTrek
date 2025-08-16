@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DeleteAccountModal from '../../../components/DeleteAccountModal';
 import { api } from '../../../lib/api';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { Icons } from '../../../lib/icons';
 
 interface User {
   _id: string;
@@ -242,22 +243,33 @@ export default function ProfilePage() {
                           {editForm.avatar ? (
                             <span className="text-2xl">{editForm.avatar}</span>
                           ) : (
-                            <span className="text-gray-400 text-sm">👤</span>
+                            <Icons.User className="w-4 h-4 text-gray-400" />
                           )}
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                          {['👤', '😊', '🚀', '💻', '🎯', '⭐', '🔥', '💡', '🏆', '🎨'].map((emoji) => (
+                          {[
+                  { emoji: '👤', icon: <Icons.User className="w-6 h-6" /> },
+                  { emoji: '😊', icon: <Icons.Smile className="w-6 h-6" /> },
+                  { emoji: '🚀', icon: <Icons.Rocket className="w-6 h-6" /> },
+                  { emoji: '💻', icon: <Icons.Laptop className="w-6 h-6" /> },
+                  { emoji: '🎯', icon: <Icons.Target className="w-6 h-6" /> },
+                  { emoji: '⭐', icon: <Icons.Star className="w-6 h-6" /> },
+                  { emoji: '🔥', icon: <Icons.Flame className="w-6 h-6" /> },
+                  { emoji: '💡', icon: <Icons.Lightbulb className="w-6 h-6" /> },
+                  { emoji: '🏆', icon: <Icons.Trophy className="w-6 h-6" /> },
+                  { emoji: '🎨', icon: <Icons.Palette className="w-6 h-6" /> }
+                ].map((item) => (
                             <button
-                              key={emoji}
+                              key={item.emoji}
                               type="button"
-                              onClick={() => setEditForm(prev => ({ ...prev, avatar: emoji }))}
+                              onClick={() => setEditForm(prev => ({ ...prev, avatar: item.emoji }))}
                               className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                                editForm.avatar === emoji 
+                                editForm.avatar === item.emoji 
                                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
                                   : 'border-gray-300 dark:border-gray-600'
                               }`}
                             >
-                              {emoji}
+                              {item.icon}
                             </button>
                           ))}
                         </div>
@@ -332,7 +344,7 @@ export default function ProfilePage() {
                         {user?.avatar ? (
                           <span className="text-2xl">{user.avatar}</span>
                         ) : (
-                          <span className="text-gray-400 text-xl">👤</span>
+                          <Icons.User className="w-8 h-8 text-gray-400" />
                         )}
                       </div>
                       <div>
@@ -382,7 +394,7 @@ export default function ProfilePage() {
                 
                 {organizations.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="text-gray-400 text-4xl mb-2">🏢</div>
+                    <Icons.Building2 className="w-16 h-16 text-gray-400 mb-2" />
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                       You're not part of any organizations yet.
                     </p>
@@ -394,7 +406,7 @@ export default function ProfilePage() {
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3 flex-1">
                             <div className="text-2xl">
-                              {org.logo || '🏢'}
+                              {org.logo === '🏢' ? <Icons.Building2 className="w-6 h-6" /> : org.logo}
                             </div>
                             <div className="flex-1">
                               <h3 className="font-medium text-gray-900 dark:text-white">

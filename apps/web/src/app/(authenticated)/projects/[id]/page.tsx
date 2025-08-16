@@ -6,6 +6,7 @@ import { DropResult } from 'react-beautiful-dnd';
 import TaskActivity from '../../../../components/TaskActivity';
 import { useWorkspace } from '../../../../contexts/WorkspaceContext';
 import { api } from '../../../../lib/api';
+import { Icons } from '../../../../lib/icons';
 
 // Dynamically import DragDropContext with no SSR
 const DragDropContext = dynamic(
@@ -1761,7 +1762,7 @@ export default function ProjectPage() {
                       >
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                           {selectedTask.title} 
-                          <span className="opacity-0 group-hover:opacity-100 text-lg ml-2 text-gray-400 dark:text-gray-500">✏️</span>
+                          <Icons.Edit className="opacity-0 group-hover:opacity-100 w-5 h-5 ml-2 text-gray-400 dark:text-gray-500" />
                         </h1>
                       </button>
                     )}
@@ -1824,7 +1825,7 @@ export default function ProjectPage() {
                             <span className="text-gray-700 dark:text-gray-300">
                               {selectedTask.description || 'No description provided'}
                             </span>
-                            <span className="opacity-0 group-hover:opacity-100 text-sm">✏️</span>
+                            <Icons.Edit className="opacity-0 group-hover:opacity-100 w-4 h-4 text-sm" />
                           </div>
                         </button>
                       )}
@@ -1910,7 +1911,7 @@ export default function ProjectPage() {
                                   className="flex items-center gap-1 px-2 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full text-sm transition-colors"
                                   title="Add reaction"
                                 >
-                                  <span>😊</span>
+                                  <Icons.Smile className="w-5 h-5" />
                                   <span className="text-xs">Add</span>
                                 </button>
                                 
@@ -1918,15 +1919,24 @@ export default function ProjectPage() {
                                 {showEmojiPicker[comment._id] && (
                                   <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
                                     <div className="grid grid-cols-5 gap-1">
-                                      {['👍', '👎', '❤️', '😊', '😢', '😮', '😡', '🎉', '👏', '🔥'].map(emoji => (
-                                        <button
-                                          key={emoji}
-                                          onClick={() => addReaction(comment._id, emoji)}
-                                          className="w-10 h-10 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md flex items-center justify-center text-xl transition-colors border-0 p-1"
-                                          title={`React with ${emoji}`}
-                                        >
-                                          {emoji}
-                                        </button>
+                                      {[
+                                        { emoji: '👍', icon: <Icons.ThumbsUp className="w-5 h-5" /> },
+                                        { emoji: '👎', icon: <Icons.ThumbsDown className="w-5 h-5" /> },
+                                        { emoji: '❤️', icon: <Icons.Heart className="w-5 h-5" /> },
+                                        { emoji: '😊', icon: <Icons.Smile className="w-5 h-5" /> },
+                                        { emoji: '😢', icon: <Icons.Frown className="w-5 h-5" /> },
+                                        { emoji: '😡', icon: <Icons.Angry className="w-5 h-5" /> },
+                                        { emoji: '🎉', icon: <Icons.PartyPopper className="w-5 h-5" /> },
+                                        { emoji: '🔥', icon: <Icons.Flame className="w-5 h-5" /> }
+                                      ].map(item => (
+                                                                                  <button
+                                            key={item.emoji}
+                                            onClick={() => addReaction(comment._id, item.emoji)}
+                                            className="w-10 h-10 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md flex items-center justify-center text-xl transition-colors border-0 p-1"
+                                            title={`React with ${item.emoji}`}
+                                          >
+                                            {item.icon}
+                                          </button>
                                       ))}
                                     </div>
                                   </div>
@@ -1949,7 +1959,7 @@ export default function ProjectPage() {
                   <div className="space-y-6">
                     {/* Assignees */}
                     <div>
-                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">👤 Assignees</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Assignees</h3>
                       
                       {/* Add Assignee Search */}
                       <div className="mb-4">
@@ -2046,7 +2056,7 @@ export default function ProjectPage() {
                       <div className="mb-4">
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-400 dark:text-gray-500">🔍</span>
+                            <Icons.Search className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                           </div>
                           <input
                             type="text"
@@ -2121,7 +2131,7 @@ export default function ProjectPage() {
                             onClick={() => startEditing('dueDate')}
                             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                           >
-                            ✏️ Edit
+                            <Icons.Edit className="w-4 h-4 inline mr-1" /> Edit
                           </button>
                         )}
                       </div>

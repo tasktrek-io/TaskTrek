@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { Icons } from '../lib/icons';
 
 interface Organization {
   _id: string;
@@ -325,7 +326,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onAccountDeleted }
               {ownedOrganizations.length === 0 && (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md p-3">
                   <p className="text-sm text-green-800 dark:text-green-300">
-                    ✅ All organization ownership has been transferred successfully. You can now proceed with account deletion.
+                    <Icons.CheckCircle className="w-5 h-5 inline mr-2 text-green-600" /> All organization ownership has been transferred successfully. You can now proceed with account deletion.
                   </p>
                 </div>
               )}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { Icons } from '../lib/icons';
 
 export default function HomePage() {
   const [email, setEmail] = useState('');
@@ -100,7 +101,7 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 rounded-3xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">📋</span>
+                <Icons.Clipboard className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-4">Drag & Drop Kanban</h3>
               <p className="text-blue-100 mb-6">
@@ -128,7 +129,7 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-8 rounded-3xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">🔍</span>
+                <Icons.Search className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-4">Smart Filtering & Search</h3>
               <p className="text-purple-100 mb-6">
@@ -184,7 +185,7 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-orange-500 to-pink-500 p-8 rounded-3xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">🏢</span>
+                <Icons.Building2 className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-4">Multiple Workspaces</h3>
               <p className="text-orange-100 mb-6">
@@ -212,7 +213,7 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-8 rounded-3xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">✅</span>
+                <Icons.CheckCircle className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-4">Complete Task Management</h3>
               <p className="text-indigo-100 mb-6">
@@ -240,7 +241,7 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 p-8 rounded-3xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">⚙️</span>
+                <Icons.Settings className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-4">Project Customization</h3>
               <p className="text-cyan-100 mb-6">
@@ -400,7 +401,7 @@ export default function HomePage() {
               <div className="w-full h-64 bg-gradient-to-br from-orange-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-orange-500/30">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white text-2xl">🚀</span>
+                    <Icons.Rocket className="w-8 h-8 text-white" />
                   </div>
                   <div className="text-white font-semibold">Project Success</div>
                   <div className="text-gray-300 text-sm">Delivered on time, every time</div>
@@ -424,7 +425,7 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">1️⃣</span>
+                <span className="text-2xl font-bold text-white">1</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Create Your Workspace</h3>
               <p className="text-orange-100 text-sm">
@@ -434,7 +435,7 @@ export default function HomePage() {
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">2️⃣</span>
+                <span className="text-2xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Add Your Projects</h3>
               <p className="text-orange-100 text-sm">
@@ -444,7 +445,7 @@ export default function HomePage() {
             
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">3️⃣</span>
+                <span className="text-2xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Track Progress</h3>
               <p className="text-orange-100 text-sm">
