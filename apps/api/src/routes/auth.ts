@@ -202,26 +202,72 @@ router.post('/verify-email', async (req: Request, res: Response) => {
     if (user.emailVerified) {
       // Clean up the verification token
       await EmailVerification.deleteOne({ _id: verification._id });
-      return res.status(400).json({ error: 'Email is already verified' });
+      
+      // Generate JWT token for login since email is already verified
+      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+      
+      // Set cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('token', authToken, { 
+        httpOnly: true, 
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      return res.json({ 
+        message: 'Email verification completed',
+        user: { id: user.id, email: user.email, name: user.name, emailVerified: true },
+        token: authToken,
+        alreadyVerified: true
+      });
     }
 
-    // Update user verification status
-    user.emailVerified = true;
-    await user.save();
+    // Update user verification status atomically to prevent race conditions
+    const updateResult = await User.findOneAndUpdate(
+      { _id: verification.userId, emailVerified: false },
+      { emailVerified: true },
+      { new: true }
+    );
+
+    if (!updateResult) {
+      // User was already verified by another request - treat as success
+      await EmailVerification.deleteOne({ _id: verification._id });
+      
+      // Generate JWT token for login since email verification is complete
+      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+      
+      // Set cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('token', authToken, { 
+        httpOnly: true, 
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      return res.json({ 
+        message: 'Email verification completed',
+        user: { id: user.id, email: user.email, name: user.name, emailVerified: true },
+        token: authToken,
+        alreadyVerified: true
+      });
+    }
 
     // Clean up the verification token
     await EmailVerification.deleteOne({ _id: verification._id });
 
-    // Send welcome email
+    // Send welcome email (only if we successfully updated the user)
     try {
-      await emailService.sendWelcomeEmail(user);
+      await emailService.sendWelcomeEmail(updateResult);
+      console.log(`Welcome email sent to ${updateResult.email}`);
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Continue with verification even if welcome email fails
     }
 
     // Generate JWT token for immediate login
-    const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+    const authToken = jwt.sign({ id: updateResult.id, email: updateResult.email, name: updateResult.name }, JWT_SECRET, { expiresIn: '7d' });
     
     // Set cookie
     const isProduction = process.env.NODE_ENV === 'production';
@@ -234,7 +280,7 @@ router.post('/verify-email', async (req: Request, res: Response) => {
 
     return res.json({ 
       message: 'Email verified successfully',
-      user: { id: user.id, email: user.email, name: user.name, emailVerified: true },
+      user: { id: updateResult.id, email: updateResult.email, name: updateResult.name, emailVerified: true },
       token: authToken
     });
   } catch (err) {
