@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { api } from '../lib/api';
 
 interface Workspace {
@@ -45,6 +45,23 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     };
   }, []);
 
+  // Helper functions for localStorage management
+  const getWorkspaceKey = (contextId: string, contextType: string) => {
+    return `selectedWorkspaceId_${contextType}_${contextId}`;
+  };
+
+  const saveWorkspaceForContext = (contextId: string, contextType: string, workspaceId: string) => {
+    const key = getWorkspaceKey(contextId, contextType);
+    localStorage.setItem(key, workspaceId);
+    // Also maintain backward compatibility
+    localStorage.setItem('selectedWorkspaceId', workspaceId);
+  };
+
+  const getWorkspaceForContext = (contextId: string, contextType: string) => {
+    const key = getWorkspaceKey(contextId, contextType);
+    return localStorage.getItem(key);
+  };
+
   const loadWorkspaces = async () => {
     try {
       // Get current context from localStorage
@@ -72,15 +89,24 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
       
       setWorkspaces(response.data);
 
-      // Auto-select first workspace if workspaces exist
+      // Try to restore the last selected workspace for this context
       if (response.data.length > 0) {
-        const firstWorkspace = response.data[0];
-        setCurrentWorkspaceState(firstWorkspace);
-        localStorage.setItem('selectedWorkspaceId', firstWorkspace._id);
+        const savedWorkspaceId = getWorkspaceForContext(contextId, contextType);
+        const savedWorkspace = savedWorkspaceId ? 
+          response.data.find((workspace: Workspace) => workspace._id === savedWorkspaceId) : null;
+        
+        if (savedWorkspace) {
+          // Restore the saved workspace for this context
+          setCurrentWorkspaceState(savedWorkspace);
+        } else {
+          // Select first workspace if no saved workspace found
+          const firstWorkspace = response.data[0];
+          setCurrentWorkspaceState(firstWorkspace);
+          saveWorkspaceForContext(contextId, contextType, firstWorkspace._id);
+        }
       } else {
         // Clear workspace if no workspaces exist for this context
         setCurrentWorkspaceState(null);
-        localStorage.removeItem('selectedWorkspaceId');
       }
     } catch (err) {
       console.error('Failed to load workspaces:', err);
@@ -90,6 +116,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
         setWorkspaces(response.data);
         if (response.data.length > 0) {
           setCurrentWorkspaceState(response.data[0]);
+          // Save with default context info
           localStorage.setItem('selectedWorkspaceId', response.data[0]._id);
         }
       } catch (fallbackErr) {
@@ -104,21 +131,39 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     if (workspace) {
       console.log('Switching to workspace:', workspace.name);
       setCurrentWorkspaceState(workspace);
-      localStorage.setItem('selectedWorkspaceId', workspace._id);
+      
+      // Save workspace with current context information
+      const lastActiveContext = localStorage.getItem('lastActiveContext');
+      if (lastActiveContext) {
+        try {
+          const savedContext = JSON.parse(lastActiveContext);
+          saveWorkspaceForContext(savedContext.id, savedContext.type, workspace._id);
+        } catch (err) {
+          console.error('Failed to parse saved context:', err);
+          // Fallback to old method
+          localStorage.setItem('selectedWorkspaceId', workspace._id);
+        }
+      } else {
+        // Fallback to old method
+        localStorage.setItem('selectedWorkspaceId', workspace._id);
+      }
     } else {
       console.log('Clearing current workspace');
       setCurrentWorkspaceState(null);
-      localStorage.removeItem('selectedWorkspaceId');
+      // Don't remove context-specific workspace selection when clearing workspace
+      // This allows restoring the workspace when switching back to the context
     }
   };
 
+  const contextValue = useMemo(() => ({
+    currentWorkspace,
+    workspaces,
+    setCurrentWorkspace,
+    loading
+  }), [currentWorkspace, workspaces, loading]);
+
   return (
-    <WorkspaceContext.Provider value={{
-      currentWorkspace,
-      workspaces,
-      setCurrentWorkspace,
-      loading
-    }}>
+    <WorkspaceContext.Provider value={contextValue}>
       {children}
     </WorkspaceContext.Provider>
   );

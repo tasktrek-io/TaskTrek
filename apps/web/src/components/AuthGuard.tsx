@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '../lib/api';
 
 export default function AuthGuard({ children }: { children: ReactNode }) {
@@ -18,7 +19,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     return (
       <div className="p-6">
         <p>You are not signed in.</p>
-        <a href="/auth/login" className="text-blue-600 underline">Go to Login</a>
+        <Link href="/auth/login" className="text-blue-600 underline">Go to Login</Link>
       </div>
     );
   }

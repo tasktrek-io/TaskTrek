@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import AuthGuard from '../../components/AuthGuard';
@@ -34,13 +34,16 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const [loading, setLoading] = useState(true);
 
   // Convert workspace to the format expected by Sidebar
-  const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
-    _id: currentWorkspace._id,
-    name: currentWorkspace.name,
-    color: currentWorkspace.color,
-    contextId: currentWorkspace._id, // Use workspace ID as context ID for now
-    contextType: 'organization' as const // Default to organization context
-  } : undefined;
+  const sidebarWorkspace: SidebarWorkspace | undefined = useMemo(() => 
+    currentWorkspace ? {
+      _id: currentWorkspace._id,
+      name: currentWorkspace.name,
+      color: currentWorkspace.color,
+      contextId: currentWorkspace._id, // Use workspace ID as context ID for now
+      contextType: 'organization' as const // Default to organization context
+    } : undefined,
+    [currentWorkspace]
+  );
 
   useEffect(() => {
     loadUserData();
@@ -61,7 +64,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     };
   }, [setCurrentWorkspace]);
 
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       const userResponse = await api.get('/auth/me');
       setUser(userResponse.data.user);
@@ -70,7 +73,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   if (loading) {
     return (

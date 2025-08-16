@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
@@ -75,7 +75,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
 
   useEffect(() => {
     if (currentContext) {
-      loadWorkspaces();
+      loadWorkspacesAndRestoreSelection(currentContext);
       // Notify parent of context change
       if (onContextChange) {
         onContextChange(currentContext);
@@ -135,6 +135,23 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     }
   };
 
+  // Helper functions for localStorage management
+  const getWorkspaceKey = (contextId: string, contextType: string) => {
+    return `selectedWorkspaceId_${contextType}_${contextId}`;
+  };
+
+  const saveWorkspaceForContext = (contextId: string, contextType: string, workspaceId: string) => {
+    const key = getWorkspaceKey(contextId, contextType);
+    localStorage.setItem(key, workspaceId);
+    // Also maintain backward compatibility
+    localStorage.setItem('selectedWorkspaceId', workspaceId);
+  };
+
+  const getWorkspaceForContext = (contextId: string, contextType: string) => {
+    const key = getWorkspaceKey(contextId, contextType);
+    return localStorage.getItem(key);
+  };
+
   const loadWorkspaces = async () => {
     if (!currentContext) return;
 
@@ -156,6 +173,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
         if (!currentWorkspace || !workspaceBelongsToContext) {
           // Select first workspace of the new context
           onWorkspaceChange(response.data[0]);
+          saveWorkspaceForContext(currentContext._id, currentContext.type, response.data[0]._id);
         }
       } else if (response.data.length === 0 && onWorkspaceChange) {
         // Clear workspace if no workspaces exist for this context
@@ -173,7 +191,51 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     }
   };
 
-  const handleContextChange = async (context: Context) => {
+  const loadWorkspacesAndRestoreSelection = async (context: Context) => {
+    try {
+      const response = await api.get('/workspaces', {
+        params: {
+          contextType: context.type,
+          contextId: context._id
+        }
+      });
+      setWorkspaces(response.data);
+
+      if (response.data.length > 0 && onWorkspaceChange) {
+        // Try to restore the last selected workspace for this context
+        const savedWorkspaceId = getWorkspaceForContext(context._id, context.type);
+        const savedWorkspace = savedWorkspaceId ? 
+          response.data.find((w: Workspace) => w._id === savedWorkspaceId) : null;
+        
+        if (savedWorkspace) {
+          // Restore the saved workspace for this context
+          onWorkspaceChange(savedWorkspace);
+        } else {
+          // Select first workspace if no saved workspace found
+          onWorkspaceChange(response.data[0]);
+          saveWorkspaceForContext(context._id, context.type, response.data[0]._id);
+        }
+      } else if (response.data.length === 0 && onWorkspaceChange) {
+        // Clear workspace if no workspaces exist for this context
+        onWorkspaceChange(null as any);
+      }
+    } catch (err) {
+      console.error('Failed to load workspaces:', err);
+      // Fallback to old API for backward compatibility
+      try {
+        const response = await api.get('/workspaces');
+        setWorkspaces(response.data);
+        if (response.data.length > 0 && onWorkspaceChange) {
+          onWorkspaceChange(response.data[0]);
+          saveWorkspaceForContext(context._id, context.type, response.data[0]._id);
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback workspace loading failed:', fallbackErr);
+      }
+    }
+  };
+
+  const handleContextChange = useCallback(async (context: Context) => {
     try {
       // Update context in backend
       await api.put('/contexts/context', {
@@ -198,54 +260,48 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
         onContextChange(context);
       }
       
-      // Clear current workspace when changing context
+      // Clear current workspace temporarily
       if (onWorkspaceChange) {
         onWorkspaceChange(null as any);
       }
       
-      // Load workspaces for the new context
-      await loadWorkspaces();
+      // Load workspaces for the new context and restore saved workspace
+      await loadWorkspacesAndRestoreSelection(context);
     } catch (error) {
       console.error('Failed to update context:', error);
     }
-  };
-  
-  useEffect(() => {
-    // Update CSS custom property for sidebar width
-    const updateSidebarWidth = () => {
-      document.documentElement.style.setProperty(
-        '--sidebar-width', 
-        isCollapsed ? '4rem' : '16rem'
-      );
-    };
-    
-    updateSidebarWidth();
-  }, [isCollapsed]);
+  }, [onContextChange, onWorkspaceChange]);
 
-  useEffect(() => {
-    // Load saved workspace from localStorage
-    const savedWorkspaceId = localStorage.getItem('selectedWorkspaceId');
-    if (savedWorkspaceId && workspaces.length > 0) {
-      const savedWorkspace = workspaces.find(w => w._id === savedWorkspaceId);
-      if (savedWorkspace && onWorkspaceChange) {
-        onWorkspaceChange(savedWorkspace);
-      }
-    } else if (workspaces.length > 0 && onWorkspaceChange && !currentWorkspace) {
-      // Set first workspace as default if none saved
-      onWorkspaceChange(workspaces[0]);
-    }
-  }, [workspaces, onWorkspaceChange, currentWorkspace]);
-
-  const handleWorkspaceChange = (workspace: Workspace) => {
+  const handleWorkspaceChange = useCallback((workspace: Workspace) => {
     if (onWorkspaceChange) {
       onWorkspaceChange(workspace);
     }
-    // Save selected workspace to localStorage
-    localStorage.setItem('selectedWorkspaceId', workspace._id);
+    // Save selected workspace for the current context
+    if (currentContext) {
+      saveWorkspaceForContext(currentContext._id, currentContext.type, workspace._id);
+    }
     setShowWorkspaceDropdown(false);
-  };
+  }, [onWorkspaceChange, currentContext]);
 
-  const handleOrganizationCreated = (newOrg: any) => {
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('selectedWorkspaceId');
+    localStorage.removeItem('lastActiveContext');
+    
+    // Clear all context-specific workspace selections
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('selectedWorkspaceId_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    router.push('/auth/login');
+  }, [router]);
+
+  const handleOrganizationCreated = useCallback((newOrg: any) => {
     const newContext: Context = {
       _id: newOrg._id,
       name: newOrg.name,
@@ -256,9 +312,9 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
     setContexts(prev => [...prev, newContext]);
     setCurrentContext(newContext);
     localStorage.setItem('lastActiveContext', JSON.stringify({ id: newContext._id, type: newContext.type }));
-  };
+  }, []);
 
-  const handleManageMembers = (context: Context) => {
+  const handleManageMembers = useCallback((context: Context) => {
     if (context.type === 'organization') {
       setSelectedOrgForMembers({
         _id: context._id,
@@ -270,18 +326,24 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
       setShowMembersModal(true);
       setShowContextDropdown(false);
     }
-  };
+  }, []);
 
-  const handleMembersUpdated = () => {
+  const handleMembersUpdated = useCallback(() => {
     // Refresh contexts to get updated member counts if needed
     loadContexts();
-  };
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('selectedWorkspaceId');
-    router.push('/');
-  };
+  useEffect(() => {
+    // Update CSS custom property for sidebar width
+    const updateSidebarWidth = () => {
+      document.documentElement.style.setProperty(
+        '--sidebar-width', 
+        isCollapsed ? '4rem' : '16rem'
+      );
+    };
+    
+    updateSidebarWidth();
+  }, [isCollapsed]);
 
   const getMenuItems = (): MenuItem[] => {
     const baseItems = [

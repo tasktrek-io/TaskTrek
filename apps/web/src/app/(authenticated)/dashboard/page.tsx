@@ -55,7 +55,7 @@ export default function Dashboard() {
     if (currentWorkspace) {
       loadWorkspaceData();
     }
-  }, [currentWorkspace]);
+  }, [currentWorkspace?._id]); // Only depend on workspace ID to prevent unnecessary rerenders
 
   const loadDashboardData = async () => {
     try {

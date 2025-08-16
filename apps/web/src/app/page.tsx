@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icons } from '../lib/icons';
 
 export default function HomePage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -17,9 +19,9 @@ export default function HomePage() {
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoggedIn) {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } else {
-      window.location.href = '/auth/register';
+      router.push('/auth/register');
     }
   };
 
