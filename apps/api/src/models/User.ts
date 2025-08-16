@@ -12,6 +12,9 @@ export interface IUser extends Document {
     type: 'personal' | 'organization';
     id: string;
   };
+  // Password reset fields
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   // Deletion fields
   deleted: boolean;
   deletedAt?: Date;
@@ -40,6 +43,9 @@ const UserSchema = new Schema<IUser>({
       type: Schema.Types.ObjectId
     }
   },
+  // Password reset fields
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
   // Deletion fields
   deleted: { type: Boolean, default: false },
   deletedAt: { type: Date },

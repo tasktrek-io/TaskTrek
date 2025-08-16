@@ -7,6 +7,7 @@ import Organization from '../models/Organization';
 import EmailVerification from '../models/EmailVerification';
 import EmailService from '../services/EmailService';
 import UserDeletionService from '../services/UserDeletionService';
+import { PasswordResetService } from '../services/PasswordResetService';
 
 // Create email service instance after env is loaded
 const emailService = new EmailService();
@@ -347,6 +348,76 @@ router.get('/test-email', async (req, res) => {
   } catch (error) {
     console.error('Email test error:', error);
     return res.status(500).json({ error: 'Email test failed' });
+  }
+});
+
+// Forgot password
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const result = await PasswordResetService.forgotPassword(email.toLowerCase().trim());
+    
+    if (result.success) {
+      return res.json({ message: result.message });
+    } else {
+      return res.status(400).json({ error: result.message });
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Verify reset token
+router.get('/verify-reset-token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'Reset token is required' });
+    }
+
+    const result = await PasswordResetService.verifyResetToken(token);
+    
+    if (result.valid) {
+      return res.json({ valid: true, message: 'Token is valid' });
+    } else {
+      return res.status(400).json({ valid: false, error: 'Invalid or expired reset token' });
+    }
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({ error: 'Token, password, and password confirmation are required' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match' });
+    }
+
+    const result = await PasswordResetService.resetPassword(token, password);
+    
+    if (result.success) {
+      return res.json({ message: result.message });
+    } else {
+      return res.status(400).json({ error: result.message });
+    }
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 

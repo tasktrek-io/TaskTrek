@@ -181,6 +181,12 @@ export default function LoginPage() {
             {isLoading ? 'Signing In...' : 'Sign In'}
           </Button>
 
+          <Typography variant="body2" textAlign="center" sx={{ mt: 1 }}>
+            <Link href="/auth/forgot-password" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}>
+              Forgot your password?
+            </Link>
+          </Typography>
+
           <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
             Don't have an account?{' '}
             <Link href="/auth/register" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}>
