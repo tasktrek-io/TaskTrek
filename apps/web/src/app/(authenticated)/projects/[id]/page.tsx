@@ -3,11 +3,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DropResult } from 'react-beautiful-dnd';
-import AuthGuard from '../../../components/AuthGuard';
-import Sidebar from '../../../components/Sidebar';
-import TaskActivity from '../../../components/TaskActivity';
-import { useWorkspace } from '../../../contexts/WorkspaceContext';
-import { api } from '../../../lib/api';
+import TaskActivity from '../../../../components/TaskActivity';
+import { useWorkspace } from '../../../../contexts/WorkspaceContext';
+import { api } from '../../../../lib/api';
 
 // Dynamically import DragDropContext with no SSR
 const DragDropContext = dynamic(
@@ -845,13 +843,7 @@ export default function ProjectPage() {
   }, [tasks, taskSearchQuery, taskFilters, taskSort]);
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar />
-        <main 
-          className="p-3 sm:p-6 space-y-6 sm:space-y-8 transition-all duration-300" 
-          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-        >
+    <>
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap">
             <button 
@@ -963,7 +955,8 @@ export default function ProjectPage() {
           </div>
 
           {/* Project Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="mt-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{tasksByStatus.todo.length}</div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">To Do</div>
@@ -980,10 +973,11 @@ export default function ProjectPage() {
             <div className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-gray-400">{tasks.length}</div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
           </div>
-        </div>
+            </div>
+          </div>
 
         {/* Members Section */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <section className="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <div className="font-medium mb-4 text-sm sm:text-base text-gray-900 dark:text-gray-100">Team Members</div>
           <div className="flex flex-wrap gap-2 mb-4">
             {allMembers.map(m => (
@@ -1016,7 +1010,7 @@ export default function ProjectPage() {
         </section>
 
         {/* Tasks Kanban Board */}
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6">
+        <section className="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6">
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
@@ -1302,7 +1296,7 @@ export default function ProjectPage() {
           
           {isClient ? (
             <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-              <div className="flex flex-col md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-x-visible">
+              <div className="flex flex-col md:grid md:grid-cols-3 gap-8 overflow-x-auto md:overflow-x-visible">
                 {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
                   <div key={status} className="space-y-3 min-w-[280px] md:min-w-0">
                     <div className="flex items-center justify-between">
@@ -1317,7 +1311,7 @@ export default function ProjectPage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-3 min-h-[200px] p-2 rounded-lg transition-colors ${
+                          className={`space-y-4 min-h-[200px] p-3 rounded-lg transition-colors ${
                             snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-600 border-dashed' : 'bg-gray-50 dark:bg-gray-700'
                           }`}
                         >
@@ -1328,16 +1322,16 @@ export default function ProjectPage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 transition-shadow cursor-pointer select-none ${
+                                  className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 transition-shadow cursor-pointer select-none ${
                                     snapshot.isDragging 
                                       ? 'shadow-lg rotate-2 border-blue-300 dark:border-blue-500' 
                                       : 'hover:shadow-md'
                                   }`}
                                   onClick={() => openTaskDetail(task)}
                                 >
-                                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm sm:text-base">{task.title}</h4>
+                                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 text-sm sm:text-base">{task.title}</h4>
                                   
-                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-3">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
                                     <span className={`px-2 py-1 rounded text-xs font-medium w-fit ${getPriorityColor(task.priority)}`}>
                                       {task.priority}
                                     </span>
@@ -1349,7 +1343,7 @@ export default function ProjectPage() {
                                   </div>
                                   
                                   {task.assignees.length > 0 && (
-                                    <div className="flex gap-1 mb-2">
+                                    <div className="flex gap-2 mb-3">
                                       {task.assignees.slice(0, 3).map(assignee => (
                                         <div
                                           key={assignee._id}
@@ -1366,14 +1360,14 @@ export default function ProjectPage() {
                                     </div>
                                   )}
                                   
-                                  <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
+                                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-4">
                                     {status !== 'todo' && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'todo');
                                         }}
-                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
+                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
                                       >
                                         Todo
                                       </button>
@@ -1384,7 +1378,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'in_progress');
                                         }}
-                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
+                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
                                       >
                                         In Progress
                                       </button>
@@ -1395,7 +1389,7 @@ export default function ProjectPage() {
                                           e.stopPropagation();
                                           updateTaskStatus(task._id, 'done');
                                         }}
-                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap"
+                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
                                       >
                                         Done
                                       </button>
@@ -1423,7 +1417,7 @@ export default function ProjectPage() {
               </div>
             </DragDropContext>
           ) : (
-            <div className="flex flex-col md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-x-visible">
+            <div className="flex flex-col md:grid md:grid-cols-3 gap-8 overflow-x-auto md:overflow-x-visible">
               {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
                 <div key={status} className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -1433,11 +1427,11 @@ export default function ProjectPage() {
                     <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
                   </div>
                   
-                  <div className="space-y-3 min-h-[200px] p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
+                  <div className="space-y-4 min-h-[200px] p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                     {statusTasks.map((task) => (
                       <div
                         key={task._id}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => openTaskDetail(task)}
                       >
                         <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{task.title}</h4>
@@ -2315,8 +2309,6 @@ export default function ProjectPage() {
             </div>
           </div>
         )}
-        </main>
-      </div>
-    </AuthGuard>
+    </>
   );
 }

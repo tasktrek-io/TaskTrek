@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthGuard from '../../components/AuthGuard';
-import Sidebar from '../../components/Sidebar';
-import { api } from '../../lib/api';
-import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { api } from '../../../lib/api';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
 
 interface Member {
   _id: string;
@@ -21,13 +19,7 @@ interface Organization {
   description?: string;
 }
 
-interface SidebarWorkspace {
-  _id: string;
-  name: string;
-  color: string;
-  contextId: string;
-  contextType: 'personal' | 'organization';
-}
+
 
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -45,14 +37,7 @@ export default function MembersPage() {
   const router = useRouter();
   const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
 
-  // Convert workspace to the format expected by Sidebar
-  const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
-    _id: currentWorkspace._id,
-    name: currentWorkspace.name,
-    color: currentWorkspace.color,
-    contextId: currentWorkspace._id, // Use workspace ID as context ID for now
-    contextType: 'organization' as const // We know this is an organization context
-  } : undefined;
+
 
   useEffect(() => {
     fetchCurrentOrganization();
@@ -277,39 +262,15 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar 
-            currentWorkspace={sidebarWorkspace} 
-            onWorkspaceChange={setCurrentWorkspace}
-          />
-          
-          <main 
-            className="p-6 transition-all duration-300" 
-            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-          >
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-            </div>
-          </main>
-        </div>
-      </AuthGuard>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar 
-            currentWorkspace={sidebarWorkspace} 
-            onWorkspaceChange={setCurrentWorkspace}
-          />
-          
-          <main 
-            className="p-6 transition-all duration-300" 
-            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-          >
+      <>
             <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -345,24 +306,12 @@ export default function MembersPage() {
                 </div>
               </div>
             </div>
-          </main>
-        </div>
-      </AuthGuard>
+      </>
     );
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar 
-          currentWorkspace={sidebarWorkspace} 
-          onWorkspaceChange={setCurrentWorkspace}
-        />
-        
-        <main 
-          className="p-6 transition-all duration-300" 
-          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-        >
+    <>
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -587,8 +536,6 @@ export default function MembersPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </AuthGuard>
+    </>
   );
 }

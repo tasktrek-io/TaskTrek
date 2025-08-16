@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
-import AuthGuard from '../../components/AuthGuard';
-import Sidebar from '../../components/Sidebar';
-import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { api } from '../../lib/api';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { api } from '../../../lib/api';
 import { useRouter } from 'next/navigation';
 
 interface Workspace {
@@ -51,6 +49,7 @@ export default function WorkspacesPage() {
     try {
       let response;
       if (currentContext) {
+        console.log('Loading workspaces for context:', currentContext);
         // Load workspaces for the current context
         response = await api.get('/workspaces', {
           params: {
@@ -59,10 +58,12 @@ export default function WorkspacesPage() {
           }
         });
       } else {
+        console.log('No current context, loading all workspaces');
         // Fallback to all workspaces if no context
         response = await api.get('/workspaces');
       }
       setWorkspaces(response.data);
+      console.log('Loaded workspaces:', response.data);
     } catch (err) {
       console.error('Failed to load workspaces:', err);
     } finally {
@@ -73,6 +74,57 @@ export default function WorkspacesPage() {
   useEffect(() => {
     loadWorkspaces();
   }, [currentContext]);
+
+  // Listen for context changes from the sidebar
+  useEffect(() => {
+    const handleContextChange = (event: CustomEvent) => {
+      setCurrentContext(event.detail.context);
+    };
+
+    // Listen for custom context change events
+    window.addEventListener('contextChanged', handleContextChange as EventListener);
+
+    // Also check localStorage for the current context
+    const lastActiveContext = localStorage.getItem('lastActiveContext');
+    if (lastActiveContext) {
+      try {
+        const savedContext = JSON.parse(lastActiveContext);
+        // We need to fetch the context details from the API
+        fetchCurrentContext(savedContext.id, savedContext.type);
+      } catch (err) {
+        console.error('Failed to parse saved context:', err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('contextChanged', handleContextChange as EventListener);
+    };
+  }, []);
+
+  const fetchCurrentContext = async (contextId: string, contextType: 'personal' | 'organization') => {
+    try {
+      if (contextType === 'personal') {
+        const response = await api.get('/contexts/personal-space');
+        setCurrentContext({
+          _id: response.data._id,
+          name: 'Personal',
+          type: 'personal'
+        });
+      } else {
+        const response = await api.get('/contexts/organizations');
+        const org = response.data.find((org: any) => org._id === contextId);
+        if (org) {
+          setCurrentContext({
+            _id: org._id,
+            name: org.name,
+            type: 'organization'
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch current context:', err);
+    }
+  };
 
   const createWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,37 +185,14 @@ export default function WorkspacesPage() {
 
   if (loading) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar 
-            currentWorkspace={undefined} 
-            onWorkspaceChange={undefined}
-            onContextChange={setCurrentContext}
-          />
-          <div 
-            className="flex items-center justify-center min-h-screen transition-all duration-300" 
-            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-          >
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          </div>
-        </div>
-      </AuthGuard>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+      </div>
     );
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar 
-          currentWorkspace={undefined} 
-          onWorkspaceChange={undefined}
-          onContextChange={setCurrentContext}
-        />
-        
-        <main 
-          className="p-6 transition-all duration-300" 
-          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-        >
+    <>
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Workspaces</h1>
@@ -349,8 +378,6 @@ export default function WorkspacesPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </AuthGuard>
+    </>
   );
 }

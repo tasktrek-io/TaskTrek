@@ -293,11 +293,6 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
         name: 'Profile',
         href: '/profile',
         icon: '👤',
-      },
-      {
-        name: 'Settings',
-        href: '/settings',
-        icon: '⚙️',
       }
     );
 

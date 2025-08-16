@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthGuard from '../../components/AuthGuard';
-import Sidebar from '../../components/Sidebar';
-import DeleteAccountModal from '../../components/DeleteAccountModal';
-import { api } from '../../lib/api';
-import { useWorkspace } from '../../contexts/WorkspaceContext';
+import DeleteAccountModal from '../../../components/DeleteAccountModal';
+import { api } from '../../../lib/api';
+import { useWorkspace } from '../../../contexts/WorkspaceContext';
 
 interface User {
   _id: string;
@@ -21,13 +19,7 @@ interface User {
   };
 }
 
-interface SidebarWorkspace {
-  _id: string;
-  name: string;
-  color: string;
-  contextId: string;
-  contextType: 'personal' | 'organization';
-}
+
 
 interface Organization {
   _id: string;
@@ -60,14 +52,7 @@ export default function ProfilePage() {
   const [leavingOrgId, setLeavingOrgId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Convert workspace to the format expected by Sidebar
-  const sidebarWorkspace: SidebarWorkspace | undefined = currentWorkspace ? {
-    _id: currentWorkspace._id,
-    name: currentWorkspace.name,
-    color: currentWorkspace.color,
-    contextId: currentWorkspace._id,
-    contextType: 'organization' as const
-  } : undefined;
+
 
   useEffect(() => {
     loadProfileData();
@@ -194,38 +179,14 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar 
-            currentWorkspace={sidebarWorkspace} 
-            onWorkspaceChange={setCurrentWorkspace}
-          />
-          
-          <main 
-            className="p-6 transition-all duration-300" 
-            style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-          >
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-            </div>
-          </main>
-        </div>
-      </AuthGuard>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar 
-          currentWorkspace={sidebarWorkspace} 
-          onWorkspaceChange={setCurrentWorkspace}
-        />
-        
-        <main 
-          className="p-6 transition-all duration-300" 
-          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-        >
+    <>
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -488,15 +449,12 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </main>
-
-        {/* Delete Account Modal */}
-        <DeleteAccountModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onAccountDeleted={handleAccountDeleted}
-        />
-      </div>
-    </AuthGuard>
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onAccountDeleted={handleAccountDeleted}
+      />
+    </>
   );
 }
