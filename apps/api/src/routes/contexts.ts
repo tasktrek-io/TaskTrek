@@ -493,4 +493,40 @@ router.patch('/organizations/:orgId/members/:memberId', requireAuth, async (req:
   }
 });
 
+// Leave organization (self-removal)
+router.delete('/organizations/:orgId/leave', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const userId = req.user!.id;
+
+    const organization = await Organization.findOne({
+      _id: orgId,
+      'members.userId': userId
+    });
+
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found or you are not a member' });
+    }
+
+    const currentUserMember = organization.members.find(m => m.userId.toString() === userId);
+    if (!currentUserMember) {
+      return res.status(404).json({ message: 'You are not a member of this organization' });
+    }
+
+    // Owners cannot leave their own organization
+    if (currentUserMember.role === 'owner') {
+      return res.status(400).json({ message: 'Organization owners cannot leave. You must transfer ownership or delete the organization.' });
+    }
+
+    // Remove the user from the organization
+    organization.members = organization.members.filter(m => m.userId.toString() !== userId);
+    await organization.save();
+
+    res.json({ message: 'Successfully left the organization' });
+  } catch (err) {
+    console.error('Leave organization error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

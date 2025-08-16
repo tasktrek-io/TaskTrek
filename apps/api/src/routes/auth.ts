@@ -76,9 +76,63 @@ router.post('/logout', (_req: Request, res: Response) => {
 
 router.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.user!;
-  const user = await User.findById(id).select('_id email name lastActiveContext');
+  const user = await User.findById(id).select('_id email name phone avatar lastActiveContext createdAt');
   if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json({ user: { _id: user._id, id: user.id, email: user.email, name: user.name, lastActiveContext: user.lastActiveContext } });
+  res.json({ 
+    user: { 
+      _id: user._id, 
+      id: user.id, 
+      email: user.email, 
+      name: user.name, 
+      phone: user.phone,
+      avatar: user.avatar,
+      lastActiveContext: user.lastActiveContext,
+      createdAt: user.createdAt
+    } 
+  });
+});
+
+router.patch('/profile', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { id } = req.user!;
+    const { name, phone, avatar } = req.body;
+
+    // Validate input
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    // Update user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        name: name.trim(),
+        phone: phone ? phone.trim() : undefined,
+        avatar: avatar ? avatar.trim() : undefined
+      },
+      { new: true, runValidators: true }
+    ).select('_id email name phone avatar lastActiveContext createdAt');
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ 
+      user: { 
+        _id: updatedUser._id, 
+        id: updatedUser.id, 
+        email: updatedUser.email, 
+        name: updatedUser.name, 
+        phone: updatedUser.phone,
+        avatar: updatedUser.avatar,
+        lastActiveContext: updatedUser.lastActiveContext,
+        createdAt: updatedUser.createdAt
+      } 
+    });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

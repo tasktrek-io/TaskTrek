@@ -290,9 +290,9 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
 
     baseItems.push(
       {
-        name: 'Achieved',
-        href: '/achieved',
-        icon: '🏆',
+        name: 'Profile',
+        href: '/profile',
+        icon: '👤',
       },
       {
         name: 'Settings',
