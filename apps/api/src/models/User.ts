@@ -6,6 +6,7 @@ export interface IUser extends Document {
   passwordHash: string;
   phone?: string;
   avatar?: string;
+  emailVerified: boolean;
   personalSpaceId?: string;
   lastActiveContext?: {
     type: 'personal' | 'organization';
@@ -21,6 +22,7 @@ const UserSchema = new Schema<IUser>({
   passwordHash: { type: String, required: true },
   phone: { type: String, required: false },
   avatar: { type: String, required: false },
+  emailVerified: { type: Boolean, default: false },
   personalSpaceId: { 
     type: Schema.Types.ObjectId, 
     ref: 'PersonalSpace' 

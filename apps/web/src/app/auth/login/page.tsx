@@ -18,6 +18,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
   const [validationErrors, setValidationErrors] = useState({
     email: '',
     password: ''
@@ -65,6 +67,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setValidationErrors({ email: '', password: '' });
+    setShowResendVerification(false);
 
     // Validate form before submission
     if (!validateForm()) {
@@ -72,6 +75,7 @@ export default function LoginPage() {
     }
 
     try {
+      setIsLoading(true);
       const response = await api.post('/auth/login', { email, password });
       // Store the token in localStorage
       if (response.data.token) {
@@ -79,7 +83,29 @@ export default function LoginPage() {
       }
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Login failed');
+      const errorMessage = err?.response?.data?.error || 'Login failed';
+      setError(errorMessage);
+      
+      // Check if error is about email not being verified
+      if (errorMessage.includes('verify') || errorMessage.includes('verification')) {
+        setShowResendVerification(true);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    try {
+      setIsLoading(true);
+      await api.post('/auth/resend-verification', { email });
+      setError('');
+      alert('Verification email sent successfully! Please check your inbox.');
+      setShowResendVerification(false);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to resend verification email.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,6 +120,19 @@ export default function LoginPage() {
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
+              {showResendVerification && (
+                <Box sx={{ mt: 2 }}>
+                  <Button
+                    onClick={resendVerification}
+                    disabled={isLoading}
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                  >
+                    {isLoading ? 'Sending...' : 'Resend Verification Email'}
+                  </Button>
+                </Box>
+              )}
             </Alert>
           )}
 
@@ -108,6 +147,7 @@ export default function LoginPage() {
             helperText={validationErrors.email}
             required
             variant="outlined"
+            disabled={isLoading}
           />
 
           <TextField
@@ -121,6 +161,7 @@ export default function LoginPage() {
             helperText={validationErrors.password}
             required
             variant="outlined"
+            disabled={isLoading}
           />
 
           <Button
@@ -128,6 +169,7 @@ export default function LoginPage() {
             fullWidth
             variant="contained"
             size="large"
+            disabled={isLoading}
             sx={{ 
               py: 1.5,
               mt: 2,
@@ -136,7 +178,7 @@ export default function LoginPage() {
               fontWeight: 600
             }}
           >
-            Sign In
+            {isLoading ? 'Signing In...' : 'Sign In'}
           </Button>
 
           <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>

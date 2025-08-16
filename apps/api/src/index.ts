@@ -4,7 +4,20 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+import path from 'path';
 
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Debug environment variables
+console.log('Environment variables loaded:', {
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_USER: process.env.SMTP_USER,
+  FROM_EMAIL: process.env.FROM_EMAIL,
+  SMTP_PASS: process.env.SMTP_PASS ? '***' : undefined
+});
+
+// Import routes after environment variables are loaded
 import authRouter from './routes/auth';
 import workspaceRouter from './routes/workspaces';
 import projectRouter from './routes/projects';
@@ -12,8 +25,6 @@ import taskRouter from './routes/tasks';
 import userRouter from './routes/users';
 import notificationRouter from './routes/notifications';
 import contextsRouter from './routes/contexts';
-
-dotenv.config();
 
 const app = express();
 

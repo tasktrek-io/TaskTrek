@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import User from '../models/User';
 
 export interface AuthPayload { id: string; email: string; name: string }
 
@@ -21,4 +22,24 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
   } catch (err) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+}
+
+export function requireVerifiedUser(req: AuthedRequest, res: Response, next: NextFunction) {
+  requireAuth(req, res, async () => {
+    try {
+      const user = await User.findById(req.user!.id);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+      if (!user.emailVerified) {
+        return res.status(403).json({ 
+          error: 'Email verification required',
+          requiresVerification: true 
+        });
+      }
+      next();
+    } catch (err) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 }
