@@ -36,6 +36,12 @@ export default function MembersPage() {
   const [error, setError] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   const [updatingMember, setUpdatingMember] = useState<string | null>(null);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addMemberForm, setAddMemberForm] = useState({
+    email: '',
+    role: 'member' as 'admin' | 'member'
+  });
+  const [addingMember, setAddingMember] = useState(false);
   const router = useRouter();
   const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
 
@@ -223,6 +229,39 @@ export default function MembersPage() {
     }
   };
 
+  const addMember = async () => {
+    if (!organization || !['owner', 'admin'].includes(currentUserRole)) {
+      setError('Only organization owners and admins can add members');
+      return;
+    }
+
+    if (!addMemberForm.email.trim()) {
+      setError('Email is required');
+      return;
+    }
+
+    setAddingMember(true);
+    try {
+      await api.post(`/contexts/organizations/${organization._id}/members`, {
+        email: addMemberForm.email.trim(),
+        role: addMemberForm.role
+      });
+
+      // Reset form and close modal
+      setAddMemberForm({ email: '', role: 'member' });
+      setShowAddMemberModal(false);
+      setError('');
+
+      // Refresh members list
+      await fetchMembers(organization._id);
+    } catch (err: any) {
+      console.error('Error adding member:', err);
+      setError(err.response?.data?.message || 'Failed to add member');
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'owner':
@@ -326,12 +365,29 @@ export default function MembersPage() {
         >
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Organization Members
-            </h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-              Manage members and their roles in <span className="font-semibold">{organization?.name}</span>
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Organization Members
+                </h1>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  Manage members and their roles in <span className="font-semibold">{organization?.name}</span>
+                </p>
+              </div>
+              
+              {/* Add Member Button - Only show for owners and admins */}
+              {(currentUserRole === 'owner' || currentUserRole === 'admin') && (
+                <button
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Member
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Members List */}
@@ -434,6 +490,103 @@ export default function MembersPage() {
               </div>
             </div>
           </div>
+
+          {/* Add Member Modal */}
+          {showAddMemberModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Add New Member
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowAddMemberModal(false);
+                        setAddMemberForm({ email: '', role: 'member' });
+                        setError('');
+                      }}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  {error && (
+                    <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md p-3">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={addMemberForm.email}
+                      onChange={(e) => setAddMemberForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter member's email address"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Role
+                    </label>
+                    <select
+                      value={addMemberForm.role}
+                      onChange={(e) => setAddMemberForm(prev => ({ ...prev, role: e.target.value as 'admin' | 'member' }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {addMemberForm.role === 'admin' 
+                        ? 'Admins can manage workspaces and projects, but not organization members'
+                        : 'Members can access assigned workspaces with limited permissions'
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowAddMemberModal(false);
+                      setAddMemberForm({ email: '', role: 'member' });
+                      setError('');
+                    }}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={addMember}
+                    disabled={addingMember || !addMemberForm.email.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {addingMember ? 'Adding...' : 'Add Member'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </AuthGuard>
