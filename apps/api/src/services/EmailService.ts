@@ -64,8 +64,8 @@ class EmailService {
   }
 
   async sendWelcomeEmail(user: IUser): Promise<void> {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    
+    const frontendUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+
     const mailOptions = {
       from: {
         name: process.env.FROM_NAME || 'TaskTrek',
