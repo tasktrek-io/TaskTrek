@@ -243,14 +243,14 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Upload Area */}
+    <div className={`${className}`}>
+      {/* Compact Upload Area */}
       <div
         className={`
-          relative border-2 border-dashed rounded-lg p-6 transition-colors
+          relative border border-dashed rounded-md transition-colors cursor-pointer p-2
           ${dragActive 
-            ? 'border-blue-400 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
           }
           ${uploading ? 'pointer-events-none opacity-50' : ''}
         `}
@@ -269,51 +269,31 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
           disabled={uploading}
         />
         
-        <div className="text-center">
-          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-          <div className="mt-4">
-            <p className="text-lg font-medium text-gray-900">
-              Drop files here or click to browse
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Maximum {maxFiles} files, {maxFileSize}MB each
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Supports: Images, PDFs, Videos, Office Documents
-            </p>
-          </div>
+        <div className="flex items-center justify-center space-x-2">
+          <Upload className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Drop your files here to <span className="text-blue-600 dark:text-blue-400 underline">upload</span>
+          </span>
         </div>
       </div>
 
-      {/* Description Input */}
+      {/* Selected Files for Upload */}
       {files.length > 0 && (
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description (optional)
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add a description for these files..."
-            rows={3}
-            maxLength={500}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            disabled={uploading}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            {description.length}/500 characters
-          </p>
-        </div>
-      )}
-
-      {/* File List */}
-      {files.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-900">
-            Selected Files ({files.length})
-          </h4>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {files.length} file{files.length > 1 ? 's' : ''} ready to upload
+            </span>
+            <button
+              onClick={uploadFiles}
+              disabled={uploading}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Upload
+            </button>
+          </div>
+          
+          <div className="space-y-1 max-h-32 overflow-y-auto">
             {files.map((file) => {
               const FileIcon = getFileIcon(file.type);
               const progress = uploadProgress[file.id] || 0;
@@ -321,75 +301,56 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
               return (
                 <div
                   key={file.id}
-                  className="flex items-center p-3 bg-gray-50 rounded-lg border"
+                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm"
                 >
-                  {/* File Preview/Icon */}
-                  <div className="flex-shrink-0 mr-3">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     {file.preview ? (
-                      <img
-                        src={file.preview}
-                        alt={file.name}
-                        className="w-10 h-10 object-cover rounded"
-                      />
+                      <img src={file.preview} alt={file.name} className="w-6 h-6 object-cover rounded" />
                     ) : (
-                      <FileIcon className="w-10 h-10 text-gray-400" />
+                      <FileIcon className="w-6 h-6 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     )}
+                    <span className="text-gray-900 dark:text-gray-100 truncate">{file.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                      {formatFileSize(file.size)}
+                    </span>
                   </div>
-
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(file.size)} • {getFileCategory(file.type)}
-                    </p>
-                    
-                    {/* Progress Bar */}
-                    {uploading && progress > 0 && (
-                      <div className="mt-1">
-                        <div className="bg-gray-200 rounded-full h-1">
-                          <div
-                            className="bg-blue-600 h-1 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Remove Button */}
+                  
                   {!uploading && (
                     <button
                       onClick={() => removeFile(file.id)}
-                      className="flex-shrink-0 ml-3 p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      className="ml-2 p-1 text-gray-400 hover:text-red-500 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
+                  )}
+                  
+                  {uploading && progress > 0 && (
+                    <div className="ml-2 w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-1">
+                      <div
+                        className="bg-blue-600 h-1 rounded-full transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* Upload Button */}
-      {files.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={uploadFiles}
-            disabled={uploading || files.length === 0}
-            className={`
-              px-4 py-2 rounded-md font-medium transition-colors
-              ${uploading || files.length === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-              }
-            `}
-          >
-            {uploading ? 'Uploading...' : `Upload ${files.length} file${files.length > 1 ? 's' : ''}`}
-          </button>
+          {/* Description Input */}
+          <div>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add description to the file (optional)..."
+              rows={2}
+              maxLength={500}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              disabled={uploading}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {description.length}/500 characters
+            </p>
+          </div>
         </div>
       )}
     </div>

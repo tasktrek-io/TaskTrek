@@ -90,10 +90,10 @@ router.get('/tasks/:taskId/documents', requireAuth, async (req: AuthedRequest, r
         category: doc.category,
         description: doc.description,
         uploadedAt: doc.uploadedAt,
-        uploadedBy: doc.uploadedByUser ? {
-          id: doc.uploadedByUser._id,
-          name: doc.uploadedByUser.name,
-          email: doc.uploadedByUser.email
+        uploadedBy: (doc as any).uploadedBy ? {
+          id: (doc as any).uploadedBy._id,
+          name: (doc as any).uploadedBy.name,
+          email: (doc as any).uploadedBy.email
         } : null
       }))
     });

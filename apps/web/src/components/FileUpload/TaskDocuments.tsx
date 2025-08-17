@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Paperclip } from 'lucide-react';
 import FileUploadComponent from './FileUploadComponent';
 import DocumentList from './DocumentList';
 
@@ -45,62 +46,43 @@ const TaskDocuments: React.FC<TaskDocumentsProps> = ({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {/* Header */}
-      {taskTitle && (
-        <div className="border-b border-gray-200 pb-4">
-          <h2 className="text-xl font-semibold text-gray-900">{taskTitle}</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage documents and files for this task
-          </p>
-        </div>
-      )}
-
-      {/* Success/Error Messages */}
-      {(uploadSuccess || uploadError) && (
-        <div
-          className={`
-            p-4 rounded-md flex items-center justify-between
-            ${uploadSuccess 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
-            }
-          `}
-        >
-          <p className="text-sm font-medium">
-            {uploadSuccess || uploadError}
-          </p>
-          <button
-            onClick={dismissMessage}
-            className="ml-4 text-current hover:opacity-75"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+    <div className={`space-y-3 p-4 ${className}`}>
+      {/* Compact Header */}
+      <div className="flex items-center gap-2">
+        <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          Attachments
+        </h3>
+      </div>
 
       {/* Upload Section */}
       {canEdit && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Upload Documents
-          </h3>
-          <FileUploadComponent
-            taskId={taskId}
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={handleUploadError}
-          />
-        </div>
+        <FileUploadComponent
+          taskId={taskId}
+          onUploadSuccess={handleUploadSuccess}
+          onUploadError={handleUploadError}
+        />
       )}
 
       {/* Documents List */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <DocumentList
-          taskId={taskId}
-          refreshTrigger={refreshTrigger}
-          onDocumentDeleted={handleDocumentDeleted}
-        />
-      </div>
+      <DocumentList
+        taskId={taskId}
+        refreshTrigger={refreshTrigger}
+        onDocumentDeleted={handleDocumentDeleted}
+      />
+
+      {/* Status Messages */}
+      {uploadSuccess && (
+        <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-md">
+          {uploadSuccess}
+        </div>
+      )}
+      
+      {uploadError && (
+        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md">
+          {uploadError}
+        </div>
+      )}
     </div>
   );
 };
