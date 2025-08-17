@@ -13,6 +13,7 @@ export interface ITask extends Document {
   priority: TaskPriority;
   dueDate?: Date;
   createdBy: Types.ObjectId; // User
+  documents: Types.ObjectId[]; // Document references
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ const TaskSchema = new Schema<ITask>({
   priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
   dueDate: { type: Date },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  documents: [{ type: Schema.Types.ObjectId, ref: 'Document' }],
 }, { timestamps: true });
 
 const Task = mongoose.model<ITask>('Task', TaskSchema);

@@ -62,7 +62,8 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       .populate('project', 'name workspace')
       .populate('assignees', 'name email')
       .populate('watchers', 'name email')
-      .populate('createdBy', 'name email');    return res.status(201).json(populated);
+      .populate('createdBy', 'name email')
+      .populate('documents', 'filename originalName mimeType size category uploadedAt uploadedBy');    return res.status(201).json(populated);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -198,7 +199,8 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
       .populate('project', 'name workspace')
       .populate('assignees', 'name email')
       .populate('watchers', 'name email')
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email')
+      .populate('documents', 'filename originalName mimeType size category uploadedAt uploadedBy');
     
     if (!task) return res.status(404).json({ error: 'Task not found' });
     

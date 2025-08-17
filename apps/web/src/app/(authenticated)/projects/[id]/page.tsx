@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DropResult } from 'react-beautiful-dnd';
 import TaskActivity from '../../../../components/TaskActivity';
+import TaskDocuments from '../../../../components/FileUpload/TaskDocuments';
 import { useWorkspace } from '../../../../contexts/WorkspaceContext';
 import { api } from '../../../../lib/api';
 import { Icons } from '../../../../lib/icons';
@@ -1830,7 +1831,17 @@ export default function ProjectPage() {
                         </button>
                       )}
                     </div>
-
+                    {/* Documents Section */}
+                    <div className="space-y-4 size-y-6">
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg">
+                        <TaskDocuments
+                          taskId={selectedTask._id}
+                          canEdit={true}
+                          className=""
+                        />
+                      </div>
+                    </div>
+                    
                     {/* Comments */}
                     <div>
                       <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Comments</h3>

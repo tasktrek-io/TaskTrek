@@ -25,6 +25,7 @@ import taskRouter from './routes/tasks';
 import userRouter from './routes/users';
 import notificationRouter from './routes/notifications';
 import contextsRouter from './routes/contexts';
+import documentsRouter from './routes/documents';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/tasks', taskRouter);
 app.use('/api/users', userRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/contexts', contextsRouter);
+app.use('/api', documentsRouter);
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/project_mgmt';
