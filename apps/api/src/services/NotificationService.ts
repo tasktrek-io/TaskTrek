@@ -1,5 +1,6 @@
 import Notification from '../models/Notification';
 import { Types } from 'mongoose';
+import { logger } from '../utils/logger';
 
 interface NotificationData {
   recipient: string;
@@ -31,7 +32,7 @@ export class NotificationService {
       await notification.save();
       return notification;
     } catch (error) {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification', {}, error as Error);
       throw error;
     }
   }

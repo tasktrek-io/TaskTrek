@@ -8,6 +8,7 @@ import EmailVerification from '../models/EmailVerification';
 import EmailService from '../services/EmailService';
 import UserDeletionService from '../services/UserDeletionService';
 import { PasswordResetService } from '../services/PasswordResetService';
+import { logger } from '../utils/logger';
 
 // Create email service instance after env is loaded
 const emailService = new EmailService();
@@ -52,7 +53,7 @@ router.post('/register', async (req: Request, res: Response) => {
     try {
       await emailService.sendVerificationEmail(email, verificationToken);
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      logger.error('Failed to send verification email', { email, userId: user.id }, emailError as Error);
       // Continue with registration even if email fails
     }
 
@@ -62,7 +63,7 @@ router.post('/register', async (req: Request, res: Response) => {
       requiresVerification: true
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Registration error', {}, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -102,7 +103,7 @@ router.post('/login', async (req: Request, res: Response) => {
     
     return res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
   } catch (err) {
-    console.error(err);
+    logger.error('Login error', {}, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -168,7 +169,7 @@ router.patch('/profile', requireAuth, async (req: AuthedRequest, res: Response) 
       } 
     });
   } catch (err) {
-    console.error('Error updating profile:', err);
+    logger.error('Error updating profile', { userId: req.user?.id }, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -261,9 +262,9 @@ router.post('/verify-email', async (req: Request, res: Response) => {
     // Send welcome email (only if we successfully updated the user)
     try {
       await emailService.sendWelcomeEmail(updateResult);
-      console.log(`Welcome email sent to ${updateResult.email}`);
+      logger.info('Welcome email sent', { email: updateResult.email, userId: updateResult.id });
     } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
+      logger.error('Failed to send welcome email', { email: updateResult.email, userId: updateResult.id }, emailError as Error);
       // Continue with verification even if welcome email fails
     }
 
@@ -285,7 +286,7 @@ router.post('/verify-email', async (req: Request, res: Response) => {
       token: authToken
     });
   } catch (err) {
-    console.error('Email verification error:', err);
+    logger.error('Email verification error', {}, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -327,11 +328,11 @@ router.post('/resend-verification', async (req: Request, res: Response) => {
       await emailService.sendVerificationEmail(email, verificationToken);
       return res.json({ message: 'Verification email sent successfully' });
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      logger.error('Failed to send verification email', { email }, emailError as Error);
       return res.status(500).json({ error: 'Failed to send verification email' });
     }
   } catch (err) {
-    console.error('Resend verification error:', err);
+    logger.error('Resend verification error', {}, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -346,7 +347,7 @@ router.get('/test-email', async (req, res) => {
       return res.status(500).json({ error: 'Email service connection failed' });
     }
   } catch (error) {
-    console.error('Email test error:', error);
+    logger.error('Email test error', {}, error as Error);
     return res.status(500).json({ error: 'Email test failed' });
   }
 });
@@ -368,7 +369,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       return res.status(400).json({ error: result.message });
     }
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error', {}, error as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -390,7 +391,7 @@ router.get('/verify-reset-token', async (req: Request, res: Response) => {
       return res.status(400).json({ valid: false, error: 'Invalid or expired reset token' });
     }
   } catch (error) {
-    console.error('Token verification error:', error);
+    logger.error('Token verification error', {}, error as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -416,7 +417,7 @@ router.post('/reset-password', async (req: Request, res: Response) => {
       return res.status(400).json({ error: result.message });
     }
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error', {}, error as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -434,7 +435,7 @@ router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: 
     
     return res.json({ organizations: ownedOrgs });
   } catch (err) {
-    console.error('Error fetching owned organizations:', err);
+    logger.error('Error fetching owned organizations', { userId: req.user?.id }, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -491,7 +492,7 @@ router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: 
 
     return res.json({ message: 'Ownership transferred successfully' });
   } catch (err) {
-    console.error('Error transferring ownership:', err);
+    logger.error('Error transferring ownership', { userId: req.user?.id }, err as Error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -502,7 +503,7 @@ router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: 
     const organizations = await UserDeletionService.getOwnedOrganizations(req.user!.id);
     res.json({ organizations });
   } catch (error: any) {
-    console.error('Error getting owned organizations:', error);
+    logger.error('Error getting owned organizations', { userId: req.user?.id }, error);
     res.status(500).json({ message: error.message || 'Internal server error' });
   }
 });
@@ -519,7 +520,7 @@ router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: 
     await UserDeletionService.transferOwnership(organizationId, req.user!.id, newOwnerId);
     res.json({ message: 'Ownership transferred successfully' });
   } catch (error: any) {
-    console.error('Error transferring ownership:', error);
+    logger.error('Error transferring ownership', { userId: req.user?.id }, error);
     res.status(500).json({ message: error.message || 'Failed to transfer ownership' });
   }
 });
@@ -530,7 +531,7 @@ router.get('/deletion-assessment', requireAuth, async (req: AuthedRequest, res: 
     const assessment = await UserDeletionService.assessDeletionImpact(req.user!.id);
     res.json(assessment);
   } catch (error: any) {
-    console.error('Error assessing deletion impact:', error);
+    logger.error('Error assessing deletion impact', { userId: req.user?.id }, error);
     res.status(500).json({ message: error.message || 'Internal server error' });
   }
 });
@@ -554,7 +555,7 @@ router.delete('/delete-account', requireAuth, async (req: AuthedRequest, res: Re
     
     res.json(result);
   } catch (error: any) {
-    console.error('Error deleting account:', error);
+    logger.error('Error deleting account', { userId: req.user?.id }, error);
     res.status(500).json({ message: error.message || 'Failed to delete account' });
   }
 });

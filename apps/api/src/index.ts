@@ -1,15 +1,15 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import path from 'path';
+import { logger, httpLogger } from './utils/logger';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Debug environment variables
-console.log('Environment variables loaded:', {
+logger.debug('Environment variables loaded', {
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,
@@ -31,7 +31,7 @@ const app = express();
 app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(morgan('dev'));
+app.use(httpLogger);
 
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 
@@ -49,22 +49,22 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/project_mg
 async function start() {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB', { uri: MONGO_URI });
     
     // Clean up any existing conflicting indexes
     try {
       const db = mongoose.connection.db;
       if (db) {
         await db.collection('users').dropIndex('username_1');
-        console.log('Dropped conflicting username index');
+        logger.info('Dropped conflicting username index');
       }
     } catch (indexErr) {
       // Index doesn't exist, that's fine
     }
     
-    app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
+    app.listen(PORT, () => logger.info(`API server started`, { port: PORT, url: `http://localhost:${PORT}` }));
   } catch (err) {
-    console.error('Failed to start server', err);
+    logger.error('Failed to start server', {}, err as Error);
     process.exit(1);
   }
 }

@@ -2,6 +2,7 @@ import Workspace from '../models/Workspace';
 import Project from '../models/Project';
 import Task from '../models/Task';
 import { Types } from 'mongoose';
+import { logger } from '../utils/logger';
 
 export class WorkspaceService {
   /**
@@ -21,14 +22,14 @@ export class WorkspaceService {
       }
 
       if (!workspaceId) {
-        console.error('Could not determine workspace for user assignment');
+        logger.error('Could not determine workspace for user assignment', { userId, projectId, taskId });
         return;
       }
 
       // Check if user is already a member of the workspace
       const workspace = await Workspace.findById(workspaceId);
       if (!workspace) {
-        console.error('Workspace not found:', workspaceId);
+        logger.error('Workspace not found', { workspaceId, userId });
         return;
       }
 
@@ -47,9 +48,9 @@ export class WorkspaceService {
       workspace.members.push(userObjectId);
       await workspace.save();
 
-      console.log(`Added user ${userId} to workspace ${workspaceId}`);
+      logger.info('Added user to workspace', { userId, workspaceId, action: 'auto_assignment' });
     } catch (error) {
-      console.error('Error ensuring user in workspace:', error);
+      logger.error('Error ensuring user in workspace', { userId, projectId, taskId }, error as Error);
       // Don't throw error as this shouldn't break the main flow
     }
   }

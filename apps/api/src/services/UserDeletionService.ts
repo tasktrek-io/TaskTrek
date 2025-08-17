@@ -7,6 +7,7 @@ import TaskActivity from '../models/TaskActivity';
 import PersonalSpace from '../models/PersonalSpace';
 import Workspace from '../models/Workspace';
 import Notification from '../models/Notification';
+import { logger } from '../utils/logger';
 
 export interface DeletionAssessment {
   canDelete: boolean;
@@ -58,7 +59,7 @@ export class UserDeletionService {
         blockingFactors
       };
     } catch (error) {
-      console.error('Error assessing deletion impact:', error);
+      logger.error('Error assessing deletion impact', { userId }, error as Error);
       throw new Error('Failed to assess deletion impact');
     }
   }

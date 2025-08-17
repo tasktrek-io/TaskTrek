@@ -1,4 +1,5 @@
 import TaskActivity from '../models/TaskActivity';
+import { logger } from '../utils/logger';
 import { Types } from 'mongoose';
 
 interface ActivityData {
@@ -29,7 +30,7 @@ export class TaskActivityService {
       await activity.save();
       return activity;
     } catch (error) {
-      console.error('Error creating task activity:', error);
+      logger.error('Error creating task activity', { taskId: data.taskId, userId: data.performedBy, action: data.action }, error as Error);
       throw error;
     }
   }
@@ -42,7 +43,7 @@ export class TaskActivityService {
 
       return activities;
     } catch (error) {
-      console.error('Error fetching task activities:', error);
+      logger.error('Error fetching task activities', { taskId }, error as Error);
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { IUser } from '../models/User';
+import { logger } from '../utils/logger';
 
 class EmailService {
   private transporter: nodemailer.Transporter;
@@ -7,7 +8,7 @@ class EmailService {
   constructor() {
     // Ensure environment variables are loaded
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn('Email service: SMTP credentials not found in environment variables');
+      logger.warn('Email service: SMTP credentials not found in environment variables');
     }
 
     this.transporter = nodemailer.createTransport({
@@ -21,7 +22,7 @@ class EmailService {
     });
 
     // Log configuration (without password) for debugging
-    console.log('Email service initialized with config:', {
+    logger.debug('Email service initialized', {
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       user: process.env.SMTP_USER,
@@ -42,7 +43,7 @@ class EmailService {
         text: this.getVerificationEmailText('User', verificationLink)
       };
 
-      console.log('Attempting to send email with config:', {
+      logger.debug('Attempting to send verification email', {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         user: process.env.SMTP_USER,
@@ -51,14 +52,15 @@ class EmailService {
       });
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', result.messageId);
+      logger.info('Email sent successfully', { messageId: result.messageId, to: email });
     } catch (error: any) {
-      console.error('Detailed email error:', {
+      logger.error('Detailed email error', {
         error: error?.message,
         code: error?.code,
         command: error?.command,
-        response: error?.response
-      });
+        response: error?.response,
+        to: email
+      }, error);
       throw new Error(`Failed to send verification email: ${error?.message || 'Unknown error'}`);
     }
   }
@@ -79,9 +81,9 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Welcome email sent to ${user.email}`);
+      logger.info('Welcome email sent', { email: user.email });
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      logger.error('Error sending welcome email', { email: user.email }, error as Error);
       // Don't throw error for welcome email failure
     }
   }
@@ -100,9 +102,9 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Password reset email sent to ${email}`);
+      logger.info('Password reset email sent', { email });
     } catch (error) {
-      console.error('Error sending password reset email:', error);
+      logger.error('Error sending password reset email', { email }, error as Error);
       throw error;
     }
   }
@@ -121,9 +123,9 @@ class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Password change confirmation sent to ${email}`);
+      logger.info('Password change confirmation sent', { email });
     } catch (error) {
-      console.error('Error sending password change confirmation:', error);
+      logger.error('Error sending password change confirmation', { email }, error as Error);
       throw error;
     }
   }
@@ -446,10 +448,10 @@ The TaskTrek Team
   async testConnection(): Promise<boolean> {
     try {
       await this.transporter.verify();
-      console.log('Email service connection verified successfully');
+      logger.info('Email service connection verified successfully');
       return true;
     } catch (error) {
-      console.error('Email service connection failed:', error);
+      logger.error('Email service connection failed', {}, error as Error);
       return false;
     }
   }
