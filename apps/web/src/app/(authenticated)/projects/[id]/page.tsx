@@ -114,6 +114,7 @@ export default function ProjectPage() {
   const [dueDate, setDueDate] = useState('');
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [defaultTaskStatus, setDefaultTaskStatus] = useState<Task['status']>('todo');
   
   // Comment form
   const [newComment, setNewComment] = useState('');
@@ -146,6 +147,8 @@ export default function ProjectPage() {
   const [showTaskFilters, setShowTaskFilters] = useState(false);
   const [showTaskSort, setShowTaskSort] = useState(false);
   const [showAssigneeFilter, setShowAssigneeFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [collapsedSections, setCollapsedSections] = useState<{ [key: string]: boolean }>({});
   const [taskFilters, setTaskFilters] = useState({
     status: [] as string[],
     priority: [] as string[],
@@ -254,7 +257,8 @@ export default function ProjectPage() {
         description: description.trim() || undefined,
         priority,
         dueDate: dueDate || undefined,
-        assignees: selectedAssignees
+        assignees: selectedAssignees,
+        status: defaultTaskStatus // Use the default status based on which section's Add Task was clicked
       });
       
       setTitle(''); 
@@ -262,6 +266,7 @@ export default function ProjectPage() {
       setPriority('medium');
       setDueDate('');
       setSelectedAssignees([]);
+      setDefaultTaskStatus('todo'); // Reset to default
       setShowTaskModal(false);
       loadTasks();
     } catch (err: any) {
@@ -677,6 +682,18 @@ export default function ProjectPage() {
     }));
   };
 
+  const toggleSectionCollapse = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const openTaskModalWithStatus = (status: Task['status']) => {
+    setDefaultTaskStatus(status);
+    setShowTaskModal(true);
+  };
+
   const filterAndSortTasks = (tasks: Task[]) => {
     let filteredTasks = [...tasks];
 
@@ -919,7 +936,7 @@ export default function ProjectPage() {
               </div>
               <div className="flex gap-3 items-center flex-shrink-0">
                 <button
-                  onClick={() => setShowTaskModal(true)}
+                  onClick={() => openTaskModalWithStatus('todo')}
                   className="bg-blue-600 dark:bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm sm:text-base whitespace-nowrap"
                 >
                   + Add Task
@@ -1011,12 +1028,42 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        {/* Tasks Kanban Board */}
+        {/* Tasks Section */}
         <section className="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6">
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Tasks</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 overflow-x-auto">
+                {/* View Mode Toggle */}
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex-shrink-0">
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap ${
+                      viewMode === 'kanban' 
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' 
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
+                    </svg>
+                    <span className="hidden sm:inline">Board</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap ${
+                      viewMode === 'list' 
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' 
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <span className="hidden sm:inline">List</span>
+                  </button>
+                </div>
+
                 {/* Search */}
                 <div className="relative min-w-0 flex-shrink-0">
                   <input
@@ -1296,11 +1343,135 @@ export default function ProjectPage() {
             )}
           </div>
           
-          {isClient ? (
-            <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          {/* Task Views */}
+          {viewMode === 'kanban' ? (
+            // Kanban Board View
+            isClient ? (
+              <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                <div className="flex flex-col md:grid md:grid-cols-3 gap-8 overflow-x-auto md:overflow-x-visible">
+                  {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
+                    <div key={status} className="space-y-3 min-w-[280px] md:min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                          {status.replace('_', ' ')}
+                        </h3>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
+                      </div>
+                      
+                      <Droppable droppableId={status}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`space-y-4 min-h-[200px] p-3 rounded-lg transition-colors ${
+                              snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-600 border-dashed' : 'bg-gray-50 dark:bg-gray-700'
+                            }`}
+                          >
+                            {statusTasks.map((task, index) => (
+                              <Draggable key={task._id} draggableId={task._id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 transition-shadow cursor-pointer select-none ${
+                                      snapshot.isDragging 
+                                        ? 'shadow-lg rotate-2 border-blue-300 dark:border-blue-500' 
+                                        : 'hover:shadow-md'
+                                    }`}
+                                    onClick={() => openTaskDetail(task)}
+                                  >
+                                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 text-sm sm:text-base">{task.title}</h4>
+                                    
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
+                                      <span className={`px-2 py-1 rounded text-xs font-medium w-fit ${getPriorityColor(task.priority)}`}>
+                                        {task.priority}
+                                      </span>
+                                      {task.dueDate && (
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                          Due {new Date(task.dueDate).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {task.assignees.length > 0 && (
+                                      <div className="flex gap-2 mb-3">
+                                        {task.assignees.slice(0, 3).map(assignee => (
+                                          <div
+                                            key={assignee._id}
+                                            className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
+                                          >
+                                            {assignee.name.charAt(0).toUpperCase()}
+                                          </div>
+                                        ))}
+                                        {task.assignees.length > 3 && (
+                                          <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
+                                            +{task.assignees.length - 3}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex flex-wrap gap-2 sm:gap-3 mt-4">
+                                      {status !== 'todo' && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateTaskStatus(task._id, 'todo');
+                                          }}
+                                          className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
+                                        >
+                                          Todo
+                                        </button>
+                                      )}
+                                      {status !== 'in_progress' && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateTaskStatus(task._id, 'in_progress');
+                                          }}
+                                          className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
+                                        >
+                                          In Progress
+                                        </button>
+                                      )}
+                                      {status !== 'done' && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateTaskStatus(task._id, 'done');
+                                          }}
+                                          className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
+                                        >
+                                          Done
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            
+                            {statusTasks.length === 0 && (
+                              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                                  ? `No ${status.replace('_', ' ')} tasks match your filters`
+                                  : `No ${status.replace('_', ' ')} tasks`
+                                }
+                              </div>
+                            )}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
+                  ))}
+                </div>
+              </DragDropContext>
+            ) : (
               <div className="flex flex-col md:grid md:grid-cols-3 gap-8 overflow-x-auto md:overflow-x-visible">
                 {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-                  <div key={status} className="space-y-3 min-w-[280px] md:min-w-0">
+                  <div key={status} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                         {status.replace('_', ' ')}
@@ -1308,214 +1479,353 @@ export default function ProjectPage() {
                       <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
                     </div>
                     
-                    <Droppable droppableId={status}>
-                      {(provided, snapshot) => (
+                    <div className="space-y-4 min-h-[200px] p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                      {statusTasks.map((task) => (
                         <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`space-y-4 min-h-[200px] p-3 rounded-lg transition-colors ${
-                            snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-600 border-dashed' : 'bg-gray-50 dark:bg-gray-700'
-                          }`}
+                          key={task._id}
+                          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => openTaskDetail(task)}
                         >
-                          {statusTasks.map((task, index) => (
-                            <Draggable key={task._id} draggableId={task._id} index={index}>
-                              {(provided, snapshot) => (
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{task.title}</h4>
+                          
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                              {task.priority}
+                            </span>
+                            {task.dueDate && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Due {new Date(task.dueDate).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {task.assignees.length > 0 && (
+                            <div className="flex gap-1 mb-2">
+                              {task.assignees.slice(0, 3).map(assignee => (
                                 <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 transition-shadow cursor-pointer select-none ${
-                                    snapshot.isDragging 
-                                      ? 'shadow-lg rotate-2 border-blue-300 dark:border-blue-500' 
-                                      : 'hover:shadow-md'
-                                  }`}
-                                  onClick={() => openTaskDetail(task)}
+                                  key={assignee._id}
+                                  className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
                                 >
-                                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 text-sm sm:text-base">{task.title}</h4>
-                                  
-                                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
-                                    <span className={`px-2 py-1 rounded text-xs font-medium w-fit ${getPriorityColor(task.priority)}`}>
-                                      {task.priority}
-                                    </span>
-                                    {task.dueDate && (
-                                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        Due {new Date(task.dueDate).toLocaleDateString()}
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  {task.assignees.length > 0 && (
-                                    <div className="flex gap-2 mb-3">
-                                      {task.assignees.slice(0, 3).map(assignee => (
-                                        <div
-                                          key={assignee._id}
-                                          className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
-                                        >
-                                          {assignee.name.charAt(0).toUpperCase()}
-                                        </div>
-                                      ))}
-                                      {task.assignees.length > 3 && (
-                                        <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
-                                          +{task.assignees.length - 3}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-4">
-                                    {status !== 'todo' && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateTaskStatus(task._id, 'todo');
-                                        }}
-                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
-                                      >
-                                        Todo
-                                      </button>
-                                    )}
-                                    {status !== 'in_progress' && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateTaskStatus(task._id, 'in_progress');
-                                        }}
-                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
-                                      >
-                                        In Progress
-                                      </button>
-                                    )}
-                                    {status !== 'done' && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateTaskStatus(task._id, 'done');
-                                        }}
-                                        className="text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-nowrap transition-colors"
-                                      >
-                                        Done
-                                      </button>
-                                    )}
-                                  </div>
+                                  {assignee.name.charAt(0).toUpperCase()}
+                                </div>
+                              ))}
+                              {task.assignees.length > 3 && (
+                                <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
+                                  +{task.assignees.length - 3}
                                 </div>
                               )}
-                            </Draggable>
-                          ))}
-                          
-                          {statusTasks.length === 0 && (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                              {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
-                                ? `No ${status.replace('_', ' ')} tasks match your filters`
-                                : `No ${status.replace('_', ' ')} tasks`
-                              }
                             </div>
                           )}
-                          {provided.placeholder}
+                          
+                          <div className="flex gap-2 mt-3">
+                            {status !== 'todo' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTaskStatus(task._id, 'todo');
+                                }}
+                                className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                              >
+                                Todo
+                              </button>
+                            )}
+                            {status !== 'in_progress' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTaskStatus(task._id, 'in_progress');
+                                }}
+                                className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                              >
+                                In Progress
+                              </button>
+                            )}
+                            {status !== 'done' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTaskStatus(task._id, 'done');
+                                }}
+                                className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                              >
+                                Done
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {statusTasks.length === 0 && (
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                          {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                            ? `No ${status.replace('_', ' ')} tasks match your filters`
+                            : `No ${status.replace('_', ' ')} tasks`
+                          }
                         </div>
                       )}
-                    </Droppable>
+                    </div>
                   </div>
                 ))}
               </div>
-            </DragDropContext>
+            )
           ) : (
-            <div className="flex flex-col md:grid md:grid-cols-3 gap-8 overflow-x-auto md:overflow-x-visible">
-              {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-                <div key={status} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                      {status.replace('_', ' ')}
-                    </h3>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{statusTasks.length}</span>
-                  </div>
-                  
-                  <div className="space-y-4 min-h-[200px] p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                    {statusTasks.map((task) => (
-                      <div
-                        key={task._id}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => openTaskDetail(task)}
+            // List View - Grouped by Status
+            <div className="space-y-2">
+              {/* List Header */}
+              <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400">
+                <div className="col-span-4">Name</div>
+                <div className="col-span-2">Assignee</div>
+                <div className="col-span-1">Start date</div>
+                <div className="col-span-1">Due date</div>
+                <div className="col-span-1">Priority</div>
+                <div className="col-span-1">Status</div>
+                <div className="col-span-2">Business Area</div>
+              </div>
+
+              {/* Grouped Task List */}
+              {Object.entries(tasksByStatus).map(([status, statusTasks]) => {
+                const isCollapsed = collapsedSections[status];
+                const statusDisplayName = status.replace('_', ' ').split(' ').map(word => 
+                  word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                
+                return (
+                  <div key={status} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                    {/* Section Header */}
+                    <div 
+                      className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      onClick={() => toggleSectionCollapse(status)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <button className="flex items-center justify-center w-5 h-5 rounded transition-transform">
+                          <svg 
+                            className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {/* Status Badge */}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          status === 'done' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                          status === 'in_progress' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                          'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                        }`}>
+                          {statusDisplayName}
+                        </span>
+                        
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {statusTasks.length}
+                        </span>
+                      </div>
+                      
+                      <button 
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent section collapse
+                          openTaskModalWithStatus(status as Task['status']);
+                        }}
+                        title={`Add task to ${statusDisplayName}`}
                       >
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{task.title}</h4>
-                        
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                            {task.priority}
-                          </span>
-                          {task.dueDate && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Due {new Date(task.dueDate).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {task.assignees.length > 0 && (
-                          <div className="flex gap-1 mb-2">
-                            {task.assignees.slice(0, 3).map(assignee => (
-                              <div
-                                key={assignee._id}
-                                className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs"
-                              >
-                                {assignee.name.charAt(0).toUpperCase()}
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Section Content */}
+                    {!isCollapsed && (
+                      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {statusTasks.length > 0 ? (
+                          statusTasks.map((task, index) => (
+                            <div
+                              key={task._id}
+                              className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                              onClick={() => openTaskDetail(task)}
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                {/* Task Name */}
+                                <div className="col-span-1 md:col-span-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">{task.title}</h4>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Assignee */}
+                                <div className="col-span-1 md:col-span-2">
+                                  <div className="flex items-center gap-2">
+                                    {task.assignees.length > 0 ? (
+                                      <>
+                                        <div className="flex -space-x-1">
+                                          {task.assignees.slice(0, 2).map(assignee => (
+                                            <div
+                                              key={assignee._id}
+                                              className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white dark:border-gray-800"
+                                              title={assignee.name}
+                                            >
+                                              {assignee.name.charAt(0).toUpperCase()}
+                                            </div>
+                                          ))}
+                                          {task.assignees.length > 2 && (
+                                            <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white dark:border-gray-800">
+                                              +{task.assignees.length - 2}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">
+                                          {task.assignees[0].name}
+                                          {task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                                          <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                          </svg>
+                                        </div>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">Unassigned</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Start Date */}
+                                <div className="col-span-1 md:col-span-1">
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+                                  </span>
+                                </div>
+
+                                {/* Due Date */}
+                                <div className="col-span-1 md:col-span-1">
+                                  <span className={`text-sm ${
+                                    task.dueDate && new Date(task.dueDate) < new Date() 
+                                      ? 'text-red-600 dark:text-red-400' 
+                                      : 'text-gray-600 dark:text-gray-400'
+                                  }`}>
+                                    {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+                                  </span>
+                                </div>
+
+                                {/* Priority */}
+                                <div className="col-span-1 md:col-span-1">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                    task.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                                    task.priority === 'high' ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' :
+                                    task.priority === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                                    'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                  }`}>
+                                    {task.priority === 'urgent' && '🔴'}
+                                    {task.priority === 'high' && '🟠'}
+                                    {task.priority === 'medium' && '🟡'}
+                                    {task.priority === 'low' && '🟢'}
+                                    <span className="ml-1 capitalize">{task.priority}</span>
+                                  </span>
+                                </div>
+
+                                {/* Status */}
+                                <div className="col-span-1 md:col-span-1">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                                    task.status === 'todo' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
+                                    task.status === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
+                                    'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                  }`}>
+                                    {task.status === 'todo' && '⏳'}
+                                    {task.status === 'in_progress' && '🔄'}
+                                    {task.status === 'done' && '✅'}
+                                    <span className="ml-1">{task.status.replace('_', ' ')}</span>
+                                  </span>
+                                </div>
+
+                                {/* Business Area */}
+                                <div className="col-span-1 md:col-span-2">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                    Development
+                                  </span>
+                                </div>
                               </div>
-                            ))}
-                            {task.assignees.length > 3 && (
-                              <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">
-                                +{task.assignees.length - 3}
+
+                              {/* Mobile Actions */}
+                              <div className="flex gap-2 mt-3 md:hidden">
+                                {task.status !== 'todo' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateTaskStatus(task._id, 'todo');
+                                    }}
+                                    className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                                  >
+                                    Todo
+                                  </button>
+                                )}
+                                {task.status !== 'in_progress' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateTaskStatus(task._id, 'in_progress');
+                                    }}
+                                    className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                                  >
+                                    In Progress
+                                  </button>
+                                )}
+                                {task.status !== 'done' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateTaskStatus(task._id, 'done');
+                                    }}
+                                    className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                                  >
+                                    Done
+                                  </button>
+                                )}
                               </div>
-                            )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                              ? `No ${statusDisplayName.toLowerCase()} tasks match your filters`
+                              : `No ${statusDisplayName.toLowerCase()} tasks`
+                            }
                           </div>
                         )}
-                        
-                        <div className="flex gap-2 mt-3">
-                          {status !== 'todo' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateTaskStatus(task._id, 'todo');
-                              }}
-                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
-                            >
-                              Todo
-                            </button>
-                          )}
-                          {status !== 'in_progress' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateTaskStatus(task._id, 'in_progress');
-                              }}
-                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
-                            >
-                              In Progress
-                            </button>
-                          )}
-                          {status !== 'done' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateTaskStatus(task._id, 'done');
-                              }}
-                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
-                            >
-                              Done
-                            </button>
-                          )}
+
+                        {/* Add Task Button */}
+                        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                          <button 
+                            className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                            onClick={() => openTaskModalWithStatus(status as Task['status'])}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add Task
+                          </button>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {statusTasks.length === 0 && (
-                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                        {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
-                          ? `No ${status.replace('_', ' ')} tasks match your filters`
-                          : `No ${status.replace('_', ' ')} tasks`
-                        }
                       </div>
                     )}
                   </div>
+                );
+              })}
+
+              {/* Empty State */}
+              {Object.values(tasksByStatus).every(statusTasks => statusTasks.length === 0) && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  {(taskSearchQuery || taskFilters.status.length + taskFilters.priority.length + taskFilters.assignees.length > 0) 
+                    ? 'No tasks match your filters'
+                    : 'No tasks created yet'
+                  }
                 </div>
-              ))}
+              )}
             </div>
           )}
         </section>
@@ -1523,18 +1833,19 @@ export default function ProjectPage() {
         {/* Create Task Modal */}
         {showTaskModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Create New Task</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Task</h2>
                   <button
                     onClick={() => {
                       setShowTaskModal(false);
                       setError('');
                       setTitle('');
                       setDescription('');
+                      setDefaultTaskStatus('todo'); // Reset to default
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     ✕
                   </button>
@@ -1542,33 +1853,33 @@ export default function ProjectPage() {
 
                 <form onSubmit={createTask} className="space-y-4">
                   {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                    <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 px-4 py-3 rounded">
                       {error}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Title
                     </label>
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Enter task title"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Description
                     </label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Enter task description"
                       rows={3}
                     />
@@ -1576,13 +1887,13 @@ export default function ProjectPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Priority
                       </label>
                       <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as Task['priority'])}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -1592,20 +1903,35 @@ export default function ProjectPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Due Date
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status
                       </label>
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <select
+                        value={defaultTaskStatus}
+                        onChange={(e) => setDefaultTaskStatus(e.target.value as Task['status'])}
+                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                      >
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Assignees
                     </label>
                     <div className="space-y-2">
@@ -1623,7 +1949,7 @@ export default function ProjectPage() {
                             }}
                             className="mr-2"
                           />
-                          <span className="text-sm">{member.name} ({member.email})</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{member.name} ({member.email})</span>
                         </label>
                       ))}
                     </div>
@@ -1637,14 +1963,15 @@ export default function ProjectPage() {
                         setError('');
                         setTitle('');
                         setDescription('');
+                        setDefaultTaskStatus('todo'); // Reset to default
                       }}
-                      className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50"
+                      className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                      className="flex-1 bg-blue-600 dark:bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
                     >
                       Create Task
                     </button>

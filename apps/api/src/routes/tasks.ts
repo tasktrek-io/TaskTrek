@@ -21,7 +21,8 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       description, 
       assignees, 
       priority, 
-      dueDate 
+      dueDate,
+      status 
     } = req.body as { 
       project: string; 
       title: string; 
@@ -29,6 +30,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       assignees?: string[];
       priority?: 'low' | 'medium' | 'high' | 'urgent';
       dueDate?: string;
+      status?: 'todo' | 'in_progress' | 'done';
     };
     
     if (!project || !title) return res.status(400).json({ error: 'Project and title are required' });
@@ -40,6 +42,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       description, 
       assignees: assignees || [],
       priority: priority || 'medium',
+      status: status || 'todo',
       dueDate: dueDate ? new Date(dueDate) : undefined,
       watchers: [createdBy], // Creator watches by default
       createdBy 
