@@ -124,6 +124,10 @@ export default function ProjectPage() {
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState<{ [commentId: string]: boolean }>({});
   
+  // Delete confirmation states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   // Member search
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Member[]>([]);
@@ -393,6 +397,44 @@ export default function ProjectPage() {
       setIsEditing(prev => ({ ...prev, [field]: false }));
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
+    }
+  };
+
+  const deleteTask = async () => {
+    if (!selectedTask) return;
+    
+    setIsDeleting(true);
+    try {
+      await api.delete(`/tasks/${selectedTask._id}`);
+      
+      // Remove the task from the tasks list
+      setTasks(prev => prev.filter(task => task._id !== selectedTask._id));
+      
+      // Close modals
+      setShowTaskDetail(false);
+      setShowDeleteConfirm(false);
+      setSelectedTask(null);
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const quickDeleteTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening task detail modal
+    
+    if (!confirm('Are you sure you want to delete this task?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      
+      // Remove the task from the tasks list
+      setTasks(prev => prev.filter(task => task._id !== taskId));
+    } catch (err) {
+      console.error('Failed to delete task:', err);
     }
   };
 
@@ -1446,6 +1488,13 @@ export default function ProjectPage() {
                                           Done
                                         </button>
                                       )}
+                                      <button
+                                        onClick={(e) => quickDeleteTask(task._id, e)}
+                                        className="text-xs px-3 py-2 border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-100 dark:hover:bg-red-800 whitespace-nowrap transition-colors"
+                                        title="Delete task"
+                                      >
+                                        <Icons.Trash2 className="w-3 h-3" />
+                                      </button>
                                     </div>
                                   </div>
                                 )}
@@ -1551,6 +1600,13 @@ export default function ProjectPage() {
                                 Done
                               </button>
                             )}
+                            <button
+                              onClick={(e) => quickDeleteTask(task._id, e)}
+                              className="text-xs px-2 py-1 border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-100 dark:hover:bg-red-800"
+                              title="Delete task"
+                            >
+                              <Icons.Trash2 className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -1787,6 +1843,13 @@ export default function ProjectPage() {
                                     Done
                                   </button>
                                 )}
+                                <button
+                                  onClick={(e) => quickDeleteTask(task._id, e)}
+                                  className="text-xs px-2 py-1 border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-100 dark:hover:bg-red-800"
+                                  title="Delete task"
+                                >
+                                  <Icons.Trash2 className="w-3 h-3" />
+                                </button>
                               </div>
                             </div>
                           ))
@@ -2104,6 +2167,13 @@ export default function ProjectPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors"
+                      title="Delete task"
+                    >
+                      <Icons.Trash2 className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => setShowTaskDetail(false)}
                       className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl"
@@ -2653,6 +2723,65 @@ export default function ProjectPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && selectedTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Icons.AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Delete Task
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to delete <span className="font-semibold">"{selectedTask.title}"</span>? 
+                    This will permanently delete the task, all its comments, and activity history.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteTask}
+                    disabled={isDeleting}
+                    className="flex-1 bg-red-600 dark:bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 dark:hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Icons.Trash2 className="w-4 h-4" />
+                        Delete Task
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

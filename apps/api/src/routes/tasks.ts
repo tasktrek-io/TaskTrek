@@ -426,6 +426,51 @@ router.get('/project/:projectId', requireAuth, async (req: AuthedRequest, res: R
   return res.json(tasks);
 });
 
+// Delete task
+router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    // Find the task first to check permissions
+    const task = await Task.findById(id).populate('project', 'owner members');
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Check if user has permission to delete (task creator, project owner, or project member)
+    const project = task.project as any;
+    const isTaskCreator = task.createdBy.toString() === userId;
+    const isProjectOwner = project.owner.toString() === userId;
+    const isProjectMember = project.members.some((member: any) => member.toString() === userId);
+
+    if (!isTaskCreator && !isProjectOwner && !isProjectMember) {
+      return res.status(403).json({ error: 'Permission denied' });
+    }
+
+    // Delete all related data
+    await Comment.deleteMany({ task: id });
+    await TaskActivity.deleteMany({ taskId: id });
+    
+    // Delete the task
+    await Task.findByIdAndDelete(id);
+
+    // Track deletion activity in project level if needed
+    await TaskActivityService.createActivity({
+      taskId: id,
+      performedBy: userId,
+      action: 'task_deleted',
+      details: `Deleted task: ${task.title}`,
+      metadata: { taskTitle: task.title, projectId: task.project }
+    });
+
+    res.json({ message: 'Task deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting task:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Add emoji reaction to comment
 router.post('/:taskId/comments/:commentId/reactions', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {

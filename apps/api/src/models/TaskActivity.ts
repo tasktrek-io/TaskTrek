@@ -12,7 +12,8 @@ export type ActivityAction =
   | 'description_changed'
   | 'comment_added'
   | 'comment_reaction_added'
-  | 'comment_reaction_removed';
+  | 'comment_reaction_removed'
+  | 'task_deleted';
 
 export interface ITaskActivity extends Document {
   taskId: Schema.Types.ObjectId;
@@ -42,7 +43,7 @@ const taskActivitySchema = new Schema<ITaskActivity>({
     enum: [
       'created', 'updated', 'status_changed', 'assigned', 'unassigned', 
       'priority_changed', 'due_date_changed', 'title_changed', 'description_changed', 
-      'comment_added', 'comment_reaction_added', 'comment_reaction_removed'
+      'comment_added', 'comment_reaction_added', 'comment_reaction_removed', 'task_deleted'
     ],
     required: true
   },
