@@ -168,7 +168,11 @@ export default function WorkspacesPage() {
     }
     localStorage.removeItem('token');
     localStorage.removeItem('selectedWorkspaceId');
-    router.push('/auth/login');
+    
+    // Dispatch custom logout event for socket disconnection
+    window.dispatchEvent(new CustomEvent('socket:logout'));
+    
+    router.push('/');
   };
 
   const getGreeting = () => {

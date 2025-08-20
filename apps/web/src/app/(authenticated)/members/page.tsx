@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { useSocket } from '../../../contexts/SocketContext';
 
 interface Member {
   _id: string;
@@ -36,12 +37,22 @@ export default function MembersPage() {
   const [addingMember, setAddingMember] = useState(false);
   const router = useRouter();
   const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
+  const { isUserOnline, joinOrganization, leaveOrganization } = useSocket();
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
 
 
   useEffect(() => {
     fetchCurrentOrganization();
-  }, []);
+    
+    // Cleanup function to leave organization room
+    return () => {
+      if (currentOrgId) {
+        console.log('Leaving organization room on cleanup:', currentOrgId);
+        leaveOrganization(currentOrgId);
+      }
+    };
+  }, [currentOrgId, leaveOrganization]);
 
   // Listen for context changes in localStorage
   useEffect(() => {
@@ -76,7 +87,7 @@ export default function MembersPage() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        router.push('/auth/login');
+        router.push('/');
         return;
       }
 
@@ -142,6 +153,18 @@ export default function MembersPage() {
 
       // Fetch members
       await fetchMembers(contextData.id);
+      
+      // Join organization room for real-time updates only if changed
+      if (currentOrgId !== contextData.id) {
+        if (currentOrgId) {
+          console.log('Leaving previous organization room:', currentOrgId);
+          leaveOrganization(currentOrgId);
+        }
+        
+        console.log('Joining organization room:', contextData.id);
+        joinOrganization(contextData.id);
+        setCurrentOrgId(contextData.id);
+      }
     } catch (err) {
       console.error('Error fetching organization:', err);
       if (err instanceof Error && err.message.includes('403')) {
@@ -346,12 +369,16 @@ export default function MembersPage() {
                 <li key={member._id} className="px-6 py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-10 w-10 relative">
                         <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                             {member.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
+                        {/* Online status indicator */}
+                        {isUserOnline(member._id) && (
+                          <div className="absolute -bottom-0 -right-0 h-3 w-3 bg-green-400 border-2 border-white dark:border-gray-800 rounded-full"></div>
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="flex items-center">
@@ -361,6 +388,12 @@ export default function MembersPage() {
                           <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(member.role)}`}>
                             {member.role}
                           </span>
+                          {/* Online status text indicator */}
+                          {isUserOnline(member._id) && (
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              Online
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {member.email}

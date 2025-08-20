@@ -34,6 +34,7 @@ interface SocketContextType {
   isConnected: boolean;
   notifications: Notification[];
   unreadCount: number;
+  onlineUsers: string[];
   addNotification: (notification: Notification) => void;
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
@@ -41,6 +42,8 @@ interface SocketContextType {
   leaveOrganization: (organizationId: string) => void;
   joinProject: (projectId: string) => void;
   leaveProject: (projectId: string) => void;
+  isUserOnline: (userId: string) => boolean;
+  reconnect: () => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -48,6 +51,7 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
   notifications: [],
   unreadCount: 0,
+  onlineUsers: [],
   addNotification: () => {},
   markAsRead: () => {},
   markAllAsRead: () => {},
@@ -55,6 +59,8 @@ const SocketContext = createContext<SocketContextType>({
   leaveOrganization: () => {},
   joinProject: () => {},
   leaveProject: () => {},
+  isUserOnline: () => false,
+  reconnect: () => {},
 });
 
 interface SocketProviderProps {
@@ -66,6 +72,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [currentToken, setCurrentToken] = useState<string | null>(null);
 
   // Load initial notifications and unread count
   const loadInitialNotifications = async () => {
@@ -106,17 +114,98 @@ export function SocketProvider({ children }: SocketProviderProps) {
     }
   };
 
+  // Monitor token changes and manage socket connection
   useEffect(() => {
-    // Get token from localStorage or cookies
-    const token = localStorage.getItem('token') || document.cookie
-      .split('; ')
-      .find(row => row.startsWith('token='))
-      ?.split('=')[1];
+    const checkToken = () => {
+      const token = localStorage.getItem('token') || document.cookie
+        .split('; ')
+        .find(row => row.startsWith('token='))
+        ?.split('=')[1];
+      
+      return token;
+    };
 
-    if (!token) {
-      console.log('No token found, not connecting to WebSocket');
-      return;
+    // Initial token check and connection
+    const initialToken = checkToken();
+    if (initialToken !== currentToken) {
+      setCurrentToken(initialToken || null);
+      
+      if (initialToken) {
+        console.log('Initial token found, connecting to WebSocket');
+        connectSocket(initialToken);
+      }
     }
+
+    // Set up storage listener for cross-tab token changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token') {
+        const newToken = checkToken();
+        console.log('Cross-tab token change detected:', { from: currentToken, to: newToken });
+        
+        if (newToken !== currentToken) {
+          setCurrentToken(newToken || null);
+          
+          // Handle logout (token removed)
+          if (!newToken && socket) {
+            console.log('Token removed (cross-tab), disconnecting socket');
+            socket.disconnect();
+            setSocket(null);
+            setIsConnected(false);
+            setNotifications([]);
+            setUnreadCount(0);
+            setOnlineUsers([]);
+          }
+          // Handle login (new token)
+          else if (newToken && !socket) {
+            console.log('New token detected (cross-tab), connecting socket');
+            connectSocket(newToken);
+          }
+        }
+      }
+    };
+
+    // Custom event listener for same-tab logout
+    const handleLogout = () => {
+      console.log('Logout event detected, disconnecting socket');
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
+      }
+      setCurrentToken(null);
+      setNotifications([]);
+      setUnreadCount(0);
+      setOnlineUsers([]);
+    };
+
+    // Custom event listener for same-tab login
+    const handleLogin = (event: CustomEvent) => {
+      const token = event.detail?.token || checkToken();
+      console.log('Login event detected, connecting socket with token');
+      if (token && token !== currentToken) {
+        setCurrentToken(token);
+        // Disconnect existing socket if any
+        if (socket) {
+          socket.disconnect();
+          setSocket(null);
+          setIsConnected(false);
+        }
+        connectSocket(token);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('socket:logout', handleLogout);
+    window.addEventListener('socket:login', handleLogin as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('socket:logout', handleLogout);
+      window.removeEventListener('socket:login', handleLogin as EventListener);
+    };
+  }, [currentToken, socket]);
+
+  const connectSocket = (token: string) => {
 
     const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', {
       auth: {
@@ -162,12 +251,40 @@ export function SocketProvider({ children }: SocketProviderProps) {
       }
     });
 
-    setSocket(socketInstance);
+    // Listen for user status changes (online/offline)
+    socketInstance.on('userStatusChange', (data: { userId: string; isOnline: boolean; user: any }) => {
+      setOnlineUsers(prev => {
+        if (data.isOnline) {
+          // Add user to online list if not already there
+          return prev.includes(data.userId) ? prev : [...prev, data.userId];
+        } else {
+          // Remove user from online list
+          return prev.filter(id => id !== data.userId);
+        }
+      });
+    });
 
+    // Listen for online users list (when joining rooms)
+    socketInstance.on('onlineUsers', (data: { room: string; users: any[] }) => {
+      const userIds = data.users.map(user => user._id || user.id);
+      setOnlineUsers(prev => {
+        // Merge with existing online users, avoiding duplicates
+        const merged = [...new Set([...prev, ...userIds])];
+        return merged;
+      });
+    });
+
+    setSocket(socketInstance);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      socketInstance.disconnect();
+      if (socket) {
+        socket.disconnect();
+      }
     };
-  }, []);
+  }, [socket]);
 
   // Request browser notification permission on mount
   useEffect(() => {
@@ -201,25 +318,59 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
   const joinOrganization = (organizationId: string) => {
     if (socket && isConnected) {
+      console.log('SocketContext: Emitting join-organization', organizationId);
       socket.emit('join-organization', organizationId);
+    } else {
+      console.warn('SocketContext: Cannot join organization - socket not connected', { socket: !!socket, isConnected });
     }
   };
 
   const leaveOrganization = (organizationId: string) => {
     if (socket && isConnected) {
+      console.log('SocketContext: Emitting leave-organization', organizationId);
       socket.emit('leave-organization', organizationId);
     }
   };
 
   const joinProject = (projectId: string) => {
     if (socket && isConnected) {
+      console.log('SocketContext: Emitting join-project', projectId);
       socket.emit('join-project', projectId);
+    } else {
+      console.warn('SocketContext: Cannot join project - socket not connected', { socket: !!socket, isConnected });
     }
   };
 
   const leaveProject = (projectId: string) => {
     if (socket && isConnected) {
+      console.log('SocketContext: Emitting leave-project', projectId);
       socket.emit('leave-project', projectId);
+    }
+  };
+
+  const isUserOnline = (userId: string): boolean => {
+    return onlineUsers.includes(userId);
+  };
+
+  const reconnect = () => {
+    const token = localStorage.getItem('token') || document.cookie
+      .split('; ')
+      .find(row => row.startsWith('token='))
+      ?.split('=')[1];
+    
+    if (token && token !== currentToken) {
+      console.log('Manual reconnect triggered');
+      setCurrentToken(token);
+      
+      // Disconnect existing socket if any
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
+      }
+      
+      // Connect with new token
+      connectSocket(token);
     }
   };
 
@@ -228,6 +379,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     isConnected,
     notifications,
     unreadCount,
+    onlineUsers,
     addNotification,
     markAsRead,
     markAllAsRead,
@@ -235,6 +387,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
     leaveOrganization,
     joinProject,
     leaveProject,
+    isUserOnline,
+    reconnect,
   };
 
   return (

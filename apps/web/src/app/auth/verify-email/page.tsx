@@ -34,6 +34,10 @@ function VerifyEmailContent() {
       // Store the token
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        // Dispatch custom login event for socket connection
+        window.dispatchEvent(new CustomEvent('socket:login', { 
+          detail: { token: response.data.token } 
+        }));
       }
 
       // Redirect to dashboard after 3 seconds

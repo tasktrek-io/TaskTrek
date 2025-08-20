@@ -6,6 +6,7 @@ import { DropResult } from 'react-beautiful-dnd';
 import TaskActivity from '../../../../components/TaskActivity';
 import TaskDocuments from '../../../../components/FileUpload/TaskDocuments';
 import { useWorkspace } from '../../../../contexts/WorkspaceContext';
+import { useSocket } from '../../../../contexts/SocketContext';
 import { api } from '../../../../lib/api';
 import { Icons } from '../../../../lib/icons';
 
@@ -73,7 +74,10 @@ export default function ProjectPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
+  const { isUserOnline, joinProject, leaveProject, joinOrganization, leaveOrganization } = useSocket();
   const projectId = params.id;
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -165,7 +169,20 @@ export default function ProjectPage() {
     direction: 'desc' as 'asc' | 'desc'
   });
 
-  const loadProject = () => api.get(`/projects/${projectId}`).then(r=>setProject(r.data));
+  const loadProject = () => api.get(`/projects/${projectId}`).then(r=>{
+    setProject(r.data);
+    // Join project room for real-time updates only if changed
+    if (r.data && currentProjectId !== r.data._id) {
+      if (currentProjectId) {
+        console.log('Leaving previous project room:', currentProjectId);
+        leaveProject(currentProjectId);
+      }
+      
+      console.log('Joining project room:', r.data._id);
+      joinProject(r.data._id);
+      setCurrentProjectId(r.data._id);
+    }
+  });
   const loadTasks = () => api.get(`/tasks/project/${projectId}`).then(r=>setTasks(r.data));
   const loadCurrentUser = () => api.get('/auth/me').then(r=>setCurrentUser(r.data.user));
 
@@ -174,8 +191,35 @@ export default function ProjectPage() {
     if(projectId){
       loadProject(); 
       loadTasks();
-    } 
-  }, [projectId]);
+    }
+    
+    // Cleanup - leave rooms when component unmounts or project changes
+    return () => {
+      if (currentProjectId) {
+        leaveProject(currentProjectId);
+      }
+      if (currentOrgId) {
+        leaveOrganization(currentOrgId);
+      }
+    };
+  }, [projectId, currentProjectId, currentOrgId, leaveProject, leaveOrganization]);
+
+  // Join organization room when project data is available
+  useEffect(() => {
+    if (project && project.workspace && project.workspace.contextType === 'organization') {
+      const orgId = project.workspace.contextId;
+      if (currentOrgId !== orgId) {
+        if (currentOrgId) {
+          console.log('Leaving previous organization room:', currentOrgId);
+          leaveOrganization(currentOrgId);
+        }
+        
+        console.log('Joining organization room from project:', orgId);
+        joinOrganization(orgId);
+        setCurrentOrgId(orgId);
+      }
+    }
+  }, [project, currentOrgId, joinOrganization, leaveOrganization]);
 
   useEffect(() => {
     setIsClient(true);
@@ -216,13 +260,6 @@ export default function ProjectPage() {
     }, 250);
     return () => clearTimeout(t);
   }, [assigneeSearchQuery, project]);
-
-  useEffect(()=>{ 
-    if(projectId){ 
-      loadProject(); 
-      loadTasks(); 
-    } 
-  }, [projectId]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -1042,9 +1079,24 @@ export default function ProjectPage() {
           <div className="font-medium mb-4 text-sm sm:text-base text-gray-900 dark:text-gray-100">Team Members</div>
           <div className="flex flex-wrap gap-2 mb-4">
             {allMembers.map(m => (
-              <span key={m._id} className="px-2 sm:px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm truncate max-w-full">
-                {m.name} ({m.email})
-              </span>
+              <div key={m._id} className="relative">
+                <span className="px-2 sm:px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm truncate max-w-full inline-flex items-center gap-2">
+                  <div className="relative">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                      {m.name.charAt(0).toUpperCase()}
+                    </div>
+                    {/* Online status indicator */}
+                    {isUserOnline(m._id) && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 bg-green-400 border border-white dark:border-gray-700 rounded-full"></div>
+                    )}
+                  </div>
+                  {m.name} ({m.email})
+                  {/* Online status text indicator */}
+                  {isUserOnline(m._id) && (
+                    <span className="text-green-600 dark:text-green-400 text-xs">●</span>
+                  )}
+                </span>
+              </div>
             ))}
           </div>
           <div className="relative">

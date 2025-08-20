@@ -28,6 +28,7 @@ import userRouter from './routes/users';
 import notificationRouter from './routes/notifications';
 import contextsRouter from './routes/contexts';
 import documentsRouter from './routes/documents';
+import onlineStatusRouter from './routes/onlineStatus';
 
 const app = express();
 const httpServer = createServer(app);
@@ -46,6 +47,7 @@ app.use('/api/tasks', taskRouter);
 app.use('/api/users', userRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/contexts', contextsRouter);
+app.use('/api/online-status', onlineStatusRouter);
 app.use('/api', documentsRouter);
 
 const PORT = process.env.PORT || 4000;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { api } from '../../../lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { login } from '../../../lib/socket-auth';
 import {
   Box,
   TextField,
@@ -77,11 +78,10 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       const response = await api.post('/auth/login', { email, password });
-      // Store the token in localStorage
+      // Store the token and connect socket
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        login(response.data.token, router);
       }
-      router.push('/dashboard');
     } catch (err: any) {
       const errorMessage = err?.response?.data?.error || 'Login failed';
       setError(errorMessage);

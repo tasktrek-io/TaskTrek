@@ -168,6 +168,10 @@ export default function WorkspacePage() {
       // Even if logout fails on server, still clear local token
     }
     localStorage.removeItem('token');
+    
+    // Dispatch custom logout event for socket disconnection
+    window.dispatchEvent(new CustomEvent('socket:logout'));
+    
     router.push('/auth/login');
   };
 

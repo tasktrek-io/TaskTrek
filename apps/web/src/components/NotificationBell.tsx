@@ -74,13 +74,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
   }, [socketUnreadCount, isConnected]);
 
   // Fallback polling when disconnected
-  useEffect(() => {
-    if (!isConnected) {
-      loadUnreadCount();
-      const interval = setInterval(loadUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [isConnected]);
+  // useEffect(() => {
+  //   if (!isConnected) {
+  //     loadUnreadCount();
+  //     const interval = setInterval(loadUnreadCount, 30000);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [isConnected]);
 
   const loadUnreadCount = async () => {
     try {
@@ -219,13 +219,6 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
-        {/* Connection status indicator */}
-        <span 
-          className={`absolute -bottom-1 -right-1 w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-yellow-500'
-          }`}
-          title={isConnected ? 'Connected to real-time notifications' : 'Using fallback mode'}
-        />
         {/* New notification pulse animation */}
         {showNewNotificationPulse && (
           <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full animate-ping opacity-75"></span>

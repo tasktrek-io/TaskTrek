@@ -13,6 +13,7 @@ export interface AuthenticatedSocket {
 class SocketServer {
   private io: Server | null = null;
   private connectedUsers: Map<string, string> = new Map(); // userId -> socketId
+  private userProfiles: Map<string, any> = new Map(); // userId -> user profile data
 
   initialize(httpServer: HttpServer) {
     this.io = new Server(httpServer, {
@@ -69,42 +70,74 @@ class SocketServer {
       return;
     }
 
-    // Store the connection
+    // Store the connection and user profile
     this.connectedUsers.set(userId, socket.id);
+    
+    // Store user profile data from JWT for online status
+    const decoded = jwt.decode(socket.handshake.auth.token) as any;
+    if (decoded) {
+      this.userProfiles.set(userId, {
+        _id: userId,
+        id: userId,
+        name: decoded.name || 'Unknown User',
+        email: decoded.email || '',
+        isOnline: true,
+        lastSeen: new Date()
+      });
+    }
 
     // Join user to their personal room for notifications
     const userRoom = `user:${userId}`;
     socket.join(userRoom);
     logger.info('User joined personal room', { userId, socketId: socket.id, room: userRoom });
 
+    // Broadcast user online status to organization and project rooms
+    this.broadcastUserStatus(userId, true);
+
     // Handle disconnection
     socket.on('disconnect', () => {
       logger.info('User disconnected from WebSocket', { userId, socketId: socket.id });
       this.connectedUsers.delete(userId);
+      
+      // Update user profile offline status
+      const userProfile = this.userProfiles.get(userId);
+      if (userProfile) {
+        userProfile.isOnline = false;
+        userProfile.lastSeen = new Date();
+      }
+      
+      // Broadcast user offline status
+      this.broadcastUserStatus(userId, false);
     });
 
     // Handle joining organization rooms (for organization-wide notifications)
     socket.on('join-organization', (organizationId: string) => {
       socket.join(`org:${organizationId}`);
-      logger.debug('User joined organization room', { userId, organizationId });
+      logger.info('User joined organization room', { userId, organizationId, room: `org:${organizationId}` });
+      
+      // Send current online users in this organization
+      this.sendOnlineUsersToRoom(socket, `org:${organizationId}`);
     });
 
     // Handle leaving organization rooms
     socket.on('leave-organization', (organizationId: string) => {
       socket.leave(`org:${organizationId}`);
-      logger.debug('User left organization room', { userId, organizationId });
+      logger.info('User left organization room', { userId, organizationId, room: `org:${organizationId}` });
     });
 
     // Handle joining project rooms (for project-wide notifications)
     socket.on('join-project', (projectId: string) => {
       socket.join(`project:${projectId}`);
-      logger.debug('User joined project room', { userId, projectId });
+      logger.info('User joined project room', { userId, projectId, room: `project:${projectId}` });
+      
+      // Send current online users in this project
+      this.sendOnlineUsersToRoom(socket, `project:${projectId}`);
     });
 
     // Handle leaving project rooms
     socket.on('leave-project', (projectId: string) => {
       socket.leave(`project:${projectId}`);
-      logger.debug('User left project room', { userId, projectId });
+      logger.info('User left project room', { userId, projectId, room: `project:${projectId}` });
     });
   };
 
@@ -155,6 +188,61 @@ class SocketServer {
   // Get all connected user IDs
   getConnectedUserIds(): string[] {
     return Array.from(this.connectedUsers.keys());
+  }
+
+  // Get online users with profile data
+  getOnlineUsers(): any[] {
+    return Array.from(this.userProfiles.values()).filter(user => user.isOnline);
+  }
+
+  // Check if specific user is online
+  isUserOnline(userId: string): boolean {
+    return this.connectedUsers.has(userId);
+  }
+
+  // Broadcast user status change to all relevant rooms
+  private broadcastUserStatus(userId: string, isOnline: boolean) {
+    if (!this.io) return;
+
+    const userProfile = this.userProfiles.get(userId);
+    if (!userProfile) return;
+
+    const statusData = {
+      userId,
+      isOnline,
+      lastSeen: userProfile.lastSeen,
+      user: {
+        _id: userId,
+        id: userId,
+        name: userProfile.name,
+        email: userProfile.email
+      }
+    };
+
+    // Broadcast to all organization and project rooms
+    // This is a simple approach - in production you might want to be more selective
+    this.io.emit('userStatusChange', statusData);
+    
+    logger.debug('User status broadcasted', { userId, isOnline });
+  }
+
+  // Send current online users to a socket when they join a room
+  private sendOnlineUsersToRoom(socket: any, roomName: string) {
+    if (!this.io) return;
+
+    const onlineUsers = this.getOnlineUsers();
+    socket.emit('onlineUsers', { room: roomName, users: onlineUsers });
+    
+    logger.info('Online users sent to room', { room: roomName, count: onlineUsers.length, userIds: onlineUsers.map(u => u._id || u.id) });
+  }
+
+  // Get online status for specific users
+  getOnlineStatusForUsers(userIds: string[]): { [userId: string]: boolean } {
+    const status: { [userId: string]: boolean } = {};
+    userIds.forEach(userId => {
+      status[userId] = this.isUserOnline(userId);
+    });
+    return status;
   }
 }
 

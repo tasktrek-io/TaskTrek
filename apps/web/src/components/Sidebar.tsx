@@ -9,6 +9,8 @@ import ThemeToggle from './ThemeToggle';
 import CreateOrganizationModal from './CreateOrganizationModal';
 import OrganizationMembersModal from './OrganizationMembersModal';
 import { Icons, getIcon } from '../lib/icons';
+import { useSocket } from '../contexts/SocketContext';
+import { logout as socketLogout } from '../lib/socket-auth';
 
 interface Workspace {
   _id: string;
@@ -40,6 +42,7 @@ interface SidebarProps {
 export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContextChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isConnected } = useSocket();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
   const [currentContext, setCurrentContext] = useState<Context | null>(null);
@@ -284,21 +287,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
   }, [onWorkspaceChange, currentContext]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('selectedWorkspaceId');
-    localStorage.removeItem('lastActiveContext');
-    
-    // Clear all context-specific workspace selections
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('selectedWorkspaceId_')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    router.push('/auth/login');
+    socketLogout(router, '/');
   }, [router]);
 
   const handleOrganizationCreated = useCallback((newOrg: any) => {
@@ -627,6 +616,7 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
+            const isProfileTab = item.name === 'Profile';
             return (
               <li key={item.name}>
                 <Link
@@ -638,17 +628,33 @@ export default function Sidebar({ currentWorkspace, onWorkspaceChange, onContext
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  {typeof item.icon === 'string' ? (
-                    <span className={`${isCollapsed ? 'text-xl' : 'text-lg'} flex-shrink-0`}>{item.icon}</span>
-                  ) : (
-                    <span className="flex-shrink-0">{item.icon}</span>
-                  )}
+                  <div className="relative flex-shrink-0">
+                    {typeof item.icon === 'string' ? (
+                      <span className={`${isCollapsed ? 'text-xl' : 'text-lg'}`}>{item.icon}</span>
+                    ) : (
+                      <span>{item.icon}</span>
+                    )}
+                    {/* Connection status indicator for Profile tab */}
+                    {isProfileTab && (
+                      <span 
+                        className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white ${
+                          isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                        }`}
+                        title={isConnected ? 'Connected to real-time notifications' : 'Using fallback mode'}
+                      />
+                    )}
+                  </div>
                   {!isCollapsed && <span className="font-medium ml-3">{item.name}</span>}
                   
                   {/* Tooltip for collapsed state */}
                   {isCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
                       {item.name}
+                      {isProfileTab && (
+                        <div className="text-xs mt-1 opacity-80">
+                          {isConnected ? '🟢 Real-time' : '🟡 Fallback'}
+                        </div>
+                      )}
                     </div>
                   )}
                 </Link>

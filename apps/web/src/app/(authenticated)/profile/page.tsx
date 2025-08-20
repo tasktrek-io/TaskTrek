@@ -161,8 +161,12 @@ export default function ProfilePage() {
   const handleAccountDeleted = () => {
     // Clear any local storage, cookies, etc.
     localStorage.clear();
+    
+    // Dispatch custom logout event for socket disconnection
+    window.dispatchEvent(new CustomEvent('socket:logout'));
+    
     // Redirect to home/login page
-    router.push('/auth/login');
+    router.push('/');
   };
 
   const getRoleBadgeColor = (role: string) => {
