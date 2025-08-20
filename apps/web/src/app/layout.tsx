@@ -1,6 +1,7 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { WorkspaceProvider } from '../contexts/WorkspaceContext';
+import { SocketProvider } from '../contexts/SocketContext';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -27,9 +28,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
-        <WorkspaceProvider>
-          {children}
-        </WorkspaceProvider>
+        <SocketProvider>
+          <WorkspaceProvider>
+            {children}
+          </WorkspaceProvider>
+        </SocketProvider>
       </body>
     </html>
   );

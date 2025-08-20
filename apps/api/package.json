@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.0",
+    "@types/socket.io": "^3.0.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.6",
@@ -22,6 +23,7 @@
     "mongoose": "^8.5.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
+    "socket.io": "^4.8.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {

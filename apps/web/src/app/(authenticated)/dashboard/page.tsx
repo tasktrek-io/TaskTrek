@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { useSocket } from '../../../contexts/SocketContext';
 import { Icons } from '../../../lib/icons';
 
 interface User {
@@ -42,10 +43,12 @@ interface Task {
 export default function Dashboard() {
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
+  const { isConnected, notifications: socketNotifications, unreadCount } = useSocket();
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   useEffect(() => {
     loadDashboardData();

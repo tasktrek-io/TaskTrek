@@ -1,6 +1,7 @@
 import Notification from '../models/Notification';
 import { Types } from 'mongoose';
 import { logger } from '../utils/logger';
+import { socketServer } from '../socket/socketServer';
 
 interface NotificationData {
   recipient: string;
@@ -29,12 +30,46 @@ export class NotificationService {
         relatedProject: data.relatedProject ? new Types.ObjectId(data.relatedProject) : undefined
       });
 
-      await notification.save();
-      return notification;
+      const savedNotification = await notification.save();
+      
+      // Populate the notification for real-time emission
+      const populatedNotification = await Notification.findById(savedNotification._id)
+        .populate({
+          path: 'sender',
+          select: 'name email',
+          match: { deleted: { $ne: true } }
+        })
+        .populate('relatedTask', 'title')
+        .populate('relatedOrganization', 'name')
+        .populate('relatedProject', 'name');
+
+      // Emit real-time notification to the recipient
+      if (populatedNotification) {
+        socketServer.emitToUser(data.recipient, 'newNotification', {
+          notification: populatedNotification,
+          count: await this.getUnreadCount(data.recipient)
+        });
+        
+        logger.info('Real-time notification sent', { 
+          recipient: data.recipient, 
+          type: data.type, 
+          title: data.title 
+        });
+      }
+
+      return savedNotification;
     } catch (error) {
       logger.error('Error creating notification', {}, error as Error);
       throw error;
     }
+  }
+
+  // Helper method to get unread count for a user
+  private static async getUnreadCount(userId: string): Promise<number> {
+    return await Notification.countDocuments({
+      recipient: new Types.ObjectId(userId),
+      read: false
+    });
   }
 
   static async notifyTaskAssignment(taskId: string, taskTitle: string, assigneeId: string, assignerId: string) {

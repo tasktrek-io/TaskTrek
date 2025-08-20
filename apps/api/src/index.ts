@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import path from 'path';
 import { logger, httpLogger } from './utils/logger';
+import { socketServer } from './socket/socketServer';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -28,6 +30,7 @@ import contextsRouter from './routes/contexts';
 import documentsRouter from './routes/documents';
 
 const app = express();
+const httpServer = createServer(app);
 
 app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
@@ -64,7 +67,10 @@ async function start() {
       // Index doesn't exist, that's fine
     }
     
-    app.listen(PORT, () => logger.info(`API server started`, { port: PORT, url: `http://localhost:${PORT}` }));
+    // Initialize Socket.IO
+    socketServer.initialize(httpServer);
+    
+    httpServer.listen(PORT, () => logger.info(`API server started`, { port: PORT, url: `http://localhost:${PORT}` }));
   } catch (err) {
     logger.error('Failed to start server', {}, err as Error);
     process.exit(1);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Icons } from '../lib/icons';
+import { useSocket } from '../contexts/SocketContext';
 
 interface Notification {
   _id: string;
@@ -35,18 +36,51 @@ interface NotificationProps {
 }
 
 export default function NotificationBell({ onNotificationClick }: NotificationProps) {
+  const { 
+    notifications: socketNotifications, 
+    unreadCount: socketUnreadCount, 
+    isConnected,
+    markAsRead: socketMarkAsRead,
+    markAllAsRead: socketMarkAllAsRead 
+  } = useSocket();
+  
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showNewNotificationPulse, setShowNewNotificationPulse] = useState(false);
+  const [newNotificationIds, setNewNotificationIds] = useState<Set<string>>(new Set());
 
+  // Track previous unread count for pulse animation
+  const [prevUnreadCount, setPrevUnreadCount] = useState(0);
+
+  // Update notifications when socket data changes
   useEffect(() => {
-    loadUnreadCount();
-    
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(loadUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+
+    if (isConnected) {
+      // Always update notifications from socket, regardless of dropdown state
+      setNotifications(socketNotifications);
+      setUnreadCount(socketUnreadCount);
+    }
+  }, [isConnected, socketNotifications, socketUnreadCount, showDropdown]);
+
+  // Handle pulse animation when unread count changes
+  useEffect(() => {
+    if (isConnected && socketUnreadCount > prevUnreadCount && prevUnreadCount >= 0 && socketUnreadCount > 0) {
+      setShowNewNotificationPulse(true);
+      setTimeout(() => setShowNewNotificationPulse(false), 1000);
+    }
+    setPrevUnreadCount(socketUnreadCount);
+  }, [socketUnreadCount, isConnected]);
+
+  // Fallback polling when disconnected
+  useEffect(() => {
+    if (!isConnected) {
+      loadUnreadCount();
+      const interval = setInterval(loadUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
 
   const loadUnreadCount = async () => {
     try {
@@ -63,7 +97,18 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
     setLoading(true);
     try {
       const response = await api.get('/notifications');
-      setNotifications(response.data);
+      
+      if (isConnected) {
+        // When connected via socket, only load from API if we don't have notifications yet
+        // This prevents overriding real-time updates
+        if (socketNotifications.length === 0) {
+          setNotifications(response.data);
+        }
+        // Otherwise, let the socket handle the notifications
+      } else {
+        // When disconnected, use API response
+        setNotifications(response.data);
+      }
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
@@ -74,10 +119,17 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
   const markAsRead = async (notificationId: string) => {
     try {
       await api.patch(`/notifications/${notificationId}/read`);
-      setNotifications(prev => 
-        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      if (isConnected) {
+        // Use socket context method when connected
+        socketMarkAsRead(notificationId);
+      } else {
+        // Fallback: update local state when disconnected
+        setNotifications(prev => 
+          prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
     }
@@ -86,14 +138,28 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
   const markAllAsRead = async () => {
     try {
       await api.patch('/notifications/mark-all-read');
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
+      
+      if (isConnected) {
+        // Use socket context method when connected
+        socketMarkAllAsRead();
+      } else {
+        // Fallback: update local state when disconnected
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+      }
     } catch (err) {
       console.error('Failed to mark all notifications as read:', err);
     }
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    // Remove from new notifications when clicked
+    setNewNotificationIds(prev => {
+      const updated = new Set(prev);
+      updated.delete(notification._id);
+      return updated;
+    });
+    
     if (!notification.read) {
       markAsRead(notification._id);
     }
@@ -103,7 +169,11 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
 
   const toggleDropdown = () => {
     if (!showDropdown) {
-      loadNotifications();
+      // Only load notifications from API if socket is not connected
+      // When socket is connected, use real-time data exclusively
+      if (!isConnected) {
+        loadNotifications();
+      }
     }
     setShowDropdown(!showDropdown);
   };
@@ -141,12 +211,24 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
       <button
         onClick={toggleDropdown}
         className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none"
+        title={isConnected ? 'Real-time notifications enabled' : 'Using fallback notifications'}
       >
         <Icons.Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
+        )}
+        {/* Connection status indicator */}
+        <span 
+          className={`absolute -bottom-1 -right-1 w-2 h-2 rounded-full ${
+            isConnected ? 'bg-green-500' : 'bg-yellow-500'
+          }`}
+          title={isConnected ? 'Connected to real-time notifications' : 'Using fallback mode'}
+        />
+        {/* New notification pulse animation */}
+        {showNewNotificationPulse && (
+          <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full animate-ping opacity-75"></span>
         )}
       </button>
 
@@ -188,6 +270,8 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                     onClick={() => handleNotificationClick(notification)}
                     className={`p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                       !notification.read ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+                    } ${
+                      newNotificationIds.has(notification._id) ? 'ring-2 ring-blue-400 bg-blue-100 dark:bg-blue-800' : ''
                     }`}
                   >
                     <div className="flex items-start gap-2 sm:gap-3">
