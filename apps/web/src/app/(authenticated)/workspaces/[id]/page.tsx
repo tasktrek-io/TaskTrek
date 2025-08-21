@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useWorkspace } from '../../../../contexts/WorkspaceContext';
 import { api } from '../../../../lib/api';
-import { canDeleteWorkspace } from '../../../../lib/permissions';
+import { canDeleteWorkspace, canEditWorkspace } from '../../../../lib/permissions';
 
 interface Workspace {
   _id: string;
@@ -66,6 +66,16 @@ export default function WorkspacePage() {
   const [canUserDeleteWorkspace, setCanUserDeleteWorkspace] = useState(false);
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
 
+  // Edit workspace states
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
+  const [showEditWorkspaceModal, setShowEditWorkspaceModal] = useState(false);
+  const [canUserEditWorkspace, setCanUserEditWorkspace] = useState(false);
+  const [workspaceEditForm, setWorkspaceEditForm] = useState({
+    name: '',
+    description: '',
+    color: '#ff6b35'
+  });
+
   // Time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -114,6 +124,36 @@ export default function WorkspacePage() {
 
     checkDeletePermissions();
   }, [workspace, currentUser]);
+
+  // Check if current user can edit the workspace
+  useEffect(() => {
+    const checkEditPermissions = async () => {
+      if (workspace && currentUser) {
+        try {
+          const canEdit = await canEditWorkspace(workspace, currentUser._id);
+          setCanUserEditWorkspace(canEdit);
+        } catch (error) {
+          console.error('Error checking edit permissions:', error);
+          setCanUserEditWorkspace(false);
+        }
+      }
+    };
+
+    checkEditPermissions();
+  }, [workspace, currentUser]);
+
+  // Close workspace menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.workspace-menu-container')) {
+        setShowWorkspaceMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Search for users within the current workspace's context
   useEffect(() => {
@@ -190,6 +230,31 @@ export default function WorkspacePage() {
     } finally {
       setIsDeletingWorkspace(false);
       setShowWorkspaceDeleteConfirm(false);
+    }
+  };
+
+  const openEditWorkspaceModal = () => {
+    if (workspace) {
+      setWorkspaceEditForm({
+        name: workspace.name,
+        description: workspace.description || '',
+        color: workspace.color
+      });
+      setShowWorkspaceMenu(false);
+      setShowEditWorkspaceModal(true);
+    }
+  };
+
+  const updateWorkspace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!workspace) return;
+
+    try {
+      const response = await api.patch(`/workspaces/${workspace._id}`, workspaceEditForm);
+      setWorkspace(response.data);
+      setShowEditWorkspaceModal(false);
+    } catch (err) {
+      console.error('Failed to update workspace:', err);
     }
   };
 
@@ -285,23 +350,59 @@ export default function WorkspacePage() {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 >
                   + New Project
                 </button>
-                {canUserDeleteWorkspace && (
-                  <button
-                    onClick={() => setShowWorkspaceDeleteConfirm(true)}
-                    className="border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
-                    title="Delete Workspace"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                
+                {/* Workspace Menu */}
+                {workspace && currentUser && (canUserEditWorkspace || canUserDeleteWorkspace) && (
+                  <div className="relative workspace-menu-container">
+                    <button
+                      onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
+                      className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+                    
+                    {showWorkspaceMenu && (
+                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
+                        {/* Edit option */}
+                        {canUserEditWorkspace && (
+                          <button
+                            onClick={openEditWorkspaceModal}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Workspace
+                          </button>
+                        )}
+                        
+                        {/* Delete option */}
+                        {canUserDeleteWorkspace && (
+                          <button
+                            onClick={() => {
+                              setShowWorkspaceMenu(false);
+                              setShowWorkspaceDeleteConfirm(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete Workspace
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -614,6 +715,91 @@ export default function WorkspacePage() {
     </div>
   </div>
 )}
+
+        {/* Edit Workspace Modal */}
+        {showEditWorkspaceModal && workspace && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Edit Workspace</h2>
+                  <button
+                    onClick={() => setShowEditWorkspaceModal(false)}
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={updateWorkspace} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Workspace name
+                    </label>
+                    <input
+                      type="text"
+                      value={workspaceEditForm.name}
+                      onChange={(e) => setWorkspaceEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
+                      placeholder="My Workspace"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={workspaceEditForm.description}
+                      onChange={(e) => setWorkspaceEditForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+                      placeholder="Workspace description..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Color
+                    </label>
+                    <div className="flex gap-3 items-center">
+                      <input
+                        type="color"
+                        value={workspaceEditForm.color}
+                        onChange={(e) => setWorkspaceEditForm(prev => ({ ...prev, color: e.target.value }))}
+                        className="w-12 h-10 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-8 h-8 rounded-full"
+                          style={{ backgroundColor: workspaceEditForm.color }}
+                        />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{workspaceEditForm.color}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditWorkspaceModal(false)}
+                      className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-blue-600 dark:bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                    >
+                      Update Workspace
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Workspace Delete Confirmation Modal */}
         {showWorkspaceDeleteConfirm && workspace && (

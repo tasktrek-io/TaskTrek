@@ -108,6 +108,28 @@ export async function canDeleteWorkspace(workspace: Workspace, currentUserId: st
 }
 
 /**
+ * Check if current user can edit a workspace
+ */
+export async function canEditWorkspace(workspace: Workspace, currentUserId: string): Promise<boolean> {
+  try {
+    // Workspace owner can always edit
+    if (workspace.owner._id === currentUserId) {
+      return true;
+    }
+
+    // If workspace is in organization context, check organization admin permissions
+    if (workspace.contextType === 'organization') {
+      return await isOrganizationAdmin(workspace.contextId, currentUserId);
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking workspace edit permissions:', error);
+    return false;
+  }
+}
+
+/**
  * Check if user is admin or owner of an organization
  */
 export async function isOrganizationAdmin(organizationId: string, userId: string): Promise<boolean> {

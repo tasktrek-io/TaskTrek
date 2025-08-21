@@ -134,12 +134,31 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
     const { id: workspaceId } = req.params;
     const { name, description, color } = req.body;
     
-    const workspace = await Workspace.findOne({
-      _id: workspaceId,
-      owner: userId
-    });
-    
+    const workspace = await Workspace.findById(workspaceId);
     if (!workspace) return res.status(404).json({ error: 'Workspace not found' });
+    
+    // Check if user has edit permissions
+    let hasPermission = false;
+    
+    // Check if user is workspace owner
+    if (workspace.owner.toString() === userId) {
+      hasPermission = true;
+    }
+    // Check organization admin permissions if workspace is in organization context
+    else if (workspace.contextType === 'organization') {
+      const organization = await Organization.findOne({
+        _id: workspace.contextId,
+        'members.userId': userId,
+        'members.role': { $in: ['owner', 'admin'] }
+      });
+      if (organization) {
+        hasPermission = true;
+      }
+    }
+    
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Only admins and owners can edit workspaces' });
+    }
     
     if (name?.trim()) workspace.name = name.trim();
     if (description !== undefined) workspace.description = description?.trim();
