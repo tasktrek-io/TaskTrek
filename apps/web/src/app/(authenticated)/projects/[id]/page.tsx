@@ -1,6 +1,6 @@
 "use client";
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { DropResult } from 'react-beautiful-dnd';
 import TaskActivity from '../../../../components/TaskActivity';
@@ -182,6 +182,13 @@ export default function ProjectPage() {
     direction: 'desc' as 'asc' | 'desc'
   });
 
+  // Activity refresh function - use ref to persist across re-renders
+  const refreshActivitiesRef = useRef<(() => void) | null>(null);
+
+  const handleActivitiesLoad = useCallback((refreshFunction: () => void) => {
+    refreshActivitiesRef.current = refreshFunction;
+  }, []);
+
   const loadProject = () => api.get(`/projects/${projectId}`).then(r=>{
     setProject(r.data);
     // Join project room for real-time updates only if changed
@@ -354,6 +361,11 @@ export default function ProjectPage() {
     try {
       await api.patch(`/tasks/${id}`, { status });
       loadTasks();
+      
+      // Refresh activities to show the status change immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to update task status:', err);
     }
@@ -398,6 +410,11 @@ export default function ProjectPage() {
     try {
       await api.patch(`/tasks/${draggableId}`, { status: newStatus });
       // Don't call loadTasks() here as it would cause re-render during drag
+      
+      // Refresh activities to show the status change immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to update task status:', err);
       // Revert the optimistic update on error
@@ -467,6 +484,11 @@ export default function ProjectPage() {
       ));
       
       setIsEditing(prev => ({ ...prev, [field]: false }));
+      
+      // Refresh activities to show the update immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
     }
@@ -538,6 +560,11 @@ export default function ProjectPage() {
       setComments(prev => [...prev, response.data]);
       setNewComment('');
       setShowMentions(false);
+      
+      // Refresh activities to show the new comment immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to add comment:', err);
     }
@@ -558,6 +585,11 @@ export default function ProjectPage() {
 
       // Close emoji picker after selecting
       setShowEmojiPicker(prev => ({ ...prev, [commentId]: false }));
+      
+      // Refresh activities to show the reaction immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to add reaction:', err);
     }
@@ -597,6 +629,11 @@ export default function ProjectPage() {
 
       setEditingComment(null);
       setEditCommentContent('');
+      
+      // Refresh activities to show the comment edit immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to edit comment:', err);
     }
@@ -613,6 +650,11 @@ export default function ProjectPage() {
       setComments(prev => prev.filter(comment => comment._id !== commentId));
       
       setShowCommentDeleteConfirm(null);
+      
+      // Refresh activities to show the comment deletion immediately
+      if (refreshActivitiesRef.current) {
+        refreshActivitiesRef.current();
+      }
     } catch (err) {
       console.error('Failed to delete comment:', err);
     } finally {
@@ -655,7 +697,8 @@ export default function ProjectPage() {
 
   // Helper function to render comment content with highlighted mentions
   const renderCommentContent = (content: string) => {
-    const mentionRegex = /@(\w+)/g;
+    // Updated regex to match the backend pattern for full names
+    const mentionRegex = /@([A-Za-z][A-Za-z0-9\s]*[A-Za-z0-9]|[A-Za-z])/g;
     const parts = content.split(mentionRegex);
     
     return parts.map((part, index) => {
@@ -2628,7 +2671,10 @@ export default function ProjectPage() {
                     </div>
 
                     {/* Activity Section */}
-                    <TaskActivity taskId={selectedTask._id} />
+                    <TaskActivity 
+                      taskId={selectedTask._id} 
+                      onActivitiesLoad={handleActivitiesLoad}
+                    />
                   </div>
 
                   {/* Sidebar */}

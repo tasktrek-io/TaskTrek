@@ -191,14 +191,20 @@ export class NotificationService {
 
   // Helper method to extract @mentions from text
   static extractMentions(text: string): string[] {
-    const mentionRegex = /@(\w+)/g;
+    // Updated regex to capture mentions with spaces: @"Name with spaces" or @Name or @Name\ Name
+    const mentionRegex = /@([A-Za-z][A-Za-z0-9\s]*[A-Za-z0-9]|[A-Za-z])/g;
     const mentions: string[] = [];
     let match;
     
     while ((match = mentionRegex.exec(text)) !== null) {
-      mentions.push(match[1]);
+      // Clean up the mention (trim spaces and normalize)
+      const mention = match[1].trim();
+      if (mention) {
+        mentions.push(mention);
+      }
     }
     
+    logger.info('Extracted mentions from text', { text, mentions });
     return mentions;
   }
 }

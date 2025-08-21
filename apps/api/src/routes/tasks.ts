@@ -448,26 +448,43 @@ router.post('/:taskId/comments/:commentId/reactions', requireAuth, async (req: A
       return res.status(404).json({ error: 'Comment not found' });
     }
 
-    // Remove user's existing reaction first (one reaction per user)
-    comment.reactions = comment.reactions.filter(reaction => 
-      !reaction.users.some(u => u.toString() === userId)
-    );
-
-    // Check if this emoji already exists
+    // Check if user already has this specific reaction
     const existingReaction = comment.reactions.find(r => r.emoji === emoji);
+    const userHasThisReaction = existingReaction?.users.some(u => u.toString() === userId);
     let isRemoving = false;
-    
-    if (existingReaction) {
-      // Add user to existing reaction
-      existingReaction.users.push(userId as any);
-      existingReaction.count = existingReaction.users.length;
+
+    if (userHasThisReaction) {
+      // User is removing their reaction
+      existingReaction!.users = existingReaction!.users.filter(u => u.toString() !== userId);
+      existingReaction!.count = existingReaction!.users.length;
+      
+      // Remove the reaction if no users left
+      if (existingReaction!.users.length === 0) {
+        comment.reactions = comment.reactions.filter(r => r.emoji !== emoji);
+      }
+      isRemoving = true;
     } else {
-      // Create new reaction
-      comment.reactions.push({
-        emoji,
-        users: [userId as any],
-        count: 1
+      // Remove user's existing reaction from other emojis first (one reaction per user)
+      comment.reactions = comment.reactions.filter(reaction => {
+        reaction.users = reaction.users.filter(u => u.toString() !== userId);
+        reaction.count = reaction.users.length;
+        return reaction.users.length > 0;
       });
+
+      // Add new reaction
+      const updatedReaction = comment.reactions.find(r => r.emoji === emoji);
+      if (updatedReaction) {
+        // Add user to existing reaction
+        updatedReaction.users.push(userId as any);
+        updatedReaction.count = updatedReaction.users.length;
+      } else {
+        // Create new reaction
+        comment.reactions.push({
+          emoji,
+          users: [userId as any],
+          count: 1
+        });
+      }
     }
 
     await comment.save();
@@ -476,8 +493,8 @@ router.post('/:taskId/comments/:commentId/reactions', requireAuth, async (req: A
     await TaskActivityService.createActivity({
       taskId,
       performedBy: userId,
-      action: 'comment_reaction_added',
-      details: `Reacted with ${emoji} to comment`,
+      action: isRemoving ? 'comment_reaction_removed' : 'comment_reaction_added',
+      details: isRemoving ? `Removed ${emoji} reaction from comment` : `Reacted with ${emoji} to comment`,
       metadata: { commentId, emoji }
     });
 

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Icons } from '../lib/icons';
 
@@ -21,9 +21,10 @@ interface ActivityItem {
 
 interface TaskActivityProps {
   taskId: string;
+  onActivitiesLoad?: (refreshFunction: () => void) => void;
 }
 
-export default function TaskActivity({ taskId }: TaskActivityProps) {
+export default function TaskActivity({ taskId, onActivitiesLoad }: TaskActivityProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -50,11 +51,24 @@ export default function TaskActivity({ taskId }: TaskActivityProps) {
     }
   };
 
+  // Refresh function to reload activities from the first page
+  const refreshActivities = useCallback(() => {
+    setPage(1);
+    loadActivities(1);
+  }, []);
+
   useEffect(() => {
     if (taskId) {
       loadActivities(1);
     }
   }, [taskId]);
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onActivitiesLoad) {
+      onActivitiesLoad(refreshActivities);
+    }
+  }, [onActivitiesLoad, refreshActivities]);
 
   const loadMore = () => {
     if (hasMore && !loading) {
