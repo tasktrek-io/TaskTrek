@@ -18,6 +18,13 @@ interface NotificationData {
 export class NotificationService {
   static async createNotification(data: NotificationData) {
     try {
+      logger.info('Creating notification', { 
+        recipient: data.recipient, 
+        sender: data.sender, 
+        type: data.type, 
+        title: data.title 
+      });
+
       const notification = new Notification({
         recipient: new Types.ObjectId(data.recipient),
         sender: new Types.ObjectId(data.sender),
@@ -45,15 +52,19 @@ export class NotificationService {
 
       // Emit real-time notification to the recipient
       if (populatedNotification) {
-        socketServer.emitToUser(data.recipient, 'newNotification', {
-          notification: populatedNotification,
-          count: await this.getUnreadCount(data.recipient)
-        });
+        const unreadCount = await this.getUnreadCount(data.recipient);
         
-        logger.info('Real-time notification sent', { 
+        logger.info('Emitting real-time notification', { 
           recipient: data.recipient, 
           type: data.type, 
-          title: data.title 
+          title: data.title,
+          notificationId: populatedNotification._id,
+          unreadCount
+        });
+
+        socketServer.emitToUser(data.recipient, 'newNotification', {
+          notification: populatedNotification,
+          count: unreadCount
         });
       }
 
@@ -74,6 +85,13 @@ export class NotificationService {
 
   static async notifyTaskAssignment(taskId: string, taskTitle: string, assigneeId: string, assignerId: string) {
     if (assigneeId === assignerId) return; // Don't notify self
+
+    logger.info('Creating task assignment notification', { 
+      taskId, 
+      taskTitle, 
+      assigneeId, 
+      assignerId 
+    });
 
     await this.createNotification({
       recipient: assigneeId,

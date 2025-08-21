@@ -257,9 +257,9 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
                   No notifications yet
                 </div>
               ) : (
-                notifications.map(notification => (
+                notifications.map((notification, index) => (
                   <div
-                    key={notification._id}
+                    key={`${notification._id}-${index}`}
                     onClick={() => handleNotificationClick(notification)}
                     className={`p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                       !notification.read ? 'bg-blue-50 dark:bg-blue-900/30' : ''

@@ -210,53 +210,13 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
     // Get comments for this task
     const comments = await Comment.find({ task: id })
       .populate('author', 'name email')
+      .populate('reactions.users', 'name email')
       .sort({ createdAt: 1 });
     
     res.json({ task, comments });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Update task
-router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { 
-      status, 
-      assignees, 
-      title, 
-      description, 
-      priority, 
-      dueDate 
-    } = req.body as { 
-      status?: 'todo' | 'in_progress' | 'done'; 
-      assignees?: string[]; 
-      title?: string; 
-      description?: string;
-      priority?: 'low' | 'medium' | 'high' | 'urgent';
-      dueDate?: string;
-    };
-    
-    const update: any = {};
-    if (status) update.status = status;
-    if (assignees !== undefined) update.assignees = assignees;
-    if (title !== undefined) update.title = title;
-    if (description !== undefined) update.description = description;
-    if (priority) update.priority = priority;
-    if (dueDate !== undefined) update.dueDate = dueDate ? new Date(dueDate) : undefined;
-
-    const task = await Task.findByIdAndUpdate(id, update, { new: true })
-      .populate('assignees', 'name email')
-      .populate('watchers', 'name email')
-      .populate('createdBy', 'name email');
-    
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-    return res.json(task);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -379,7 +339,8 @@ router.post('/:id/comments', requireAuth, async (req: AuthedRequest, res: Respon
     });
     
     const populated = await Comment.findById(comment._id)
-      .populate('author', 'name email');
+      .populate('author', 'name email')
+      .populate('reactions.users', 'name email');
     
     res.status(201).json(populated);
   } catch (err) {
@@ -520,11 +481,88 @@ router.post('/:taskId/comments/:commentId/reactions', requireAuth, async (req: A
       metadata: { commentId, emoji }
     });
 
-    // Populate the author before returning
+    // Populate the author and reaction users before returning
     await comment.populate('author', 'name email');
+    await comment.populate('reactions.users', 'name email');
     res.json(comment);
   } catch (err) {
     console.error('Error managing comment reaction:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Edit comment
+router.patch('/:taskId/comments/:commentId', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { taskId, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user!.id;
+
+    if (!content?.trim()) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const comment = await Comment.findById(commentId).populate('author', 'name email');
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    // Check if user is the comment author
+    if ((comment.author as any)._id.toString() !== userId) {
+      return res.status(403).json({ error: 'Only the comment author can edit this comment' });
+    }
+
+    // Update the comment
+    comment.content = content.trim();
+    await comment.save();
+
+    // Track activity
+    await TaskActivityService.createActivity({
+      taskId,
+      performedBy: userId,
+      action: 'comment_updated',
+      details: 'Updated a comment',
+      metadata: { commentId }
+    });
+
+    res.json(comment);
+  } catch (err) {
+    console.error('Error editing comment:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete comment
+router.delete('/:taskId/comments/:commentId', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { taskId, commentId } = req.params;
+    const userId = req.user!.id;
+
+    const comment = await Comment.findById(commentId).populate('author', 'name email');
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    // Check if user is the comment author
+    if ((comment.author as any)._id.toString() !== userId) {
+      return res.status(403).json({ error: 'Only the comment author can delete this comment' });
+    }
+
+    // Delete the comment
+    await Comment.findByIdAndDelete(commentId);
+
+    // Track activity
+    await TaskActivityService.createActivity({
+      taskId,
+      performedBy: userId,
+      action: 'comment_deleted',
+      details: 'Deleted a comment',
+      metadata: { commentId }
+    });
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting comment:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

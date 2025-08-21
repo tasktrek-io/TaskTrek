@@ -206,6 +206,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
   }, [currentToken, socket]);
 
   const connectSocket = (token: string) => {
+    console.log('SocketContext: Connecting socket with token', token.substring(0, 10) + '...');
+
+    // Disconnect any existing socket first
+    if (socket) {
+      console.log('SocketContext: Disconnecting existing socket before creating new one');
+      socket.disconnect();
+      setSocket(null);
+      setIsConnected(false);
+    }
 
     const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', {
       auth: {
@@ -234,8 +243,16 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
     // Listen for new notifications
     socketInstance.on('newNotification', (data: { notification: Notification; count: number }) => {
+      console.log('SocketContext: Received newNotification', data);
       
       setNotifications(prev => {
+        // Check if notification already exists to prevent duplicates
+        const existingIndex = prev.findIndex(n => n._id === data.notification._id);
+        if (existingIndex !== -1) {
+          console.log('SocketContext: Notification already exists, skipping duplicate', data.notification._id);
+          return prev;
+        }
+        
         const updated = [data.notification, ...prev];
         return updated;
       });
