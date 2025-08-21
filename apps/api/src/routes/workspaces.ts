@@ -2,6 +2,10 @@ import { Router, Response } from 'express';
 import Workspace from '../models/Workspace';
 import PersonalSpace from '../models/PersonalSpace';
 import Organization from '../models/Organization';
+import Project from '../models/Project';
+import Task from '../models/Task';
+import Comment from '../models/Comment';
+import TaskActivity from '../models/TaskActivity';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 
 const router = Router();
@@ -205,6 +209,68 @@ router.delete('/:id/members/:memberId', requireAuth, async (req: AuthedRequest, 
       .populate('members', 'name email');
     
     res.json(populated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete workspace (admin/owner only)
+router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { id: userId } = req.user!;
+    const { id: workspaceId } = req.params;
+    
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) return res.status(404).json({ error: 'Workspace not found' });
+    
+    // Check if user has admin permissions
+    let hasPermission = false;
+    
+    // Check if user is workspace owner
+    if (workspace.owner.toString() === userId) {
+      hasPermission = true;
+    }
+    // Check organization admin permissions if workspace is in organization context
+    else if (workspace.contextType === 'organization') {
+      const organization = await Organization.findOne({
+        _id: workspace.contextId,
+        'members.userId': userId,
+        'members.role': { $in: ['owner', 'admin'] }
+      });
+      if (organization) {
+        hasPermission = true;
+      }
+    }
+    
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Only admins and owners can delete workspaces' });
+    }
+    
+    // Get all projects in this workspace
+    const projects = await Project.find({ workspace: workspaceId });
+    const projectIds = projects.map(project => project._id);
+    
+    // Get all tasks in these projects
+    const tasks = await Task.find({ project: { $in: projectIds } });
+    const taskIds = tasks.map(task => task._id);
+    
+    // Delete all comments associated with tasks
+    await Comment.deleteMany({ task: { $in: taskIds } });
+    
+    // Delete all task activities
+    await TaskActivity.deleteMany({ task: { $in: taskIds } });
+    
+    // Delete all tasks
+    await Task.deleteMany({ project: { $in: projectIds } });
+    
+    // Delete all projects
+    await Project.deleteMany({ workspace: workspaceId });
+    
+    // Delete the workspace
+    await Workspace.findByIdAndDelete(workspaceId);
+    
+    res.json({ message: 'Workspace deleted successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

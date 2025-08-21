@@ -9,6 +9,7 @@ import { useWorkspace } from '../../../../contexts/WorkspaceContext';
 import { useSocket } from '../../../../contexts/SocketContext';
 import { api } from '../../../../lib/api';
 import { Icons } from '../../../../lib/icons';
+import { canDeleteProject } from '../../../../lib/permissions';
 
 // Dynamically import DragDropContext with no SSR
 const DragDropContext = dynamic(
@@ -132,6 +133,11 @@ export default function ProjectPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  // Project delete confirmation states
+  const [showProjectDeleteConfirm, setShowProjectDeleteConfirm] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+  const [canUserDeleteProject, setCanUserDeleteProject] = useState(false);
+  
   // Member search
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Member[]>([]);
@@ -223,7 +229,26 @@ export default function ProjectPage() {
 
   useEffect(() => {
     setIsClient(true);
-  }, []);  // Search for watchers
+  }, []);
+
+  // Check if current user can delete the project
+  useEffect(() => {
+    const checkDeletePermissions = async () => {
+      if (project && currentUser) {
+        try {
+          const canDelete = await canDeleteProject(project, currentUser._id);
+          setCanUserDeleteProject(canDelete);
+        } catch (error) {
+          console.error('Error checking delete permissions:', error);
+          setCanUserDeleteProject(false);
+        }
+      }
+    };
+
+    checkDeletePermissions();
+  }, [project, currentUser]);
+
+  // Search for watchers
   useEffect(() => {
     const t = setTimeout(() => {
       if (watcherSearchQuery && project?.workspace) {
@@ -472,6 +497,23 @@ export default function ProjectPage() {
       setTasks(prev => prev.filter(task => task._id !== taskId));
     } catch (err) {
       console.error('Failed to delete task:', err);
+    }
+  };
+
+  const deleteProject = async () => {
+    if (!project) return;
+    
+    setIsDeletingProject(true);
+    try {
+      await api.delete(`/projects/${project._id}`);
+      
+      // Redirect to workspace page
+      router.push(`/workspaces/${project.workspace._id}`);
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+    } finally {
+      setIsDeletingProject(false);
+      setShowProjectDeleteConfirm(false);
     }
   };
 
@@ -1022,7 +1064,7 @@ export default function ProjectPage() {
                 </button>
 
                 {/* Project Menu */}
-                {project && currentUser && project.owner._id === currentUser._id && (
+                {project && currentUser && (project.owner._id === currentUser._id || canUserDeleteProject) && (
                   <div className="relative project-menu-container">
                     <button
                       onClick={() => setShowProjectMenu(!showProjectMenu)}
@@ -1035,15 +1077,34 @@ export default function ProjectPage() {
                     
                     {showProjectMenu && (
                       <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
-                        <button
-                          onClick={openEditProjectModal}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Edit Project
-                        </button>
+                        {/* Edit option - only for project owner */}
+                        {project.owner._id === currentUser._id && (
+                          <button
+                            onClick={openEditProjectModal}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Project
+                          </button>
+                        )}
+                        
+                        {/* Delete option - for users with delete permission */}
+                        {canUserDeleteProject && (
+                          <button
+                            onClick={() => {
+                              setShowProjectMenu(false);
+                              setShowProjectDeleteConfirm(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete Project
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2830,6 +2891,65 @@ export default function ProjectPage() {
                       <>
                         <Icons.Trash2 className="w-4 h-4" />
                         Delete Task
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Project Delete Confirmation Modal */}
+        {showProjectDeleteConfirm && project && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Icons.AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Delete Project
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to delete <span className="font-semibold">"{project.name}"</span>? 
+                    This will permanently delete the project, all its tasks, comments, and activity history.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowProjectDeleteConfirm(false)}
+                    className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    disabled={isDeletingProject}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteProject}
+                    disabled={isDeletingProject}
+                    className="flex-1 bg-red-600 dark:bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 dark:hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isDeletingProject ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Icons.Trash2 className="w-4 h-4" />
+                        Delete Project
                       </>
                     )}
                   </button>

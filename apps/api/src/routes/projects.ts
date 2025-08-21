@@ -5,6 +5,9 @@ import Workspace from '../models/Workspace';
 import User from '../models/User';
 import Organization from '../models/Organization';
 import PersonalSpace from '../models/PersonalSpace';
+import Task from '../models/Task';
+import Comment from '../models/Comment';
+import TaskActivity from '../models/TaskActivity';
 import WorkspaceService from '../services/WorkspaceService';
 import NotificationService from '../services/NotificationService';
 import { Types } from 'mongoose';
@@ -244,6 +247,66 @@ router.post('/:id/members', requireAuth, async (req: AuthedRequest, res: Respons
     }
     
     res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete project (admin/owner only)
+router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.id;
+    
+    const project = await Project.findById(id).populate('workspace');
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    
+    const workspace = await Workspace.findById(project.workspace);
+    if (!workspace) return res.status(404).json({ error: 'Workspace not found' });
+    
+    // Check if user has admin permissions
+    let hasPermission = false;
+    
+    // Check if user is project owner
+    if (project.owner.toString() === userId) {
+      hasPermission = true;
+    }
+    // Check if user is workspace owner
+    else if (workspace.owner.toString() === userId) {
+      hasPermission = true;
+    }
+    // Check organization admin permissions if workspace is in organization context
+    else if (workspace.contextType === 'organization') {
+      const organization = await Organization.findOne({
+        _id: workspace.contextId,
+        'members.userId': userId,
+        'members.role': { $in: ['owner', 'admin'] }
+      });
+      if (organization) {
+        hasPermission = true;
+      }
+    }
+    
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Only admins and owners can delete projects' });
+    }
+    
+    // Delete all tasks associated with this project
+    await Task.deleteMany({ project: id });
+    
+    // Delete all comments associated with tasks of this project
+    const tasks = await Task.find({ project: id });
+    const taskIds = tasks.map(task => task._id);
+    await Comment.deleteMany({ task: { $in: taskIds } });
+    
+    // Delete all task activities associated with this project
+    await TaskActivity.deleteMany({ task: { $in: taskIds } });
+    
+    // Delete the project
+    await Project.findByIdAndDelete(id);
+    
+    res.json({ message: 'Project deleted successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
