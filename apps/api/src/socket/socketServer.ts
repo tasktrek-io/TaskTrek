@@ -20,13 +20,17 @@ class SocketServer {
       cors: {
         origin: process.env.WEB_ORIGIN || 'http://localhost:3000',
         credentials: true
-      }
+      },
+      // Essential timeout settings for AWS deployment
+      pingTimeout: 60000, // 60 seconds
+      pingInterval: 25000, // 25 seconds
+      transports: ['websocket', 'polling']
     });
 
     this.io.use(this.authenticateSocket);
     this.io.on('connection', this.handleConnection.bind(this));
     
-    logger.info('Socket.IO server initialized');
+    logger.info('Socket.IO server initialized with AWS timeout settings');
   }
 
   private authenticateSocket = (socket: any, next: any) => {
