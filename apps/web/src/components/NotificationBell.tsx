@@ -77,7 +77,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationPr
   // useEffect(() => {
   //   if (!isConnected) {
   //     loadUnreadCount();
-  //     const interval = setInterval(loadUnreadCount, 30000);
+  //     const interval = setInterval(loadUnreadCount, 600000);
   //     return () => clearInterval(interval);
   //   }
   // }, [isConnected]);

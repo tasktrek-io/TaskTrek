@@ -205,8 +205,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
     };
   }, [currentToken, socket]);
 
-  const connectSocket = (token: string) => {
-    console.log('SocketContext: Connecting socket with token', token.substring(0, 10) + '...');
+  const connectSocket = (token: string, retryCount = 0) => {
+    console.log('SocketContext: Connecting socket with token', token.substring(0, 10) + '...', retryCount > 0 ? `(retry ${retryCount})` : '');
 
     // Disconnect any existing socket first
     if (socket) {
@@ -220,25 +220,53 @@ export function SocketProvider({ children }: SocketProviderProps) {
       auth: {
         token: token
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      // Add timeout settings for AWS
+      timeout: 20000, // 20 seconds connection timeout
+      forceNew: true,
+      reconnection: false // We'll handle reconnection manually
     });
 
     socketInstance.on('connect', () => {
-      console.log('Connected to WebSocket server');
+      console.log('Connected to WebSocket server' + (retryCount > 0 ? ` after ${retryCount} retry attempts` : ''));
       setIsConnected(true);
       
       // Load initial notifications when connecting
       loadInitialNotifications();
     });
 
-    socketInstance.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
+    socketInstance.on('disconnect', (reason: string) => {
+      console.log('Disconnected from WebSocket server:', reason);
       setIsConnected(false);
+      
+      // Auto-retry on certain disconnect reasons (but limit retries)
+      if ((reason === 'transport error' || reason === 'transport close') && retryCount < 3) {
+        console.log(`Auto-retrying connection due to: ${reason} (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => {
+          const currentToken = localStorage.getItem('token');
+          if (currentToken === token) {
+            connectSocket(token, retryCount + 1);
+          }
+        }, 3000 * (retryCount + 1)); // Exponential backoff: 3s, 6s, 9s
+      }
     });
 
-    socketInstance.on('connect_error', (error) => {
+    socketInstance.on('connect_error', (error: any) => {
       console.error('WebSocket connection error:', error);
       setIsConnected(false);
+      
+      // Retry on connection error (but limit retries)
+      if (retryCount < 3) {
+        console.log(`Retrying connection after error (attempt ${retryCount + 1}/3):`, error.message || error);
+        setTimeout(() => {
+          const currentToken = localStorage.getItem('token');
+          if (currentToken === token) {
+            connectSocket(token, retryCount + 1);
+          }
+        }, 5000 * (retryCount + 1)); // Exponential backoff: 5s, 10s, 15s
+      } else {
+        console.error('Max retry attempts reached. Please check your connection.');
+      }
     });
 
     // Listen for new notifications
