@@ -147,27 +147,27 @@ export const iconMap: Record<string, LucideIcon> = {
   '💡': Lightbulb,
   '🏆': Trophy,
   '🎨': Palette,
-  
+
   // Organization and workspace
   '🏢': Building2,
   '📁': Folder,
   '📊': BarChart3,
   '✅': CheckCircle,
   '❌': X,
-  
+
   // Tasks and projects
   '📋': Clipboard,
   '📝': FileText,
   '✏️': Edit,
   '🔍': Search,
   '⚙️': Settings,
-  
+
   // Notifications
   '🔔': Bell,
   '📧': Mail,
   '🔒': Lock,
   '🔓': Unlock,
-  
+
   // Status and actions
   '⚠️': AlertTriangle,
   '👍': ThumbsUp,
@@ -176,7 +176,7 @@ export const iconMap: Record<string, LucideIcon> = {
   '😢': Frown,
   '😡': Angry,
   '🎉': PartyPopper,
-  
+
   // Time and weather
   '☀️': Sun,
   '🌤️': Cloudy,
@@ -191,7 +191,7 @@ export function getIcon(emoji: string, className?: string): React.ReactElement |
     console.warn(`No icon mapping found for emoji: ${emoji}`);
     return null;
   }
-  
+
   return <IconComponent className={className} />;
 }
 

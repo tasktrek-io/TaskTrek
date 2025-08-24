@@ -1,6 +1,6 @@
 /**
  * Socket Authentication Utilities
- * 
+ *
  * These utilities provide a clean way to manage socket authentication
  * without polling and ensure proper cleanup on logout.
  */
@@ -10,9 +10,11 @@
  * Call this after successfully storing a token in localStorage
  */
 export const notifySocketLogin = (token?: string) => {
-  window.dispatchEvent(new CustomEvent('socket:login', { 
-    detail: { token } 
-  }));
+  window.dispatchEvent(
+    new CustomEvent('socket:login', {
+      detail: { token },
+    })
+  );
 };
 
 /**
@@ -31,7 +33,7 @@ export const logout = (router?: { push: (path: string) => void }, redirectPath =
   localStorage.removeItem('token');
   localStorage.removeItem('selectedWorkspaceId');
   localStorage.removeItem('lastActiveContext');
-  
+
   // Clear all context-specific workspace selections
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -41,10 +43,10 @@ export const logout = (router?: { push: (path: string) => void }, redirectPath =
     }
   }
   keysToRemove.forEach(key => localStorage.removeItem(key));
-  
+
   // Notify socket to disconnect
   notifySocketLogout();
-  
+
   // Redirect if router is provided
   if (router) {
     router.push(redirectPath);
@@ -54,13 +56,17 @@ export const logout = (router?: { push: (path: string) => void }, redirectPath =
 /**
  * Enhanced login function that handles token storage and socket connection
  */
-export const login = (token: string, router?: { push: (path: string) => void }, redirectPath = '/dashboard') => {
+export const login = (
+  token: string,
+  router?: { push: (path: string) => void },
+  redirectPath = '/dashboard'
+) => {
   // Store the token
   localStorage.setItem('token', token);
-  
+
   // Notify socket to connect
   notifySocketLogin(token);
-  
+
   // Redirect if router is provided
   if (router) {
     router.push(redirectPath);

@@ -9,7 +9,7 @@ const router = Router();
 router.get('/users', requireAuth, async (req: Request, res: Response) => {
   try {
     const { userIds } = req.query;
-    
+
     if (!userIds) {
       return res.status(400).json({ message: 'userIds query parameter is required' });
     }
@@ -17,16 +17,19 @@ router.get('/users', requireAuth, async (req: Request, res: Response) => {
     // Parse userIds - can be comma-separated string or array
     let userIdArray: string[] = [];
     if (typeof userIds === 'string') {
-      userIdArray = userIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
+      userIdArray = userIds
+        .split(',')
+        .map(id => id.trim())
+        .filter(id => id.length > 0);
     } else if (Array.isArray(userIds)) {
       userIdArray = userIds.map(id => String(id).trim()).filter(id => id.length > 0);
     }
 
     const onlineStatus = socketServer.getOnlineStatusForUsers(userIdArray);
-    
+
     res.json({
       success: true,
-      onlineStatus
+      onlineStatus,
     });
   } catch (error) {
     logger.error('Error getting online status', {}, error as Error);
@@ -38,11 +41,11 @@ router.get('/users', requireAuth, async (req: Request, res: Response) => {
 router.get('/all', requireAuth, async (req: Request, res: Response) => {
   try {
     const onlineUsers = socketServer.getOnlineUsers();
-    
+
     res.json({
       success: true,
       users: onlineUsers,
-      count: onlineUsers.length
+      count: onlineUsers.length,
     });
   } catch (error) {
     logger.error('Error getting online users', {}, error as Error);
@@ -54,10 +57,10 @@ router.get('/all', requireAuth, async (req: Request, res: Response) => {
 router.get('/count', requireAuth, async (req: Request, res: Response) => {
   try {
     const count = socketServer.getConnectedUsersCount();
-    
+
     res.json({
       success: true,
-      count
+      count,
     });
   } catch (error) {
     logger.error('Error getting connected users count', {}, error as Error);

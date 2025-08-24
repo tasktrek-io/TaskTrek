@@ -18,37 +18,42 @@ export interface IComment extends Document {
 const reactionSchema = new Schema<IReaction>({
   emoji: {
     type: String,
-    required: true
+    required: true,
   },
-  users: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  users: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
   count: {
     type: Number,
-    default: 0
-  }
+    default: 0,
+  },
 });
 
-const commentSchema = new Schema<IComment>({
-  task: {
-    type: Schema.Types.ObjectId,
-    ref: 'Task',
-    required: true
+const commentSchema = new Schema<IComment>(
+  {
+    task: {
+      type: Schema.Types.ObjectId,
+      ref: 'Task',
+      required: true,
+    },
+    author: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    reactions: [reactionSchema],
   },
-  author: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  content: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  reactions: [reactionSchema]
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+  }
+);
 
 export default model<IComment>('Comment', commentSchema);

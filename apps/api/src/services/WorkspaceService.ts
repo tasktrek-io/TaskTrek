@@ -8,7 +8,11 @@ export class WorkspaceService {
   /**
    * Automatically add user to workspace when they're assigned to a task or project
    */
-  static async ensureUserInWorkspace(userId: string, projectId?: string, taskId?: string): Promise<void> {
+  static async ensureUserInWorkspace(
+    userId: string,
+    projectId?: string,
+    taskId?: string
+  ): Promise<void> {
     try {
       let workspaceId: string | null = null;
 
@@ -22,7 +26,11 @@ export class WorkspaceService {
       }
 
       if (!workspaceId) {
-        logger.error('Could not determine workspace for user assignment', { userId, projectId, taskId });
+        logger.error('Could not determine workspace for user assignment', {
+          userId,
+          projectId,
+          taskId,
+        });
         return;
       }
 
@@ -34,7 +42,7 @@ export class WorkspaceService {
       }
 
       const userObjectId = new Types.ObjectId(userId);
-      
+
       // Check if user is already owner or member
       if (
         workspace.owner.toString() === userId ||
@@ -50,7 +58,11 @@ export class WorkspaceService {
 
       logger.info('Added user to workspace', { userId, workspaceId, action: 'auto_assignment' });
     } catch (error) {
-      logger.error('Error ensuring user in workspace', { userId, projectId, taskId }, error as Error);
+      logger.error(
+        'Error ensuring user in workspace',
+        { userId, projectId, taskId },
+        error as Error
+      );
       // Don't throw error as this shouldn't break the main flow
     }
   }

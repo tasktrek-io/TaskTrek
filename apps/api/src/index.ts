@@ -16,7 +16,7 @@ logger.debug('Environment variables loaded', {
   SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,
   FROM_EMAIL: process.env.FROM_EMAIL,
-  SMTP_PASS: process.env.SMTP_PASS ? '***' : undefined
+  SMTP_PASS: process.env.SMTP_PASS ? '***' : undefined,
 });
 
 // Import routes after environment variables are loaded
@@ -57,7 +57,7 @@ async function start() {
   try {
     await mongoose.connect(MONGO_URI);
     logger.info('Connected to MongoDB', { uri: MONGO_URI });
-    
+
     // Clean up any existing conflicting indexes
     try {
       const db = mongoose.connection.db;
@@ -68,11 +68,13 @@ async function start() {
     } catch (indexErr) {
       // Index doesn't exist, that's fine
     }
-    
+
     // Initialize Socket.IO
     socketServer.initialize(httpServer);
-    
-    httpServer.listen(PORT, () => logger.info(`API server started`, { port: PORT, url: `http://localhost:${PORT}` }));
+
+    httpServer.listen(PORT, () =>
+      logger.info(`API server started`, { port: PORT, url: `http://localhost:${PORT}` })
+    );
   } catch (err) {
     logger.error('Failed to start server', {}, err as Error);
     process.exit(1);

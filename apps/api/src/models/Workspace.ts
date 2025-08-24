@@ -12,23 +12,26 @@ export interface IWorkspace extends Document {
   updatedAt: Date;
 }
 
-const WorkspaceSchema = new Schema<IWorkspace>({
-  name: { type: String, required: true },
-  description: { type: String },
-  owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  color: { type: String, default: '#ff6b35' }, // Default orange color
-  contextId: { 
-    type: Schema.Types.ObjectId, 
-    required: true,
-    refPath: 'contextType'
+const WorkspaceSchema = new Schema<IWorkspace>(
+  {
+    name: { type: String, required: true },
+    description: { type: String },
+    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    color: { type: String, default: '#ff6b35' }, // Default orange color
+    contextId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      refPath: 'contextType',
+    },
+    contextType: {
+      type: String,
+      required: true,
+      enum: ['personal', 'organization'],
+    },
   },
-  contextType: { 
-    type: String, 
-    required: true,
-    enum: ['personal', 'organization']
-  }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 const Workspace = mongoose.model<IWorkspace>('Workspace', WorkspaceSchema);
 export default Workspace;

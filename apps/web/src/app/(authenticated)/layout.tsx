@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,14 +34,17 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const [loading, setLoading] = useState(true);
 
   // Convert workspace to the format expected by Sidebar
-  const sidebarWorkspace: SidebarWorkspace | undefined = useMemo(() => 
-    currentWorkspace ? {
-      _id: currentWorkspace._id,
-      name: currentWorkspace.name,
-      color: currentWorkspace.color,
-      contextId: currentWorkspace._id, // Use workspace ID as context ID for now
-      contextType: 'organization' as const // Default to organization context
-    } : undefined,
+  const sidebarWorkspace: SidebarWorkspace | undefined = useMemo(
+    () =>
+      currentWorkspace
+        ? {
+            _id: currentWorkspace._id,
+            name: currentWorkspace.name,
+            color: currentWorkspace.color,
+            contextId: currentWorkspace._id, // Use workspace ID as context ID for now
+            contextType: 'organization' as const, // Default to organization context
+          }
+        : undefined,
     [currentWorkspace]
   );
 
@@ -58,7 +61,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     };
 
     window.addEventListener('contextChanged', handleContextChange as EventListener);
-    
+
     return () => {
       window.removeEventListener('contextChanged', handleContextChange as EventListener);
     };
@@ -78,8 +81,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   if (loading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400'></div>
         </div>
       </AuthGuard>
     );
@@ -87,14 +90,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar 
-          currentWorkspace={sidebarWorkspace} 
-          onWorkspaceChange={setCurrentWorkspace}
-        />
-        
-        <main 
-          className="p-6 transition-all duration-300" 
+      <div className='min-h-screen bg-gray-50 dark:bg-gray-900'>
+        <Sidebar currentWorkspace={sidebarWorkspace} onWorkspaceChange={setCurrentWorkspace} />
+
+        <main
+          className='p-6 transition-all duration-300'
           style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
         >
           {children}

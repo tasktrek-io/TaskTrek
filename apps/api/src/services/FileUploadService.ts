@@ -12,14 +12,7 @@ cloudinary.config({
 
 // File type validation
 const allowedMimeTypes = {
-  images: [
-    'image/jpeg',
-    'image/jpg', 
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml'
-  ],
+  images: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
   documents: [
     'application/pdf',
     'text/plain',
@@ -28,21 +21,15 @@ const allowedMimeTypes = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ],
-  videos: [
-    'video/mp4',
-    'video/webm',
-    'video/ogg',
-    'video/avi',
-    'video/quicktime'
-  ]
+  videos: ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/quicktime'],
 };
 
 const allAllowedTypes = [
   ...allowedMimeTypes.images,
   ...allowedMimeTypes.documents,
-  ...allowedMimeTypes.videos
+  ...allowedMimeTypes.videos,
 ];
 
 // Determine file category
@@ -54,17 +41,21 @@ export const getFileCategory = (mimeType: string): 'image' | 'document' | 'video
 };
 
 // File filter function
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
   logger.debug('File upload validation', {
     originalName: file.originalname,
     mimeType: file.mimetype,
-    size: file.size
+    size: file.size,
   });
 
   if (allAllowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`File type ${file.mimetype} is not allowed. Allowed types: images, PDFs, videos, office documents`));
+    cb(
+      new Error(
+        `File type ${file.mimetype} is not allowed. Allowed types: images, PDFs, videos, office documents`
+      )
+    );
   }
 };
 
@@ -73,9 +64,9 @@ export const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 10 // Maximum 10 files per request
+    files: 10, // Maximum 10 files per request
   },
-  fileFilter
+  fileFilter,
 });
 
 // Upload to Cloudinary
@@ -86,7 +77,7 @@ export interface CloudinaryUploadResult {
 }
 
 export const uploadToCloudinary = async (
-  file: Express.Multer.File,
+  file: any,
   folder: string = 'task-documents'
 ): Promise<CloudinaryUploadResult> => {
   return new Promise((resolve, reject) => {
@@ -103,33 +94,34 @@ export const uploadToCloudinary = async (
       uploadOptions.resource_type = 'raw';
     }
 
-    const uploadStream = cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, result) => {
-        if (error) {
-          logger.error('Cloudinary upload failed', {
+    const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+      if (error) {
+        logger.error(
+          'Cloudinary upload failed',
+          {
             filename: file.originalname,
             mimeType: file.mimetype,
-            error: error.message
-          }, error);
-          reject(error);
-        } else if (result) {
-          logger.info('File uploaded to Cloudinary', {
-            filename: file.originalname,
-            publicId: result.public_id,
-            url: result.secure_url
-          });
-          
-          resolve({
-            url: result.secure_url,
-            publicId: result.public_id,
-            filename: result.public_id.split('/').pop() || file.originalname
-          });
-        } else {
-          reject(new Error('Upload failed - no result returned'));
-        }
+            error: error.message,
+          },
+          error
+        );
+        reject(error);
+      } else if (result) {
+        logger.info('File uploaded to Cloudinary', {
+          filename: file.originalname,
+          publicId: result.public_id,
+          url: result.secure_url,
+        });
+
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+          filename: result.public_id.split('/').pop() || file.originalname,
+        });
+      } else {
+        reject(new Error('Upload failed - no result returned'));
       }
-    );
+    });
 
     uploadStream.end(file.buffer);
   });
@@ -140,7 +132,7 @@ export const deleteFromCloudinary = async (publicId: string, category?: string):
   try {
     // Determine resource type based on category
     let resourceTypes: string[];
-    
+
     if (category) {
       switch (category) {
         case 'image':
@@ -166,16 +158,16 @@ export const deleteFromCloudinary = async (publicId: string, category?: string):
     for (const resourceType of resourceTypes) {
       try {
         const result = await cloudinary.uploader.destroy(publicId, {
-          resource_type: resourceType
+          resource_type: resourceType,
         });
-        
+
         if (result.result === 'ok') {
           deleted = true;
-          logger.info('File deleted from Cloudinary', { 
-            publicId, 
-            resourceType, 
+          logger.info('File deleted from Cloudinary', {
+            publicId,
+            resourceType,
             category,
-            result: result.result 
+            result: result.result,
           });
           break;
         }
@@ -186,10 +178,10 @@ export const deleteFromCloudinary = async (publicId: string, category?: string):
     }
 
     if (!deleted) {
-      logger.error('Failed to delete file from Cloudinary with any resource type', { 
-        publicId, 
+      logger.error('Failed to delete file from Cloudinary with any resource type', {
+        publicId,
         category,
-        triedResourceTypes: resourceTypes 
+        triedResourceTypes: resourceTypes,
       });
       throw lastError || new Error('Failed to delete file from Cloudinary');
     }
@@ -203,12 +195,12 @@ export const deleteFromCloudinary = async (publicId: string, category?: string):
 export const validateCloudinaryConfig = (): boolean => {
   const requiredVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
   const missing = requiredVars.filter(varName => !process.env[varName]);
-  
+
   if (missing.length > 0) {
     logger.error('Missing Cloudinary configuration', { missingVars: missing });
     return false;
   }
-  
+
   logger.info('Cloudinary configuration validated');
   return true;
 };
@@ -218,5 +210,5 @@ export default {
   uploadToCloudinary,
   deleteFromCloudinary,
   getFileCategory,
-  validateCloudinaryConfig
+  validateCloudinaryConfig,
 };

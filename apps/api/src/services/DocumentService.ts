@@ -22,10 +22,7 @@ export class DocumentService {
   /**
    * Upload multiple documents to a task
    */
-  static async uploadDocuments(
-    files: Express.Multer.File[],
-    data: CreateDocumentData
-  ): Promise<IDocument[]> {
+  static async uploadDocuments(files: any[], data: CreateDocumentData): Promise<IDocument[]> {
     try {
       // Verify task exists and user has access
       const task = await Task.findById(data.taskId);
@@ -36,7 +33,7 @@ export class DocumentService {
       logger.info('Starting document upload', {
         taskId: data.taskId,
         fileCount: files.length,
-        uploadedBy: data.uploadedBy
+        uploadedBy: data.uploadedBy,
       });
 
       const uploadedDocuments: IDocument[] = [];
@@ -46,7 +43,7 @@ export class DocumentService {
         try {
           // Upload to Cloudinary
           const cloudinaryResult = await uploadToCloudinary(file, `tasks/${data.taskId}`);
-          
+
           // Create document record
           const document = new Document({
             taskId: new Types.ObjectId(data.taskId),
@@ -58,30 +55,30 @@ export class DocumentService {
             publicId: cloudinaryResult.publicId,
             uploadedBy: new Types.ObjectId(data.uploadedBy),
             description: data.description,
-            category: getFileCategory(file.mimetype)
+            category: getFileCategory(file.mimetype),
           });
 
           await document.save();
           uploadedDocuments.push(document);
 
           // Add document reference to task
-          await Task.findByIdAndUpdate(
-            data.taskId,
-            { $push: { documents: document._id } }
-          );
+          await Task.findByIdAndUpdate(data.taskId, { $push: { documents: document._id } });
 
           logger.info('Document uploaded successfully', {
             documentId: document._id,
             filename: file.originalname,
-            taskId: data.taskId
+            taskId: data.taskId,
           });
-
         } catch (error) {
-          logger.error('Failed to upload individual file', {
-            filename: file.originalname,
-            taskId: data.taskId
-          }, error as Error);
-          
+          logger.error(
+            'Failed to upload individual file',
+            {
+              filename: file.originalname,
+              taskId: data.taskId,
+            },
+            error as Error
+          );
+
           // Continue with other files even if one fails
           continue;
         }
@@ -94,16 +91,19 @@ export class DocumentService {
       logger.info('Document upload batch completed', {
         taskId: data.taskId,
         successCount: uploadedDocuments.length,
-        totalCount: files.length
+        totalCount: files.length,
       });
 
       return uploadedDocuments;
-
     } catch (error) {
-      logger.error('Document upload batch failed', {
-        taskId: data.taskId,
-        fileCount: files.length
-      }, error as Error);
+      logger.error(
+        'Document upload batch failed',
+        {
+          taskId: data.taskId,
+          fileCount: files.length,
+        },
+        error as Error
+      );
       throw error;
     }
   }
@@ -120,7 +120,7 @@ export class DocumentService {
 
       logger.debug('Retrieved task documents', {
         taskId,
-        documentCount: documents.length
+        documentCount: documents.length,
       });
 
       return documents as DocumentWithMetadata[];
@@ -158,7 +158,7 @@ export class DocumentService {
   ): Promise<IDocument | null> {
     try {
       const document = await Document.findById(documentId);
-      
+
       if (!document) {
         throw new Error('Document not found');
       }
@@ -170,20 +170,19 @@ export class DocumentService {
         if (!task) {
           throw new Error('Associated task not found');
         }
-        
+
         // Add permission logic here if needed
       }
 
-      const updatedDocument = await Document.findByIdAndUpdate(
-        documentId,
-        updates,
-        { new: true, runValidators: true }
-      );
+      const updatedDocument = await Document.findByIdAndUpdate(documentId, updates, {
+        new: true,
+        runValidators: true,
+      });
 
       logger.info('Document updated', {
         documentId,
         updatedBy: userId,
-        updates: Object.keys(updates)
+        updates: Object.keys(updates),
       });
 
       return updatedDocument;
@@ -199,7 +198,7 @@ export class DocumentService {
   static async deleteDocument(documentId: string, userId: string): Promise<void> {
     try {
       const document = await Document.findById(documentId);
-      
+
       if (!document) {
         throw new Error('Document not found');
       }
@@ -217,10 +216,7 @@ export class DocumentService {
       await deleteFromCloudinary(document.publicId, document.category);
 
       // Remove from task's documents array
-      await Task.findByIdAndUpdate(
-        document.taskId,
-        { $pull: { documents: document._id } }
-      );
+      await Task.findByIdAndUpdate(document.taskId, { $pull: { documents: document._id } });
 
       // Delete document record
       await Document.findByIdAndDelete(documentId);
@@ -228,9 +224,8 @@ export class DocumentService {
       logger.info('Document deleted successfully', {
         documentId,
         filename: document.originalName,
-        deletedBy: userId
+        deletedBy: userId,
       });
-
     } catch (error) {
       logger.error('Failed to delete document', { documentId, userId }, error as Error);
       throw error;
@@ -240,7 +235,10 @@ export class DocumentService {
   /**
    * Get documents by user
    */
-  static async getUserDocuments(userId: string, limit: number = 50): Promise<DocumentWithMetadata[]> {
+  static async getUserDocuments(
+    userId: string,
+    limit: number = 50
+  ): Promise<DocumentWithMetadata[]> {
     try {
       const documents = await Document.find({ uploadedBy: userId })
         .populate('uploadedBy', 'name email')
@@ -251,7 +249,7 @@ export class DocumentService {
 
       logger.debug('Retrieved user documents', {
         userId,
-        documentCount: documents.length
+        documentCount: documents.length,
       });
 
       return documents as DocumentWithMetadata[];
@@ -272,21 +270,21 @@ export class DocumentService {
           $group: {
             _id: '$category',
             count: { $sum: 1 },
-            totalSize: { $sum: '$size' }
-          }
-        }
+            totalSize: { $sum: '$size' },
+          },
+        },
       ]);
 
       const totalDocuments = await Document.countDocuments({ taskId });
       const totalSize = await Document.aggregate([
         { $match: { taskId: new Types.ObjectId(taskId) } },
-        { $group: { _id: null, totalSize: { $sum: '$size' } } }
+        { $group: { _id: null, totalSize: { $sum: '$size' } } },
       ]);
 
       return {
         totalDocuments,
         totalSize: totalSize[0]?.totalSize || 0,
-        byCategory: stats
+        byCategory: stats,
       };
     } catch (error) {
       logger.error('Failed to get document stats', { taskId }, error as Error);
