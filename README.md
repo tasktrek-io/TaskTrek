@@ -471,6 +471,7 @@ If you encounter any issues or have questions:
 - Real-time notifications
 - Responsive dashboard with analytics
 - Dark/light theme support
+- List view
 
 ---
 
