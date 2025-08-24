@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2.7-black.svg)](https://nextjs.org/)
 
-A modern, full-stack project management application built with Next.js, Express.js, and MongoDB. TaskTrek helps teams organize projects, manage tasks, and collaborate effectively with real-time updates and intuitive user interfaces.
+A modern, full-stack project management application built with Next.js, Express.js, Node.js, and MongoDB. TaskTrek helps teams organize projects, manage tasks, and collaborate effectively with real-time updates and intuitive user interfaces.
 
 ## 🚀 Features
 
