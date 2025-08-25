@@ -56,7 +56,14 @@ jobs:
           # Copy built applications
           cp -r apps/api/dist deployment-package/api-dist
           cp -r apps/web/.next deployment-package/web-next
-          cp -r apps/web/public deployment-package/web-public
+          
+          # Copy public directory if it exists, otherwise create empty one
+          if [ -d "apps/web/public" ]; then
+            cp -r apps/web/public deployment-package/web-public
+          else
+            mkdir -p deployment-package/web-public
+            echo "⚠️ No public directory found, created empty one"
+          fi
           
           # Copy essential files
           cp ecosystem.config.js deployment-package/
@@ -101,7 +108,18 @@ jobs:
           
           cp -r api-dist/* apps/api/dist/
           cp -r web-next/* apps/web/.next/
-          cp -r web-public/* apps/web/public/
+          
+          # Copy public files if they exist
+          if [ -d "web-public" ] && [ "$(ls -A web-public 2>/dev/null)" ]; then
+            cp -r web-public/* apps/web/public/
+            echo "✅ Copied public files"
+          else
+            echo "⚠️ No public files to copy"
+          fi
+          
+          # Copy package.json files for dependencies
+          cp api-package.json apps/api/package.json
+          cp web-package.json apps/web/package.json
           
           # Install only runtime dependencies for API
           echo "📦 Installing API runtime dependencies..."
@@ -120,9 +138,15 @@ jobs:
           
           chmod +x deployment-package/deploy-production.sh
           
+          # List contents for debugging
+          echo "📋 Deployment package contents:"
+          ls -la deployment-package/
+          
           # Create archive
           tar -czf deployment.tar.gz -C deployment-package .
           
+          # Show archive size
+          echo "📦 Deployment package size: $(du -h deployment.tar.gz | cut -f1)"
           echo "✅ Deployment package created"
       - name: 📤 Deploy to EC2
         run: |
