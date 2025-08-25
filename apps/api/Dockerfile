@@ -7,7 +7,7 @@ RUN apk add --no-cache libc6-compat curl
 WORKDIR /app
 
 # Copy package files for root dependencies
-COPY ../../package.json ../../package-lock.json* ../../pnpm-workspace.yaml ../../
+COPY ../../package.json ../../package-lock.json* ../../
 # Copy API package files
 COPY package.json package-lock.json* ./
 

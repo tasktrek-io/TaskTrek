@@ -4,7 +4,7 @@ This guide will help you deploy TaskTrek to your EC2 instance using Docker conta
 
 ## 📋 Prerequisites
 
-- Ubuntu 20.04+ EC2 instance
+- Ubuntu 20.04+ EC2 instance (minimum 8GB disk space recommended)
 - SSH access to your EC2 instance
 - Git repository access configured
 - Domain/IP: `http://3.110.108.184/`
@@ -41,54 +41,97 @@ ssh ubuntu@3.110.108.184
 cd TaskTrek
 ```
 
-### 4. Configure environment variables
+### 4. Create environment variables
+
+#### Create API environment file:
 
 ```bash
-# Copy API environment template
-cp apps/api/.env.example apps/api/.env
 nano apps/api/.env
-
-# Copy Web environment template
-cp apps/web/.env.example apps/web/.env.local
-nano apps/web/.env.local
 ```
 
-Update the API environment file (`apps/api/.env`):
+Add this content:
 
 ```env
+# API Environment
 NODE_ENV=production
 PORT=5000
 MONGO_URI=mongodb://mongo:27017/project_mgmt
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_SECRET=supersecretchangeme-change-this-in-production
 WEB_ORIGIN=http://3.110.108.184
 
-# Email Configuration
+# Email Service Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-FROM_EMAIL=your-email@gmail.com
+SMTP_USER=tasktrek.business@gmail.com
+SMTP_PASS=lwnufkfdazjxlzoz
+FROM_EMAIL=tasktrek.business@gmail.com
 FROM_NAME=TaskTrek
 
 # Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
-CLOUDINARY_API_KEY=your-cloudinary-api-key
-CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+CLOUDINARY_CLOUD_NAME=dkkxvozfu
+CLOUDINARY_API_KEY=451913442885857
+CLOUDINARY_API_SECRET=Z456UHn0BosPN_dH2D1kb4Lbed4
 ```
 
-Update the Web environment file (`apps/web/.env.local`):
+#### Create Web environment file:
+
+```bash
+nano apps/web/.env.local
+```
+
+Add this content:
 
 ```env
 NEXT_PUBLIC_API_URL=http://3.110.108.184/api
 NEXT_PUBLIC_WS_URL=http://3.110.108.184
 ```
 
+**Save files**: Press `Ctrl + X`, then `Y`, then `Enter`
+
 ## 🔄 Deployment Process
 
 ### Deploy the application
 
 ```bash
+chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
+```
+
+**If deployment fails**, try the step-by-step approach:
+
+```bash
+# Clean up first
+docker system prune -a -f
+
+# Pull latest code
+git pull origin main
+
+# Build services one by one
+docker-compose build mongo
+docker-compose up -d mongo
+
+# Check MongoDB is running
+docker-compose ps mongo
+
+# Build and start API
+docker-compose build api
+docker-compose up -d api
+
+# Check API logs
+docker-compose logs api
+
+# Build and start Web
+docker-compose build web
+docker-compose up -d web
+
+# Check Web logs
+docker-compose logs web
+
+# Start Nginx
+docker-compose up -d nginx
+
+# Check all services
+docker-compose ps
 ```
 
 This script will:
