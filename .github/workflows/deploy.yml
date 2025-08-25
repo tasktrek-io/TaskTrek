@@ -1,0 +1,104 @@
+name: 🚀 Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]    # Only deploy from main branch
+  workflow_dispatch:      # Allow manual deployment
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: 📥 Install dependencies
+        run: npm ci
+        
+      - name: 🎨 Check code formatting
+        run: npm run format:check
+        
+      - name: 🔍 Lint code
+        run: npm run lint
+        
+      - name: 📝 Type check
+        run: npm run type-check
+        
+      - name: 🏗️ Build applications
+        run: npm run build
+        
+      - name: 🧪 Run tests (if available)
+        run: npm test --if-present
+        
+      - name: 🔒 Security audit
+        run: npm audit --audit-level=moderate
+        
+      - name: 🔑 Setup SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+          
+      - name: 📤 Deploy to EC2
+        run: |
+          # Add EC2 to known hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+          # Create deployment directory if it doesn't exist
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            mkdir -p /home/ubuntu/TaskTrek
+            mkdir -p /home/ubuntu/backup
+          "
+          
+          # Clone or update repository on EC2
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            if [ ! -d '/home/ubuntu/TaskTrek/.git' ]; then
+              echo '📥 Cloning repository...'
+              git clone https://github.com/${{ github.repository }}.git /home/ubuntu/TaskTrek
+            else
+              echo '📥 Repository already exists, updating...'
+            fi
+          "
+          
+          # Copy deployment script to EC2
+          scp scripts/deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/TaskTrek/
+          scp scripts/health-check.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/TaskTrek/
+          
+          # Run deployment script
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            cd /home/ubuntu/TaskTrek
+            chmod +x deploy.sh health-check.sh
+            ./deploy.sh
+          "
+          
+      - name: 🔍 Health check
+        run: |
+          # Wait for services to start
+          echo "⏳ Waiting for services to start..."
+          sleep 30
+          
+          # Run health check
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            cd /home/ubuntu/TaskTrek
+            ./health-check.sh
+          "
+          
+      - name: 📊 Deployment summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "🌐 Application URL: http://${{ secrets.EC2_HOST }}"
+          echo "📅 Deployed at: $(date)"
+          echo "🔗 Commit: ${{ github.sha }}"
+          
+      - name: 📧 Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "🔗 Check the logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
