@@ -26,39 +26,55 @@ git reset --hard origin/main
 
 # Clean up node_modules to save space and avoid conflicts
 echo "🧹 Cleaning up old dependencies..."
-rm -rf node_modules
-rm -rf apps/*/node_modules
+rm -rf node_modules apps/*/node_modules
 
-# Install dependencies with memory optimization
-echo "📦 Installing dependencies..."
+# Install dependencies with memory optimization (include dev dependencies for build)
+echo "📦 Installing dependencies with memory limits..."
 export NODE_OPTIONS="--max-old-space-size=1024"
-npm ci --production --prefer-offline --no-audit --no-fund
+export NPM_CONFIG_MAXSOCKETS=1
+export NPM_CONFIG_PROGRESS=false
 
-# Build applications
+# Install root dependencies first
+npm ci --prefer-offline --no-audit --no-fund --loglevel=error
+
+# Build applications (this requires dev dependencies)
 echo "🏗️ Building applications..."
 npm run build
 
-# Install workspace dependencies separately to avoid memory issues
-echo "📦 Installing API dependencies..."
-cd apps/api 
-rm -rf node_modules
-npm ci --production --prefer-offline --no-audit --no-fund
-cd ../..
+# After successful build, clean up dev dependencies to save space
+echo "🧹 Removing dev dependencies to save space..."
+npm prune --production
 
-echo "📦 Installing Web dependencies..."
-cd apps/web 
-rm -rf node_modules
-npm ci --production --prefer-offline --no-audit --no-fund
-cd ../..
+# Verify critical files exist after build
+if [ ! -f "apps/api/dist/index.js" ]; then
+    echo "❌ API build failed - dist/index.js not found"
+    exit 1
+fi
+
+if [ ! -d "apps/web/.next" ]; then
+    echo "❌ Web build failed - .next directory not found"
+    exit 1
+fi
 
 # Clean up build artifacts to save space
 echo "🧹 Cleaning up build artifacts..."
 find . -name "*.tsbuildinfo" -delete
 npm cache clean --force
 
+# Create logs directory for PM2
+echo "📁 Creating logs directory..."
+mkdir -p logs
+
 # Start applications
 echo "🚀 Starting applications..."
+pm2 delete tasktrek-api tasktrek-web || true
 pm2 start ecosystem.config.js
+
+# Wait a moment for applications to start
+sleep 5
+
+# Check if applications started successfully
+pm2 list | grep -E "(tasktrek-api|tasktrek-web)"
 
 # Save PM2 configuration
 pm2 save

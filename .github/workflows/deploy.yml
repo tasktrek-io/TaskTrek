@@ -99,8 +99,8 @@ jobs:
           echo "⏳ Waiting for services to start..."
           sleep 30
           
-          # Run health check
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+          # Run health check using the same SSH configuration
+          ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 deployment-server "
             cd /home/ubuntu/TaskTrek
             ./health-check.sh
           "
