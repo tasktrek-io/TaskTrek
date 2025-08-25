@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   experimental: {
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+    outputFileTracingRoot: new URL('../../', import.meta.url).pathname,
   },
 }
 export default nextConfig;
