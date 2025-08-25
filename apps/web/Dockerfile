@@ -6,13 +6,14 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat curl
 WORKDIR /app
 
-# Copy package files for root dependencies
-COPY ../../package.json ../../package-lock.json* ../../
-# Copy web package files
-COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --no-audit --no-fund
+# Copy root package files (monorepo workspace)
+COPY ../../package.json ../../package-lock.json ./
+# Copy web package files
+COPY package.json ./
+
+# Install dependencies for this workspace only
+RUN npm ci --no-audit --no-fund --workspace=apps/web
 
 # Rebuild the source code only when needed
 FROM base AS builder
