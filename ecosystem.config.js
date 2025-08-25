@@ -16,6 +16,7 @@ module.exports = {
       time: true,
       max_restarts: 3,
       restart_delay: 1000,
+      max_memory_restart: '200M', // Restart if memory usage exceeds 200MB
     },
     {
       name: 'tasktrek-web',
@@ -34,6 +35,7 @@ module.exports = {
       time: true,
       max_restarts: 3,
       restart_delay: 1000,
+      max_memory_restart: '300M', // Restart if memory usage exceeds 300MB
     },
   ],
 };

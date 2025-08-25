@@ -46,6 +46,84 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
           
+      - name: � Create deployment package
+        run: |
+          echo "📦 Creating deployment package..."
+          
+          # Create deployment directory
+          mkdir -p deployment-package
+          
+          # Copy built applications
+          cp -r apps/api/dist deployment-package/api-dist
+          cp -r apps/web/.next deployment-package/web-next
+          cp -r apps/web/public deployment-package/web-public
+          
+          # Copy essential files
+          cp ecosystem.config.js deployment-package/
+          cp package.json deployment-package/
+          cp apps/api/package.json deployment-package/api-package.json
+          cp apps/web/package.json deployment-package/web-package.json
+          
+          # Copy scripts
+          cp scripts/health-check.sh deployment-package/
+          
+          # Create production package.json with only production dependencies
+          node -e "
+            const pkg = require('./package.json');
+            const prodPkg = {
+              name: pkg.name,
+              version: pkg.version,
+              scripts: {
+                start: 'pm2 start ecosystem.config.js'
+              },
+              dependencies: {}
+            };
+            require('fs').writeFileSync('./deployment-package/package.json', JSON.stringify(prodPkg, null, 2));
+          "
+          
+          # Create optimized deploy script for production
+          cat > deployment-package/deploy-production.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "🚀 Starting production deployment..."
+          
+          # Stop applications
+          echo "🛑 Stopping applications..."
+          pm2 stop tasktrek-api tasktrek-web || echo "⚠️ No running processes"
+          
+          # Create logs directory
+          mkdir -p logs
+          
+          # Copy built files to correct locations
+          echo "📁 Setting up application structure..."
+          mkdir -p apps/api/dist apps/web/.next apps/web/public
+          
+          cp -r api-dist/* apps/api/dist/
+          cp -r web-next/* apps/web/.next/
+          cp -r web-public/* apps/web/public/
+          
+          # Install only runtime dependencies for API
+          echo "📦 Installing API runtime dependencies..."
+          cd apps/api
+          npm ci --production --prefer-offline --no-audit --no-fund || echo "⚠️ API deps install failed"
+          cd ../..
+          
+          # Start applications
+          echo "🚀 Starting applications with PM2..."
+          pm2 delete tasktrek-api tasktrek-web || echo "⚠️ No processes to delete"
+          pm2 start ecosystem.config.js
+          pm2 save
+          
+          echo "✅ Production deployment completed!"
+          EOF
+          
+          chmod +x deployment-package/deploy-production.sh
+          
+          # Create archive
+          tar -czf deployment.tar.gz -C deployment-package .
+          
+          echo "✅ Deployment package created"
       - name: 📤 Deploy to EC2
         run: |
           # Add EC2 to known hosts
@@ -63,34 +141,37 @@ jobs:
             ConnectTimeout 10
           EOF
           
-          # Create deployment directory if it doesn't exist
+          # Create deployment directory
           ssh deployment-server "
             mkdir -p /home/ubuntu/TaskTrek
             mkdir -p /home/ubuntu/backup
           "
           
-          # Clone or update repository on EC2
+          # Create backup of current deployment
           ssh deployment-server "
-            if [ ! -d '/home/ubuntu/TaskTrek/.git' ]; then
-              echo '📥 Cloning repository...'
-              git clone https://github.com/${{ github.repository }}.git /home/ubuntu/TaskTrek
-            else
-              echo '📥 Repository already exists, updating...'
+            if [ -d '/home/ubuntu/TaskTrek' ]; then
+              cp -r /home/ubuntu/TaskTrek /home/ubuntu/backup/tasktrek-backup-\$(date +%Y%m%d-%H%M%S) || echo 'Backup failed'
             fi
           "
           
-          # Copy deployment script to EC2
-          scp -o ConnectTimeout=10 -o ServerAliveInterval=60 scripts/deploy.sh deployment-server:/home/ubuntu/TaskTrek/
-          scp -o ConnectTimeout=10 -o ServerAliveInterval=60 scripts/health-check.sh deployment-server:/home/ubuntu/TaskTrek/
+          # Upload deployment package
+          echo "📤 Uploading deployment package..."
+          scp -o ConnectTimeout=10 -o ServerAliveInterval=60 deployment.tar.gz deployment-server:/home/ubuntu/TaskTrek/
           
-          # Run deployment script with timeout protection
+          # Extract and deploy
           ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 deployment-server "
             cd /home/ubuntu/TaskTrek
-            chmod +x deploy.sh health-check.sh
-            timeout 900 ./deploy.sh || {
-              echo 'Deployment script timed out after 15 minutes'
-              exit 1
-            }
+            
+            # Extract deployment package
+            echo '📦 Extracting deployment package...'
+            tar -xzf deployment.tar.gz
+            
+            # Make deploy script executable and run it
+            chmod +x deploy-production.sh
+            ./deploy-production.sh
+            
+            # Clean up
+            rm -f deployment.tar.gz
           "
           
       - name: 🔍 Health check
