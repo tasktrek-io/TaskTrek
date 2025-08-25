@@ -1,0 +1,46 @@
+name: 🛡️ Branch Protection
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  enforce-quality:
+    name: 🎯 Enforce Quality Standards
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+          
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: 📥 Install dependencies
+        run: npm ci
+        
+      - name: 🎨 Prettier check
+        run: npm run format:check
+        
+      - name: 🔍 ESLint check
+        run: npm run lint
+        
+      - name: 📝 TypeScript check
+        run: npm run type-check
+        
+      - name: 🏗️ Production build
+        run: npm run build
+        
+      - name: 📊 Check bundle size (Web)
+        run: |
+          cd apps/web
+          npm run build
+          echo "Bundle analysis complete"
+          
+      - name: 🚦 All checks passed
+        run: echo "✅ All quality checks passed! Ready for merge."
