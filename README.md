@@ -488,7 +488,74 @@ npm run test:watch
 
 ## 🚀 Deployment
 
-### Vercel (Recommended for Frontend)
+### Docker Deployment to EC2 (Recommended)
+
+TaskTrek is configured for easy Docker deployment to your EC2 instance. Follow our comprehensive deployment guide:
+
+📖 **[Complete Docker Deployment Guide](DOCKER_DEPLOYMENT_GUIDE.md)**
+
+#### Quick Deployment Steps:
+
+1. **SSH into your EC2 instance**:
+
+   ```bash
+   ssh ubuntu@3.110.108.184
+   ```
+
+2. **Clone and setup**:
+
+   ```bash
+   git clone https://github.com/tasktrek-io/TaskTrek.git
+   cd TaskTrek
+   ./scripts/setup-docker.sh
+   ```
+
+3. **Configure environment**:
+
+   ```bash
+   cp .env.example .env
+   nano .env  # Update your settings
+   ```
+
+4. **Deploy**:
+
+   ```bash
+   ./scripts/deploy.sh
+   ```
+
+5. **Access your app**:
+   - Web App: http://3.110.108.184/
+   - API: http://3.110.108.184/api/
+   - Health Check: http://3.110.108.184/health
+
+#### Docker Services
+
+The deployment includes:
+
+- **MongoDB**: Database service
+- **API**: Express.js backend
+- **Web**: Next.js frontend
+- **Nginx**: Reverse proxy and load balancer
+
+#### Available Scripts
+
+```bash
+# Docker management
+npm run docker:setup    # Setup Docker environment
+npm run docker:build    # Build containers
+npm run docker:up       # Start services
+npm run docker:down     # Stop services
+npm run docker:logs     # View logs
+npm run docker:clean    # Clean up resources
+
+# Deployment and monitoring
+npm run deploy          # Deploy to production
+npm run health-check    # Check service health
+```
+
+### Alternative Deployment Options
+
+#### Vercel (Frontend Only)
 
 1. Connect your GitHub repository to Vercel
 2. Configure build settings:
@@ -496,7 +563,7 @@ npm run test:watch
    - **Build Command**: `npm run build --workspace web`
    - **Output Directory**: `apps/web/.next`
 
-### Railway/Heroku (for Backend)
+#### Railway/Heroku (Backend)
 
 1. Create a new app on Railway or Heroku
 2. Connect your GitHub repository

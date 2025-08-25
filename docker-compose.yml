@@ -1,21 +1,84 @@
 version: '3.8'
+
 services:
+  # MongoDB Database
   mongo:
     image: mongo:6
+    container_name: tasktrek-mongo
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: project_mgmt
-  mongo-express:
-    image: mongo-express:1.0.2-20
+    networks:
+      - tasktrek-network
+
+  # API Service
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: tasktrek-api
+    restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "5000:5000"
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/project_mgmt
     depends_on:
       - mongo
+    networks:
+      - tasktrek-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Web Service
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: tasktrek-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://3.110.108.184:5000
+    depends_on:
+      - api
+    networks:
+      - tasktrek-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: tasktrek-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - api
+    networks:
+      - tasktrek-network
+
+networks:
+  tasktrek-network:
+    driver: bridge
+
 volumes:
   mongo_data:

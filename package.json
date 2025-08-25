@@ -24,6 +24,12 @@
     "type-check": "npm run type-check --workspace api && npm run type-check --workspace web",
     "pre-commit": "npm run format:check && npm run lint && npm run type-check && npm run build",
     "prepare": "husky install",
+    "docker:setup": "chmod +x scripts/setup-docker.sh && scripts/setup-docker.sh",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down && docker system prune -a -f",
     "deploy": "chmod +x scripts/deploy.sh && scripts/deploy.sh",
     "health-check": "chmod +x scripts/health-check.sh && scripts/health-check.sh"
   },
