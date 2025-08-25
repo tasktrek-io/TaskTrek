@@ -5,7 +5,22 @@ import { Types } from 'mongoose';
 interface ActivityData {
   taskId: string;
   performedBy: string;
-  action: 'created' | 'updated' | 'status_changed' | 'assigned' | 'unassigned' | 'priority_changed' | 'due_date_changed' | 'title_changed' | 'description_changed' | 'comment_added' | 'comment_updated' | 'comment_deleted' | 'comment_reaction_added' | 'comment_reaction_removed' | 'task_deleted';
+  action:
+    | 'created'
+    | 'updated'
+    | 'status_changed'
+    | 'assigned'
+    | 'unassigned'
+    | 'priority_changed'
+    | 'due_date_changed'
+    | 'title_changed'
+    | 'description_changed'
+    | 'comment_added'
+    | 'comment_updated'
+    | 'comment_deleted'
+    | 'comment_reaction_added'
+    | 'comment_reaction_removed'
+    | 'task_deleted';
   field?: string;
   oldValue?: any;
   newValue?: any;
@@ -24,13 +39,17 @@ export class TaskActivityService {
         oldValue: data.oldValue,
         newValue: data.newValue,
         details: data.details,
-        metadata: data.metadata
+        metadata: data.metadata,
       });
 
       await activity.save();
       return activity;
     } catch (error) {
-      logger.error('Error creating task activity', { taskId: data.taskId, userId: data.performedBy, action: data.action }, error as Error);
+      logger.error(
+        'Error creating task activity',
+        { taskId: data.taskId, userId: data.performedBy, action: data.action },
+        error as Error
+      );
       throw error;
     }
   }
@@ -53,21 +72,27 @@ export class TaskActivityService {
       taskId: taskId,
       performedBy: userId,
       action: 'created',
-      details: `Created task "${taskData.title}"`
+      details: `Created task "${taskData.title}"`,
     });
   }
 
-  static async trackFieldChange(taskId: string, userId: string, field: string, oldValue: any, newValue: any) {
+  static async trackFieldChange(
+    taskId: string,
+    userId: string,
+    field: string,
+    oldValue: any,
+    newValue: any
+  ) {
     const actionMap: Record<string, any> = {
-      'status': 'status_changed',
-      'priority': 'priority_changed',
-      'dueDate': 'due_date_changed',
-      'title': 'title_changed',
-      'description': 'description_changed'
+      status: 'status_changed',
+      priority: 'priority_changed',
+      dueDate: 'due_date_changed',
+      title: 'title_changed',
+      description: 'description_changed',
     };
 
     const action = actionMap[field] || 'updated';
-    
+
     let details = '';
     switch (field) {
       case 'status':
@@ -77,7 +102,7 @@ export class TaskActivityService {
         details = `Changed priority from "${oldValue}" to "${newValue}"`;
         break;
       case 'dueDate':
-        details = oldValue 
+        details = oldValue
           ? `Changed due date from ${new Date(oldValue).toLocaleDateString()} to ${new Date(newValue).toLocaleDateString()}`
           : `Set due date to ${new Date(newValue).toLocaleDateString()}`;
         break;
@@ -85,9 +110,7 @@ export class TaskActivityService {
         details = `Changed title from "${oldValue}" to "${newValue}"`;
         break;
       case 'description':
-        details = oldValue 
-          ? `Updated description`
-          : `Added description`;
+        details = oldValue ? `Updated description` : `Added description`;
         break;
       default:
         details = `Updated ${field}`;
@@ -100,18 +123,23 @@ export class TaskActivityService {
       field,
       oldValue,
       newValue,
-      details
+      details,
     });
   }
 
-  static async trackAssignment(taskId: string, userId: string, assigneeId: string, assigned: boolean) {
+  static async trackAssignment(
+    taskId: string,
+    userId: string,
+    assigneeId: string,
+    assigned: boolean
+  ) {
     await this.createActivity({
       taskId: taskId,
       performedBy: userId,
       action: assigned ? 'assigned' : 'unassigned',
       details: assigned ? `Assigned user` : `Unassigned user`,
       newValue: assigned ? assigneeId : null,
-      oldValue: assigned ? null : assigneeId
+      oldValue: assigned ? null : assigneeId,
     });
   }
 
@@ -120,7 +148,7 @@ export class TaskActivityService {
       taskId: taskId,
       performedBy: userId,
       action: 'comment_added',
-      details: 'Added a comment'
+      details: 'Added a comment',
     });
   }
 }

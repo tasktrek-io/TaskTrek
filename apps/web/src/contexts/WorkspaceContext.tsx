@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { api } from '../lib/api';
@@ -29,7 +29,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
 
   useEffect(() => {
     loadWorkspaces();
-    
+
     // Listen for context changes and reload workspaces
     const handleContextChange = (event: CustomEvent) => {
       console.log('Context changed, reloading workspaces for:', event.detail.context);
@@ -39,7 +39,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     };
 
     window.addEventListener('contextChanged', handleContextChange as EventListener);
-    
+
     return () => {
       window.removeEventListener('contextChanged', handleContextChange as EventListener);
     };
@@ -83,18 +83,19 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
       const response = await api.get('/workspaces', {
         params: {
           contextType,
-          contextId
-        }
+          contextId,
+        },
       });
-      
+
       setWorkspaces(response.data);
 
       // Try to restore the last selected workspace for this context
       if (response.data.length > 0) {
         const savedWorkspaceId = getWorkspaceForContext(contextId, contextType);
-        const savedWorkspace = savedWorkspaceId ? 
-          response.data.find((workspace: Workspace) => workspace._id === savedWorkspaceId) : null;
-        
+        const savedWorkspace = savedWorkspaceId
+          ? response.data.find((workspace: Workspace) => workspace._id === savedWorkspaceId)
+          : null;
+
         if (savedWorkspace) {
           // Restore the saved workspace for this context
           setCurrentWorkspaceState(savedWorkspace);
@@ -131,7 +132,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     if (workspace) {
       console.log('Switching to workspace:', workspace.name);
       setCurrentWorkspaceState(workspace);
-      
+
       // Save workspace with current context information
       const lastActiveContext = localStorage.getItem('lastActiveContext');
       if (lastActiveContext) {
@@ -155,18 +156,17 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     }
   };
 
-  const contextValue = useMemo(() => ({
-    currentWorkspace,
-    workspaces,
-    setCurrentWorkspace,
-    loading
-  }), [currentWorkspace, workspaces, loading]);
-
-  return (
-    <WorkspaceContext.Provider value={contextValue}>
-      {children}
-    </WorkspaceContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      currentWorkspace,
+      workspaces,
+      setCurrentWorkspace,
+      loading,
+    }),
+    [currentWorkspace, workspaces, loading]
   );
+
+  return <WorkspaceContext.Provider value={contextValue}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspace() {

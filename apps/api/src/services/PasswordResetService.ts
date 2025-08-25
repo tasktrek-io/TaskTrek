@@ -24,15 +24,16 @@ export class PasswordResetService {
     if (!user) return true; // Allow request if user doesn't exist (for security)
 
     if (user.resetPasswordExpires) {
-      const lastRequest = user.resetPasswordExpires.getTime() - (this.TOKEN_EXPIRY_MINUTES * 60 * 1000);
-      const hourAgo = Date.now() - (this.RATE_LIMIT_MINUTES * 60 * 1000);
-      
+      const lastRequest =
+        user.resetPasswordExpires.getTime() - this.TOKEN_EXPIRY_MINUTES * 60 * 1000;
+      const hourAgo = Date.now() - this.RATE_LIMIT_MINUTES * 60 * 1000;
+
       if (lastRequest > hourAgo) {
         // Check how many requests in the last hour (simplified check)
         return false; // Rate limited
       }
     }
-    
+
     return true;
   }
 
@@ -46,18 +47,18 @@ export class PasswordResetService {
       if (!canProceed) {
         return {
           success: false,
-          message: 'Too many password reset requests. Please try again later.'
+          message: 'Too many password reset requests. Please try again later.',
         };
       }
 
       // Find user by email
       const user = await User.findOne({ email: email.toLowerCase(), deleted: false });
-      
+
       // Always return success for security (don't reveal if email exists)
       if (!user) {
         return {
           success: true,
-          message: 'If an account with that email exists, a password reset link has been sent.'
+          message: 'If an account with that email exists, a password reset link has been sent.',
         };
       }
 
@@ -72,7 +73,7 @@ export class PasswordResetService {
 
       // Send reset email
       const resetUrl = `${process.env.WEB_ORIGIN || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
-      
+
       try {
         await this.emailService.sendPasswordResetEmail(user.email, user.name, resetUrl);
       } catch (emailError) {
@@ -81,22 +82,22 @@ export class PasswordResetService {
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
-        
+
         return {
           success: false,
-          message: 'Failed to send password reset email. Please try again later.'
+          message: 'Failed to send password reset email. Please try again later.',
         };
       }
 
       return {
         success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
+        message: 'If an account with that email exists, a password reset link has been sent.',
       };
     } catch (error) {
       console.error('Forgot password error:', error);
       return {
         success: false,
-        message: 'An error occurred. Please try again later.'
+        message: 'An error occurred. Please try again later.',
       };
     }
   }
@@ -109,12 +110,12 @@ export class PasswordResetService {
       const user = await User.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: Date.now() },
-        deleted: false
+        deleted: false,
       });
 
       return {
         valid: !!user,
-        user: user || undefined
+        user: user || undefined,
       };
     } catch (error) {
       console.error('Token verification error:', error);
@@ -125,13 +126,16 @@ export class PasswordResetService {
   /**
    * Reset password with token
    */
-  static async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  static async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Validate password strength
       if (newPassword.length < 8) {
         return {
           success: false,
-          message: 'Password must be at least 8 characters long.'
+          message: 'Password must be at least 8 characters long.',
         };
       }
 
@@ -139,13 +143,13 @@ export class PasswordResetService {
       const user = await User.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: Date.now() },
-        deleted: false
+        deleted: false,
       });
 
       if (!user) {
         return {
           success: false,
-          message: 'Invalid or expired password reset token.'
+          message: 'Invalid or expired password reset token.',
         };
       }
 
@@ -169,13 +173,13 @@ export class PasswordResetService {
 
       return {
         success: true,
-        message: 'Password has been reset successfully. You can now log in with your new password.'
+        message: 'Password has been reset successfully. You can now log in with your new password.',
       };
     } catch (error) {
       console.error('Reset password error:', error);
       return {
         success: false,
-        message: 'An error occurred while resetting your password. Please try again.'
+        message: 'An error occurred while resetting your password. Please try again.',
       };
     }
   }
@@ -190,8 +194,8 @@ export class PasswordResetService {
         {
           $unset: {
             resetPasswordToken: 1,
-            resetPasswordExpires: 1
-          }
+            resetPasswordExpires: 1,
+          },
         }
       );
     } catch (error) {

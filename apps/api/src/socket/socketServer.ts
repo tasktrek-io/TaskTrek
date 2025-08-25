@@ -19,37 +19,42 @@ class SocketServer {
     this.io = new Server(httpServer, {
       cors: {
         origin: process.env.WEB_ORIGIN || 'http://localhost:3000',
-        credentials: true
+        credentials: true,
       },
       // Essential timeout settings for AWS deployment
       pingTimeout: 60000, // 60 seconds
       pingInterval: 25000, // 25 seconds
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
     });
 
     this.io.use(this.authenticateSocket);
     this.io.on('connection', this.handleConnection.bind(this));
-    
+
     logger.info('Socket.IO server initialized with AWS timeout settings');
   }
 
   private authenticateSocket = (socket: any, next: any) => {
     try {
-      const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-      
+      const token =
+        socket.handshake.auth.token ||
+        socket.handshake.headers.authorization?.replace('Bearer ', '');
+
       if (!token) {
         logger.warn('Socket authentication failed: No token provided', { socketId: socket.id });
         return next(new Error('Authentication error: No token provided'));
       }
 
-      logger.debug('Socket authentication attempt', { socketId: socket.id, tokenLength: token.length });
+      logger.debug('Socket authentication attempt', {
+        socketId: socket.id,
+        tokenLength: token.length,
+      });
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
       logger.debug('JWT decoded payload', { socketId: socket.id, decoded });
-      
+
       // Check if userId exists in the decoded token
       const userId = decoded.userId || decoded.id || decoded.user?.id || decoded.sub;
-      
+
       if (!userId) {
         logger.error('No userId found in JWT token', { socketId: socket.id, decoded });
         return next(new Error('Authentication error: Invalid token structure'));
@@ -76,7 +81,7 @@ class SocketServer {
 
     // Store the connection and user profile
     this.connectedUsers.set(userId, socket.id);
-    
+
     // Store user profile data from JWT for online status
     const decoded = jwt.decode(socket.handshake.auth.token) as any;
     if (decoded) {
@@ -86,7 +91,7 @@ class SocketServer {
         name: decoded.name || 'Unknown User',
         email: decoded.email || '',
         isOnline: true,
-        lastSeen: new Date()
+        lastSeen: new Date(),
       });
     }
 
@@ -102,14 +107,14 @@ class SocketServer {
     socket.on('disconnect', () => {
       logger.info('User disconnected from WebSocket', { userId, socketId: socket.id });
       this.connectedUsers.delete(userId);
-      
+
       // Update user profile offline status
       const userProfile = this.userProfiles.get(userId);
       if (userProfile) {
         userProfile.isOnline = false;
         userProfile.lastSeen = new Date();
       }
-      
+
       // Broadcast user offline status
       this.broadcastUserStatus(userId, false);
     });
@@ -117,8 +122,12 @@ class SocketServer {
     // Handle joining organization rooms (for organization-wide notifications)
     socket.on('join-organization', (organizationId: string) => {
       socket.join(`org:${organizationId}`);
-      logger.info('User joined organization room', { userId, organizationId, room: `org:${organizationId}` });
-      
+      logger.info('User joined organization room', {
+        userId,
+        organizationId,
+        room: `org:${organizationId}`,
+      });
+
       // Send current online users in this organization
       this.sendOnlineUsersToRoom(socket, `org:${organizationId}`);
     });
@@ -126,14 +135,18 @@ class SocketServer {
     // Handle leaving organization rooms
     socket.on('leave-organization', (organizationId: string) => {
       socket.leave(`org:${organizationId}`);
-      logger.info('User left organization room', { userId, organizationId, room: `org:${organizationId}` });
+      logger.info('User left organization room', {
+        userId,
+        organizationId,
+        room: `org:${organizationId}`,
+      });
     });
 
     // Handle joining project rooms (for project-wide notifications)
     socket.on('join-project', (projectId: string) => {
       socket.join(`project:${projectId}`);
       logger.info('User joined project room', { userId, projectId, room: `project:${projectId}` });
-      
+
       // Send current online users in this project
       this.sendOnlineUsersToRoom(socket, `project:${projectId}`);
     });
@@ -219,14 +232,14 @@ class SocketServer {
         _id: userId,
         id: userId,
         name: userProfile.name,
-        email: userProfile.email
-      }
+        email: userProfile.email,
+      },
     };
 
     // Broadcast to all organization and project rooms
     // This is a simple approach - in production you might want to be more selective
     this.io.emit('userStatusChange', statusData);
-    
+
     logger.debug('User status broadcasted', { userId, isOnline });
   }
 
@@ -236,8 +249,12 @@ class SocketServer {
 
     const onlineUsers = this.getOnlineUsers();
     socket.emit('onlineUsers', { room: roomName, users: onlineUsers });
-    
-    logger.info('Online users sent to room', { room: roomName, count: onlineUsers.length, userIds: onlineUsers.map(u => u._id || u.id) });
+
+    logger.info('Online users sent to room', {
+      room: roomName,
+      count: onlineUsers.length,
+      userIds: onlineUsers.map(u => u._id || u.id),
+    });
   }
 
   // Get online status for specific users

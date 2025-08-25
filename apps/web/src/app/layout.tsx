@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang='en'>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -29,9 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <SocketProvider>
-          <WorkspaceProvider>
-            {children}
-          </WorkspaceProvider>
+          <WorkspaceProvider>{children}</WorkspaceProvider>
         </SocketProvider>
       </body>
     </html>

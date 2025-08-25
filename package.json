@@ -5,15 +5,38 @@
     "apps/*",
     "packages/*"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tasktrek-io/TaskTrek.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tasktrek-io/TaskTrek/issues"
+  },
+  "homepage": "https://github.com/tasktrek-io/TaskTrek#readme",
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace api\" \"npm run dev --workspace web\"",
-    "build": "npm run build --workspace web && npm run build --workspace api",
-    "start": "concurrently \"npm run start --workspace api\" \"npm run start --workspace web\""
+    "build": "npm run build --workspace api && npm run build --workspace web",
+    "start": "concurrently \"npm run start --workspace api\" \"npm run start --workspace web\"",
+    "lint": "npm run lint --workspace api && npm run lint --workspace web",
+    "lint:fix": "npm run lint:fix --workspace api && npm run lint:fix --workspace web",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "npm run type-check --workspace api && npm run type-check --workspace web",
+    "pre-commit": "npm run format:check && npm run lint && npm run type-check && npm run build",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/node": "^20.15.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "concurrently": "^9.0.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.2",
     "nodemon": "^3.1.0",
+    "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },

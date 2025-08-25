@@ -18,12 +18,15 @@ interface Project {
   _id: string;
   name: string;
   owner: User;
-  workspace: Workspace | string | { 
-    _id: string; 
-    name: string; 
-    contextType: 'personal' | 'organization'; 
-    contextId: string; 
-  };
+  workspace:
+    | Workspace
+    | string
+    | {
+        _id: string;
+        name: string;
+        contextType: 'personal' | 'organization';
+        contextId: string;
+      };
 }
 
 interface OrganizationMember {
@@ -49,8 +52,12 @@ export async function canDeleteProject(project: Project, currentUserId: string):
     }
 
     // Get workspace details if not already populated
-    let workspaceDetails: { contextType: 'personal' | 'organization'; contextId: string; owner?: User };
-    
+    let workspaceDetails: {
+      contextType: 'personal' | 'organization';
+      contextId: string;
+      owner?: User;
+    };
+
     if (typeof project.workspace === 'string') {
       const response = await api.get(`/workspaces/${project.workspace}`);
       workspaceDetails = response.data;
@@ -60,9 +67,9 @@ export async function canDeleteProject(project: Project, currentUserId: string):
       // It's the simplified workspace object from project detail
       workspaceDetails = {
         contextType: project.workspace.contextType,
-        contextId: project.workspace.contextId
+        contextId: project.workspace.contextId,
       };
-      
+
       // Get the full workspace details to check owner
       const response = await api.get(`/workspaces/${project.workspace._id}`);
       workspaceDetails.owner = response.data.owner;
@@ -88,7 +95,10 @@ export async function canDeleteProject(project: Project, currentUserId: string):
 /**
  * Check if current user can delete a workspace
  */
-export async function canDeleteWorkspace(workspace: Workspace, currentUserId: string): Promise<boolean> {
+export async function canDeleteWorkspace(
+  workspace: Workspace,
+  currentUserId: string
+): Promise<boolean> {
   try {
     // Workspace owner can always delete
     if (workspace.owner._id === currentUserId) {
@@ -110,7 +120,10 @@ export async function canDeleteWorkspace(workspace: Workspace, currentUserId: st
 /**
  * Check if current user can edit a workspace
  */
-export async function canEditWorkspace(workspace: Workspace, currentUserId: string): Promise<boolean> {
+export async function canEditWorkspace(
+  workspace: Workspace,
+  currentUserId: string
+): Promise<boolean> {
   try {
     // Workspace owner can always edit
     if (workspace.owner._id === currentUserId) {
@@ -132,11 +145,14 @@ export async function canEditWorkspace(workspace: Workspace, currentUserId: stri
 /**
  * Check if user is admin or owner of an organization
  */
-export async function isOrganizationAdmin(organizationId: string, userId: string): Promise<boolean> {
+export async function isOrganizationAdmin(
+  organizationId: string,
+  userId: string
+): Promise<boolean> {
   try {
     const response = await api.get('/contexts/organizations');
     const organizations: Organization[] = response.data;
-    
+
     const organization = organizations.find(org => org._id === organizationId);
     if (!organization) {
       return false;
@@ -159,11 +175,14 @@ export async function isOrganizationAdmin(organizationId: string, userId: string
 /**
  * Get current user's role in an organization
  */
-export async function getUserOrganizationRole(organizationId: string, userId: string): Promise<'owner' | 'admin' | 'member' | null> {
+export async function getUserOrganizationRole(
+  organizationId: string,
+  userId: string
+): Promise<'owner' | 'admin' | 'member' | null> {
   try {
     const response = await api.get('/contexts/organizations');
     const organizations: Organization[] = response.data;
-    
+
     const organization = organizations.find(org => org._id === organizationId);
     if (!organization) {
       return null;

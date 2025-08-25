@@ -14,59 +14,62 @@ export interface IDocument extends MongoDocument {
   category: 'image' | 'document' | 'video' | 'other';
 }
 
-const DocumentSchema = new Schema<IDocument>({
-  taskId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Task',
-    required: true,
-    index: true
+const DocumentSchema = new Schema<IDocument>(
+  {
+    taskId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Task',
+      required: true,
+      index: true,
+    },
+    filename: {
+      type: String,
+      required: true,
+    },
+    originalName: {
+      type: String,
+      required: true,
+    },
+    mimeType: {
+      type: String,
+      required: true,
+    },
+    size: {
+      type: Number,
+      required: true,
+      max: 10 * 1024 * 1024, // 10MB limit
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+    publicId: {
+      type: String,
+      required: true,
+    },
+    uploadedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    description: {
+      type: String,
+      maxlength: 500,
+    },
+    category: {
+      type: String,
+      enum: ['image', 'document', 'video', 'other'],
+      required: true,
+    },
   },
-  filename: {
-    type: String,
-    required: true
-  },
-  originalName: {
-    type: String,
-    required: true
-  },
-  mimeType: {
-    type: String,
-    required: true
-  },
-  size: {
-    type: Number,
-    required: true,
-    max: 10 * 1024 * 1024 // 10MB limit
-  },
-  url: {
-    type: String,
-    required: true
-  },
-  publicId: {
-    type: String,
-    required: true
-  },
-  uploadedBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  uploadedAt: {
-    type: Date,
-    default: Date.now
-  },
-  description: {
-    type: String,
-    maxlength: 500
-  },
-  category: {
-    type: String,
-    enum: ['image', 'document', 'video', 'other'],
-    required: true
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
 // Index for efficient queries
 DocumentSchema.index({ taskId: 1, uploadedAt: -1 });

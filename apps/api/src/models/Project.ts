@@ -16,17 +16,24 @@ export interface IProject extends Document {
   updatedAt: Date;
 }
 
-const ProjectSchema = new Schema<IProject>({
-  workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true },
-  name: { type: String, required: true },
-  description: { type: String },
-  status: { type: String, enum: ['planning', 'active', 'on_hold', 'completed', 'cancelled'], default: 'planning' },
-  startDate: { type: Date },
-  endDate: { type: Date },
-  tags: [{ type: String }],
-  owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-}, { timestamps: true });
+const ProjectSchema = new Schema<IProject>(
+  {
+    workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    status: {
+      type: String,
+      enum: ['planning', 'active', 'on_hold', 'completed', 'cancelled'],
+      default: 'planning',
+    },
+    startDate: { type: Date },
+    endDate: { type: Date },
+    tags: [{ type: String }],
+    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  },
+  { timestamps: true }
+);
 
 const Project = mongoose.model<IProject>('Project', ProjectSchema);
 export default Project;

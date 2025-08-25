@@ -1,17 +1,9 @@
-"use client";
+'use client';
 import { useState } from 'react';
 import { api } from '../../../lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  Paper,
-  Container
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Alert, Paper, Container } from '@mui/material';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,7 +16,7 @@ export default function RegisterPage() {
   const [validationErrors, setValidationErrors] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
   });
 
   const validateField = (field: string, value: string) => {
@@ -67,7 +59,7 @@ export default function RegisterPage() {
     const errors = {
       name: validateField('name', name),
       email: validateField('email', email),
-      password: validateField('password', password)
+      password: validateField('password', password),
     };
 
     setValidationErrors(errors);
@@ -87,10 +79,10 @@ export default function RegisterPage() {
     try {
       setIsLoading(true);
       const response = await api.post('/auth/register', { email, name, password });
-      
+
       // Store email for potential resend verification
       localStorage.setItem('pendingVerificationEmail', email);
-      
+
       // Show verification message instead of redirecting
       setShowVerificationMessage(true);
     } catch (err: any) {
@@ -114,128 +106,138 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+    <Container
+      maxWidth='sm'
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4,
+      }}
+    >
       <Paper elevation={3} sx={{ width: '100%', maxWidth: 400, p: 4 }}>
         {showVerificationMessage ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'center' }}>
-            <Typography variant="h4" component="h1" fontWeight="600" color="success.main">
+            <Typography variant='h4' component='h1' fontWeight='600' color='success.main'>
               Check Your Email
             </Typography>
-            
-            <Typography variant="body1" color="text.secondary">
+
+            <Typography variant='body1' color='text.secondary'>
               We've sent a verification link to <strong>{email}</strong>
             </Typography>
-            
-            <Typography variant="body2" color="text.secondary">
+
+            <Typography variant='body2' color='text.secondary'>
               Please check your email and click the verification link to complete your registration.
             </Typography>
 
-            {error && (
-              <Alert severity="error">
-                {error}
-              </Alert>
-            )}
+            {error && <Alert severity='error'>{error}</Alert>}
 
-            <Button
-              onClick={resendVerification}
-              disabled={isLoading}
-              variant="outlined"
-              fullWidth
-            >
+            <Button onClick={resendVerification} disabled={isLoading} variant='outlined' fullWidth>
               {isLoading ? 'Sending...' : 'Resend Verification Email'}
             </Button>
 
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant='body2' color='text.secondary'>
               Didn't receive the email? Check your spam folder or{' '}
-              <Button 
-                onClick={() => setShowVerificationMessage(false)} 
-                variant="text" 
+              <Button
+                onClick={() => setShowVerificationMessage(false)}
+                variant='text'
                 sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
               >
                 try a different email
               </Button>
             </Typography>
 
-            <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
+            <Typography variant='body2' textAlign='center' sx={{ mt: 2 }}>
               Already have an account?{' '}
-              <Link href="/auth/login" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}>
+              <Link
+                href='/auth/login'
+                style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}
+              >
                 Login here
               </Link>
             </Typography>
           </Box>
         ) : (
-          <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h4" component="h1" textAlign="center" fontWeight="600">
+          <Box
+            component='form'
+            onSubmit={onSubmit}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+          >
+            <Typography variant='h4' component='h1' textAlign='center' fontWeight='600'>
               Create Account
             </Typography>
-            
+
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert severity='error' sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
 
             <TextField
               fullWidth
-              label="Full Name"
-              placeholder="Enter your full name"
+              label='Full Name'
+              placeholder='Enter your full name'
               value={name}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
+              onChange={e => handleFieldChange('name', e.target.value)}
               error={!!validationErrors.name}
               helperText={validationErrors.name}
               required
-              variant="outlined"
+              variant='outlined'
               disabled={isLoading}
             />
 
             <TextField
               fullWidth
-              label="Email Address"
-              placeholder="Enter your email"
-              type="email"
+              label='Email Address'
+              placeholder='Enter your email'
+              type='email'
               value={email}
-              onChange={(e) => handleFieldChange('email', e.target.value)}
+              onChange={e => handleFieldChange('email', e.target.value)}
               error={!!validationErrors.email}
               helperText={validationErrors.email}
               required
-              variant="outlined"
+              variant='outlined'
               disabled={isLoading}
             />
 
             <TextField
               fullWidth
-              label="Password"
-              placeholder="Enter password (min 8 characters)"
-              type="password"
+              label='Password'
+              placeholder='Enter password (min 8 characters)'
+              type='password'
               value={password}
-              onChange={(e) => handleFieldChange('password', e.target.value)}
+              onChange={e => handleFieldChange('password', e.target.value)}
               error={!!validationErrors.password}
               helperText={validationErrors.password}
               required
-              variant="outlined"
+              variant='outlined'
               disabled={isLoading}
             />
 
             <Button
-              type="submit"
+              type='submit'
               fullWidth
-              variant="contained"
-              size="large"
+              variant='contained'
+              size='large'
               disabled={isLoading}
-              sx={{ 
+              sx={{
                 py: 1.5,
                 mt: 2,
                 textTransform: 'none',
                 fontSize: '1rem',
-                fontWeight: 600
+                fontWeight: 600,
               }}
             >
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
 
-            <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
+            <Typography variant='body2' textAlign='center' sx={{ mt: 2 }}>
               Already have an account?{' '}
-              <Link href="/auth/login" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}>
+              <Link
+                href='/auth/login'
+                style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 500 }}
+              >
                 Login here
               </Link>
             </Typography>

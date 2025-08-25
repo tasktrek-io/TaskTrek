@@ -30,20 +30,23 @@ export class UserDeletionService {
     try {
       // Check owned organizations
       const ownedOrganizations = await Organization.find({ owner: userId }).lean();
-      
+
       // Check data impact
-      const [activeTasks, comments, createdProjects, taskActivities, ownedWorkspaces] = await Promise.all([
-        Task.countDocuments({ assignedTo: userId }),
-        Comment.countDocuments({ author: userId }),
-        Project.countDocuments({ createdBy: userId }),
-        TaskActivity.countDocuments({ user: userId }),
-        Workspace.countDocuments({ createdBy: userId })
-      ]);
+      const [activeTasks, comments, createdProjects, taskActivities, ownedWorkspaces] =
+        await Promise.all([
+          Task.countDocuments({ assignedTo: userId }),
+          Comment.countDocuments({ author: userId }),
+          Project.countDocuments({ createdBy: userId }),
+          TaskActivity.countDocuments({ user: userId }),
+          Workspace.countDocuments({ createdBy: userId }),
+        ]);
 
       const blockingFactors: string[] = [];
-      
+
       if (ownedOrganizations.length > 0) {
-        blockingFactors.push(`Must transfer ownership of ${ownedOrganizations.length} organization(s)`);
+        blockingFactors.push(
+          `Must transfer ownership of ${ownedOrganizations.length} organization(s)`
+        );
       }
 
       return {
@@ -54,9 +57,9 @@ export class UserDeletionService {
           comments,
           createdProjects,
           taskActivities,
-          ownedWorkspaces
+          ownedWorkspaces,
         },
-        blockingFactors
+        blockingFactors,
       };
     } catch (error) {
       logger.error('Error assessing deletion impact', { userId }, error as Error);
@@ -82,9 +85,9 @@ export class UserDeletionService {
   static async transferOwnership(organizationId: string, fromUserId: string, toUserId: string) {
     try {
       // Verify the current user owns the organization
-      const organization = await Organization.findOne({ 
-        _id: organizationId, 
-        owner: fromUserId 
+      const organization = await Organization.findOne({
+        _id: organizationId,
+        owner: fromUserId,
       });
 
       if (!organization) {
@@ -92,34 +95,42 @@ export class UserDeletionService {
       }
 
       // Verify the new owner is a member of the organization
-      const isMember = organization.members.some(
-        member => member.userId.toString() === toUserId
-      );
+      const isMember = organization.members.some(member => member.userId.toString() === toUserId);
 
       if (!isMember) {
         throw new Error('New owner must be a member of the organization');
       }
 
       // Update ownership
-      await Organization.findByIdAndUpdate(organizationId, {
-        owner: toUserId,
-        $set: {
-          'members.$[member].role': 'owner'
+      await Organization.findByIdAndUpdate(
+        organizationId,
+        {
+          owner: toUserId,
+          $set: {
+            'members.$[member].role': 'owner',
+          },
+        },
+        {
+          arrayFilters: [{ 'member.userId': toUserId }],
         }
-      }, {
-        arrayFilters: [{ 'member.userId': toUserId }]
-      });
+      );
 
       // Update the former owner's role to admin
-      await Organization.findByIdAndUpdate(organizationId, {
-        $set: {
-          'members.$[member].role': 'admin'
+      await Organization.findByIdAndUpdate(
+        organizationId,
+        {
+          $set: {
+            'members.$[member].role': 'admin',
+          },
+        },
+        {
+          arrayFilters: [{ 'member.userId': fromUserId }],
         }
-      }, {
-        arrayFilters: [{ 'member.userId': fromUserId }]
-      });
+      );
 
-      console.log(`Ownership of organization ${organizationId} transferred from ${fromUserId} to ${toUserId}`);
+      console.log(
+        `Ownership of organization ${organizationId} transferred from ${fromUserId} to ${toUserId}`
+      );
     } catch (error) {
       console.error('Error transferring ownership:', error);
       throw error;
@@ -139,11 +150,13 @@ export class UserDeletionService {
       // Re-check ownership status (should be 0 after transfer)
       const currentOwnedOrgs = await Organization.find({ owner: userId }).lean();
       if (currentOwnedOrgs.length > 0) {
-        throw new Error(`Cannot delete user: Must transfer ownership of ${currentOwnedOrgs.length} organization(s) first`);
+        throw new Error(
+          `Cannot delete user: Must transfer ownership of ${currentOwnedOrgs.length} organization(s) first`
+        );
       }
 
       const timestamp = Date.now();
-      
+
       // Soft delete user - preserve original email for potential re-registration
       await User.findByIdAndUpdate(userId, {
         email: `deleted_${timestamp}_${user.email}`,
@@ -154,7 +167,7 @@ export class UserDeletionService {
         deleted: true,
         deletedAt: new Date(),
         originalEmail: user.email,
-        emailVerified: false
+        emailVerified: false,
       });
 
       // Anonymize user's data
@@ -182,46 +195,46 @@ export class UserDeletionService {
       // Anonymize tasks assigned to user
       await Task.updateMany(
         { assignedTo: userId },
-        { 
+        {
           $unset: { assignedTo: 1 },
-          $set: { assignedToName: 'Former User' }
+          $set: { assignedToName: 'Former User' },
         }
       );
 
       // Anonymize comments
       await Comment.updateMany(
         { author: userId },
-        { 
+        {
           $unset: { author: 1 },
-          $set: { authorName: 'Former User' }
+          $set: { authorName: 'Former User' },
         }
       );
 
       // Anonymize task activities
       await TaskActivity.updateMany(
         { user: userId },
-        { 
+        {
           $unset: { user: 1 },
-          $set: { userName: 'Former User' }
+          $set: { userName: 'Former User' },
         }
       );
 
       // For projects created by user, transfer to system user or mark as legacy
       await Project.updateMany(
         { createdBy: userId },
-        { 
-          $set: { 
+        {
+          $set: {
             createdByName: 'Former User',
-            isLegacy: true
-          }
+            isLegacy: true,
+          },
         }
       );
 
       // Handle notifications - add sender name for future reference
       await Notification.updateMany(
         { sender: userId },
-        { 
-          $set: { senderName: 'Former User' }
+        {
+          $set: { senderName: 'Former User' },
         }
       );
 
@@ -285,10 +298,10 @@ export class UserDeletionService {
       // Check if email was used by deleted account
       const deletedUser = await User.findOne({ originalEmail: email, deleted: true });
       if (deletedUser) {
-        return { 
-          available: true, 
+        return {
+          available: true,
           reason: 'Email available for re-registration',
-          previouslyDeleted: true 
+          previouslyDeleted: true,
         };
       }
 

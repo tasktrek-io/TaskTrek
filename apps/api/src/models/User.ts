@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   email: string;
@@ -23,36 +23,39 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
-const UserSchema = new Schema<IUser>({
-  email: { type: String, required: true, unique: true, index: true },
-  name: { type: String, required: true },
-  passwordHash: { type: String, required: true },
-  phone: { type: String, required: false },
-  avatar: { type: String, required: false },
-  emailVerified: { type: Boolean, default: false },
-  personalSpaceId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'PersonalSpace' 
-  },
-  lastActiveContext: {
-    type: {
-      type: String,
-      enum: ['personal', 'organization']
+const UserSchema = new Schema<IUser>(
+  {
+    email: { type: String, required: true, unique: true, index: true },
+    name: { type: String, required: true },
+    passwordHash: { type: String, required: true },
+    phone: { type: String, required: false },
+    avatar: { type: String, required: false },
+    emailVerified: { type: Boolean, default: false },
+    personalSpaceId: {
+      type: Schema.Types.ObjectId,
+      ref: 'PersonalSpace',
     },
-    id: {
-      type: Schema.Types.ObjectId
-    }
+    lastActiveContext: {
+      type: {
+        type: String,
+        enum: ['personal', 'organization'],
+      },
+      id: {
+        type: Schema.Types.ObjectId,
+      },
+    },
+    // Password reset fields
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    // Deletion fields
+    deleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    originalEmail: { type: String }, // Store original email for potential reactivation
   },
-  // Password reset fields
-  resetPasswordToken: { type: String },
-  resetPasswordExpires: { type: Date },
-  // Deletion fields
-  deleted: { type: Boolean, default: false },
-  deletedAt: { type: Date },
-  originalEmail: { type: String } // Store original email for potential reactivation
-}, {
-  timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
 const User = mongoose.model<IUser>('User', UserSchema);
 export default User;

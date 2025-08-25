@@ -9,6 +9,7 @@ A modern, full-stack project management application built with Next.js, Express.
 ## 🚀 Features
 
 ### Core Functionality
+
 - **User Authentication & Authorization** - Secure JWT-based authentication
 - **Workspace Management** - Multi-workspace support for different teams/organizations
 - **Project Organization** - Create and manage projects within workspaces
@@ -17,6 +18,7 @@ A modern, full-stack project management application built with Next.js, Express.
 - **Activity Tracking** - Monitor task and project changes
 
 ### UI/UX Features
+
 - **Responsive Design** - Works seamlessly on desktop and mobile
 - **Dark/Light Theme** - Toggle between themes for better user experience
 - **Interactive Dashboard** - Visual analytics and progress tracking
@@ -24,6 +26,7 @@ A modern, full-stack project management application built with Next.js, Express.
 - **Real-time Updates** - Live notifications and activity feeds
 
 ### Technical Features
+
 - **TypeScript** - Full type safety across the entire stack
 - **Modern React** - Built with React 18 and Next.js 14
 - **RESTful API** - Well-structured Express.js backend
@@ -57,6 +60,7 @@ TaskTrek/
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -65,6 +69,7 @@ TaskTrek/
 - **Theme Management**: next-themes
 
 ### Backend
+
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: MongoDB with Mongoose ODM
@@ -72,6 +77,7 @@ TaskTrek/
 - **Security**: bcryptjs for password hashing
 
 ### Development Tools
+
 - **Package Manager**: npm (with workspaces)
 - **Development**: Nodemon, ts-node
 - **Database Management**: MongoDB Express (Web UI)
@@ -91,7 +97,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/rammohanpatel/TaskTrek.git
+git clone https://github.com/tasktrek-io/TaskTrek.git
 cd TaskTrek
 ```
 
@@ -110,6 +116,7 @@ docker-compose up -d
 ```
 
 This will start:
+
 - **MongoDB** on `localhost:27017`
 - **Mongo Express** (Database UI) on `localhost:8081`
 
@@ -148,6 +155,7 @@ npm run dev
 ```
 
 This will start:
+
 - **Backend API** on `http://localhost:4000`
 - **Frontend Web App** on `http://localhost:3000`
 
@@ -227,10 +235,63 @@ npm run dev          # Start both frontend and backend in development mode
 npm run build        # Build both applications for production
 npm run start        # Start both applications in production mode
 
+# Code Quality
+npm run lint         # Lint both applications
+npm run lint:fix     # Lint and auto-fix issues in both applications
+npm run format       # Format all code with Prettier
+npm run format:check # Check if code is formatted correctly
+npm run type-check   # Type check both applications
+npm run pre-commit   # Run all checks (format, lint, type-check, build)
+
 # Individual Applications
 npm run dev --workspace api    # Start only the backend API
 npm run dev --workspace web    # Start only the frontend app
 ```
+
+### Code Quality & Development Practices
+
+This project enforces code quality through automated tools:
+
+#### Pre-commit Hooks
+
+- **Prettier**: Automatically formats code on commit
+- **ESLint**: Checks for code quality issues and enforces best practices
+- **Type Checking**: Ensures TypeScript types are correct
+- **Build Validation**: Confirms both applications build successfully
+
+#### Pre-push Hooks
+
+- **Complete Validation**: Runs format check, linting, type checking, and builds before pushing
+
+#### Manual Commands
+
+```bash
+# Format all files
+npm run format
+
+# Check formatting without changing files
+npm run format:check
+
+# Lint all workspaces
+npm run lint
+
+# Fix linting issues automatically
+npm run lint:fix
+
+# Type check all workspaces
+npm run type-check
+
+# Run all quality checks
+npm run pre-commit
+```
+
+#### Configuration Files
+
+- **`.prettierrc`** - Prettier configuration
+- **`.eslintrc.json`** - Root ESLint configuration
+- **`apps/api/.eslintrc.json`** - API-specific ESLint rules
+- **`apps/web/.eslintrc.json`** - Web app ESLint rules (includes Next.js rules)
+- **`.lintstagedrc.json`** - Lint-staged configuration for pre-commit hooks
 
 ### API Development
 
@@ -245,6 +306,12 @@ npm run build
 
 # Start production server
 npm run start
+
+# Lint API code
+npm run lint
+
+# Type check API code
+npm run type-check
 ```
 
 ### Web Development
@@ -260,23 +327,32 @@ npm run build
 
 # Start production server
 npm run start
+
+# Lint web app code
+npm run lint
+
+# Type check web app code
+npm run type-check
 ```
 
 ## 🔐 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 - `GET /api/auth/me` - Get current user
 
 ### Workspaces
+
 - `GET /api/workspaces` - Get user workspaces
 - `POST /api/workspaces` - Create workspace
 - `PUT /api/workspaces/:id` - Update workspace
 - `DELETE /api/workspaces/:id` - Delete workspace
 
 ### Projects
+
 - `GET /api/projects` - Get user projects
 - `GET /api/projects/workspace/:workspaceId` - Get workspace projects
 - `POST /api/projects` - Create project
@@ -284,6 +360,7 @@ npm run start
 - `DELETE /api/projects/:id` - Delete project
 
 ### Tasks
+
 - `GET /api/tasks` - Get all tasks
 - `GET /api/tasks/assigned` - Get assigned tasks
 - `GET /api/tasks/project/:projectId` - Get project tasks
@@ -292,10 +369,12 @@ npm run start
 - `DELETE /api/tasks/:id` - Delete task
 
 ### Users
+
 - `GET /api/users` - Get users
 - `GET /api/users/:id` - Get user by ID
 
 ### Notifications
+
 - `GET /api/notifications` - Get user notifications
 - `PUT /api/notifications/:id/read` - Mark notification as read
 
@@ -304,6 +383,7 @@ npm run start
 ### Theme Configuration
 
 The application supports dark and light themes. Modify theme settings in:
+
 - `apps/web/tailwind.config.ts` - Tailwind CSS configuration
 - `apps/web/src/app/globals.css` - Global CSS variables
 
@@ -342,7 +422,7 @@ services:
   mongo:
     image: mongo:6
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     environment:
@@ -355,7 +435,7 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       - MONGO_URI=mongodb://mongo:27017/project_mgmt
       - NODE_ENV=production
@@ -369,7 +449,7 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NEXT_PUBLIC_API_URL=http://api:4000
     depends_on:
@@ -458,19 +538,21 @@ npm run test:watch
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/rammohanpatel/TaskTrek/issues) page
+1. Check the [Issues](https://github.com/tasktrek-io/TaskTrek/issues) page
 2. Create a new issue with detailed information
 3. Contact the maintainers
 
 ## 🔄 Changelog
 
 ### v1.0.0 (Initial Release)
+
 - User authentication and authorization
 - Workspace and project management
 - Task creation and assignment
 - Real-time notifications
 - Responsive dashboard with analytics
 - Dark/light theme support
+- List view
 
 ---
 

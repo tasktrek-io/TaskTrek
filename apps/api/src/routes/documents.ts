@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { upload, validateCloudinaryConfig } from '../services/FileUploadService';
 import DocumentService from '../services/DocumentService';
@@ -12,65 +12,73 @@ if (!validateCloudinaryConfig()) {
 }
 
 // Upload documents to a task
-router.post('/tasks/:taskId/documents', requireAuth, upload.array('documents', 10), async (req: AuthedRequest, res: Response) => {
-  try {
-    const { taskId } = req.params;
-    const { description } = req.body;
-    const files = req.files as Express.Multer.File[];
+router.post(
+  '/tasks/:taskId/documents',
+  requireAuth,
+  upload.array('documents', 10),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const { taskId } = req.params;
+      const { description } = req.body;
+      const files = req.files as any[];
 
-    if (!files || files.length === 0) {
-      return res.status(400).json({ error: 'No files provided' });
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: 'No files provided' });
+      }
+
+      logger.info('Document upload request', {
+        taskId,
+        fileCount: files.length,
+        userId: req.user!.id,
+        filenames: files.map(f => f.originalname),
+      });
+
+      const documents = await DocumentService.uploadDocuments(files, {
+        taskId,
+        uploadedBy: req.user!.id,
+        description,
+      });
+
+      res.status(201).json({
+        message: `Successfully uploaded ${documents.length} document(s)`,
+        documents: documents.map(doc => ({
+          id: doc._id,
+          filename: doc.filename,
+          originalName: doc.originalName,
+          mimeType: doc.mimeType,
+          size: doc.size,
+          url: doc.url,
+          category: doc.category,
+          description: doc.description,
+          uploadedAt: doc.uploadedAt,
+        })),
+      });
+    } catch (error) {
+      logger.error(
+        'Document upload failed',
+        {
+          taskId: req.params.taskId,
+          userId: req.user?.id,
+        },
+        error as Error
+      );
+
+      if (error instanceof Error) {
+        if (error.message.includes('File type') || error.message.includes('not allowed')) {
+          return res.status(400).json({ error: error.message });
+        }
+        if (error.message.includes('Task not found')) {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message.includes('File too large')) {
+          return res.status(413).json({ error: 'File size exceeds 10MB limit' });
+        }
+      }
+
+      res.status(500).json({ error: 'Failed to upload documents' });
     }
-
-    logger.info('Document upload request', {
-      taskId,
-      fileCount: files.length,
-      userId: req.user!.id,
-      filenames: files.map(f => f.originalname)
-    });
-
-    const documents = await DocumentService.uploadDocuments(files, {
-      taskId,
-      uploadedBy: req.user!.id,
-      description
-    });
-
-    res.status(201).json({
-      message: `Successfully uploaded ${documents.length} document(s)`,
-      documents: documents.map(doc => ({
-        id: doc._id,
-        filename: doc.filename,
-        originalName: doc.originalName,
-        mimeType: doc.mimeType,
-        size: doc.size,
-        url: doc.url,
-        category: doc.category,
-        description: doc.description,
-        uploadedAt: doc.uploadedAt
-      }))
-    });
-
-  } catch (error) {
-    logger.error('Document upload failed', {
-      taskId: req.params.taskId,
-      userId: req.user?.id
-    }, error as Error);
-
-    if (error instanceof Error) {
-      if (error.message.includes('File type') || error.message.includes('not allowed')) {
-        return res.status(400).json({ error: error.message });
-      }
-      if (error.message.includes('Task not found')) {
-        return res.status(404).json({ error: error.message });
-      }
-      if (error.message.includes('File too large')) {
-        return res.status(413).json({ error: 'File size exceeds 10MB limit' });
-      }
-    }
-
-    res.status(500).json({ error: 'Failed to upload documents' });
   }
-});
+);
 
 // Get documents for a task
 router.get('/tasks/:taskId/documents', requireAuth, async (req: AuthedRequest, res: Response) => {
@@ -90,19 +98,24 @@ router.get('/tasks/:taskId/documents', requireAuth, async (req: AuthedRequest, r
         category: doc.category,
         description: doc.description,
         uploadedAt: doc.uploadedAt,
-        uploadedBy: (doc as any).uploadedBy ? {
-          id: (doc as any).uploadedBy._id,
-          name: (doc as any).uploadedBy.name,
-          email: (doc as any).uploadedBy.email
-        } : null
-      }))
+        uploadedBy: (doc as any).uploadedBy
+          ? {
+              id: (doc as any).uploadedBy._id,
+              name: (doc as any).uploadedBy.name,
+              email: (doc as any).uploadedBy.email,
+            }
+          : null,
+      })),
     });
-
   } catch (error) {
-    logger.error('Failed to get task documents', {
-      taskId: req.params.taskId,
-      userId: req.user?.id
-    }, error as Error);
+    logger.error(
+      'Failed to get task documents',
+      {
+        taskId: req.params.taskId,
+        userId: req.user?.id,
+      },
+      error as Error
+    );
 
     res.status(500).json({ error: 'Failed to retrieve documents' });
   }
@@ -130,19 +143,24 @@ router.get('/documents/:documentId', requireAuth, async (req: AuthedRequest, res
         category: document.category,
         description: document.description,
         uploadedAt: document.uploadedAt,
-        uploadedBy: document.uploadedByUser ? {
-          id: document.uploadedByUser._id,
-          name: document.uploadedByUser.name,
-          email: document.uploadedByUser.email
-        } : null
-      }
+        uploadedBy: document.uploadedByUser
+          ? {
+              id: document.uploadedByUser._id,
+              name: document.uploadedByUser.name,
+              email: document.uploadedByUser.email,
+            }
+          : null,
+      },
     });
-
   } catch (error) {
-    logger.error('Failed to get document', {
-      documentId: req.params.documentId,
-      userId: req.user?.id
-    }, error as Error);
+    logger.error(
+      'Failed to get document',
+      {
+        documentId: req.params.documentId,
+        userId: req.user?.id,
+      },
+      error as Error
+    );
 
     res.status(500).json({ error: 'Failed to retrieve document' });
   }
@@ -176,15 +194,18 @@ router.patch('/documents/:documentId', requireAuth, async (req: AuthedRequest, r
       message: 'Document updated successfully',
       document: {
         id: updatedDocument._id,
-        description: updatedDocument.description
-      }
+        description: updatedDocument.description,
+      },
     });
-
   } catch (error) {
-    logger.error('Failed to update document', {
-      documentId: req.params.documentId,
-      userId: req.user?.id
-    }, error as Error);
+    logger.error(
+      'Failed to update document',
+      {
+        documentId: req.params.documentId,
+        userId: req.user?.id,
+      },
+      error as Error
+    );
 
     if (error instanceof Error && error.message.includes('not found')) {
       return res.status(404).json({ error: error.message });
@@ -202,12 +223,15 @@ router.delete('/documents/:documentId', requireAuth, async (req: AuthedRequest, 
     await DocumentService.deleteDocument(documentId, req.user!.id);
 
     res.json({ message: 'Document deleted successfully' });
-
   } catch (error) {
-    logger.error('Failed to delete document', {
-      documentId: req.params.documentId,
-      userId: req.user?.id
-    }, error as Error);
+    logger.error(
+      'Failed to delete document',
+      {
+        documentId: req.params.documentId,
+        userId: req.user?.id,
+      },
+      error as Error
+    );
 
     if (error instanceof Error && error.message.includes('not found')) {
       return res.status(404).json({ error: error.message });
@@ -239,39 +263,51 @@ router.get('/user/documents', requireAuth, async (req: AuthedRequest, res: Respo
         category: doc.category,
         description: doc.description,
         uploadedAt: doc.uploadedAt,
-        task: (doc as any).taskId ? {
-          id: (doc as any).taskId._id,
-          title: (doc as any).taskId.title
-        } : null
-      }))
+        task: (doc as any).taskId
+          ? {
+              id: (doc as any).taskId._id,
+              title: (doc as any).taskId.title,
+            }
+          : null,
+      })),
     });
-
   } catch (error) {
-    logger.error('Failed to get user documents', {
-      userId: req.user?.id
-    }, error as Error);
+    logger.error(
+      'Failed to get user documents',
+      {
+        userId: req.user?.id,
+      },
+      error as Error
+    );
 
     res.status(500).json({ error: 'Failed to retrieve documents' });
   }
 });
 
 // Get document statistics for a task
-router.get('/tasks/:taskId/documents/stats', requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const { taskId } = req.params;
+router.get(
+  '/tasks/:taskId/documents/stats',
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const { taskId } = req.params;
 
-    const stats = await DocumentService.getTaskDocumentStats(taskId);
+      const stats = await DocumentService.getTaskDocumentStats(taskId);
 
-    res.json({ stats });
+      res.json({ stats });
+    } catch (error) {
+      logger.error(
+        'Failed to get document stats',
+        {
+          taskId: req.params.taskId,
+          userId: req.user?.id,
+        },
+        error as Error
+      );
 
-  } catch (error) {
-    logger.error('Failed to get document stats', {
-      taskId: req.params.taskId,
-      userId: req.user?.id
-    }, error as Error);
-
-    res.status(500).json({ error: 'Failed to retrieve document statistics' });
+      res.status(500).json({ error: 'Failed to retrieve document statistics' });
+    }
   }
-});
+);
 
 export default router;

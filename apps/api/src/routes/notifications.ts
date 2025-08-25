@@ -7,34 +7,34 @@ const router = Router();
 // Get notifications for current user
 router.get('/', requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const notifications = await Notification.find({ 
-      recipient: req.user!.id 
+    const notifications = await Notification.find({
+      recipient: req.user!.id,
     })
-    .populate({
-      path: 'sender',
-      select: 'name email',
-      match: { deleted: { $ne: true } } // Only populate non-deleted users
-    })
-    .populate('relatedTask', 'title')
-    .populate('relatedOrganization', 'name')
-    .populate('relatedProject', 'name')
-    .sort({ createdAt: -1 })
-    .limit(50);
+      .populate({
+        path: 'sender',
+        select: 'name email',
+        match: { deleted: { $ne: true } }, // Only populate non-deleted users
+      })
+      .populate('relatedTask', 'title')
+      .populate('relatedOrganization', 'name')
+      .populate('relatedProject', 'name')
+      .sort({ createdAt: -1 })
+      .limit(50);
 
     // Transform notifications to handle deleted senders
     const transformedNotifications = notifications.map(notification => {
       const notificationObj = notification.toObject();
-      
+
       // If sender is null (deleted user), use senderName as fallback
       if (!notificationObj.sender && notificationObj.senderName) {
         // Replace the sender field with fallback data
         (notificationObj as any).sender = {
           _id: null,
           name: notificationObj.senderName,
-          email: null
+          email: null,
         };
       }
-      
+
       return notificationObj;
     });
 
@@ -68,10 +68,7 @@ router.patch('/:id/read', requireAuth, async (req: AuthedRequest, res) => {
 // Mark all notifications as read
 router.patch('/mark-all-read', requireAuth, async (req: AuthedRequest, res) => {
   try {
-    await Notification.updateMany(
-      { recipient: req.user!.id, read: false },
-      { read: true }
-    );
+    await Notification.updateMany({ recipient: req.user!.id, read: false }, { read: true });
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -85,7 +82,7 @@ router.get('/unread-count', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const count = await Notification.countDocuments({
       recipient: req.user!.id,
-      read: false
+      read: false,
     });
 
     res.json({ count });

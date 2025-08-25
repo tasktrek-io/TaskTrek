@@ -8,65 +8,71 @@ import Project from '../models/Project';
 import NotificationService from '../services/NotificationService';
 import TaskActivityService from '../services/TaskActivityService';
 import WorkspaceService from '../services/WorkspaceService';
-import { Types, Schema } from 'mongoose';
+import { Types } from 'mongoose';
 
 const router = Router();
 
 // Create task under project
 router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
-    const { 
-      project, 
-      title, 
-      description, 
-      assignees, 
-      priority, 
-      dueDate,
-      status 
-    } = req.body as { 
-      project: string; 
-      title: string; 
-      description?: string; 
+    const { project, title, description, assignees, priority, dueDate, status } = req.body as {
+      project: string;
+      title: string;
+      description?: string;
       assignees?: string[];
       priority?: 'low' | 'medium' | 'high' | 'urgent';
       dueDate?: string;
       status?: 'todo' | 'in_progress' | 'done';
     };
-    
-    if (!project || !title) return res.status(400).json({ error: 'Project and title are required' });
-    
+
+    if (!project || !title)
+      return res.status(400).json({ error: 'Project and title are required' });
+
     const createdBy = req.user!.id;
-    const task = await Task.create({ 
-      project, 
-      title, 
-      description, 
+    const task = await Task.create({
+      project,
+      title,
+      description,
       assignees: assignees || [],
       priority: priority || 'medium',
       status: status || 'todo',
       dueDate: dueDate ? new Date(dueDate) : undefined,
       watchers: [createdBy], // Creator watches by default
-      createdBy 
+      createdBy,
     });
 
     // Create notifications for assignees
     if (assignees && assignees.length > 0) {
       for (const assigneeId of assignees) {
-        await NotificationService.notifyTaskAssignment((task._id as Types.ObjectId).toString(), title, assigneeId, createdBy);
-        
+        await NotificationService.notifyTaskAssignment(
+          (task._id as Types.ObjectId).toString(),
+          title,
+          assigneeId,
+          createdBy
+        );
+
         // Add assignee to workspace automatically
-        await WorkspaceService.addUserToWorkspaceForTask(assigneeId, (task._id as Types.ObjectId).toString());
+        await WorkspaceService.addUserToWorkspaceForTask(
+          assigneeId,
+          (task._id as Types.ObjectId).toString()
+        );
       }
     }
 
     // Track task creation activity
-    await TaskActivityService.trackTaskCreation((task._id as Types.ObjectId).toString(), createdBy, { title });
+    await TaskActivityService.trackTaskCreation(
+      (task._id as Types.ObjectId).toString(),
+      createdBy,
+      { title }
+    );
 
     const populated = await Task.findById(task._id)
       .populate('project', 'name workspace')
       .populate('assignees', 'name email')
       .populate('watchers', 'name email')
       .populate('createdBy', 'name email')
-      .populate('documents', 'filename originalName mimeType size category uploadedAt uploadedBy');    return res.status(201).json(populated);
+      .populate('documents', 'filename originalName mimeType size category uploadedAt uploadedBy');
+    return res.status(201).json(populated);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -94,7 +100,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
       if (updateData[field] !== undefined) {
         const oldValue = currentTask[field as keyof typeof currentTask];
         const newValue = updateData[field];
-        
+
         // Special handling for arrays and dates
         let hasChanged = false;
         if (field === 'assignees') {
@@ -120,9 +126,10 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
       id,
       { ...updateData, updatedAt: new Date() },
       { new: true }
-    ).populate('assignees', 'name email')
-     .populate('watchers', 'name email')
-     .populate('createdBy', 'name email');
+    )
+      .populate('assignees', 'name email')
+      .populate('watchers', 'name email')
+      .populate('createdBy', 'name email');
 
     // Track activities for each change
     for (const change of changes) {
@@ -149,13 +156,18 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
       if (change.field === 'assignees') {
         const oldAssignees = change.oldValue || [];
         const newAssignees = change.newValue || [];
-        
+
         // Notify newly assigned users and add them to workspace
         const newlyAssigned = newAssignees.filter((a: string) => !oldAssignees.includes(a));
         for (const assigneeId of newlyAssigned) {
-          await NotificationService.notifyTaskAssignment(id, updatedTask?.title || '', assigneeId, userId);
+          await NotificationService.notifyTaskAssignment(
+            id,
+            updatedTask?.title || '',
+            assigneeId,
+            userId
+          );
           await TaskActivityService.trackAssignment(id, userId, assigneeId, true);
-          
+
           // Add user to workspace automatically
           await WorkspaceService.addUserToWorkspaceForTask(assigneeId, id);
         }
@@ -179,13 +191,13 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
 router.get('/assigned', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const tasks = await Task.find({ assignees: userId })
       .populate('project', 'name')
       .populate('assignees', 'name email')
       .populate('createdBy', 'name email')
       .sort({ dueDate: 1, createdAt: -1 });
-    
+
     res.json(tasks);
   } catch (err) {
     console.error(err);
@@ -197,22 +209,22 @@ router.get('/assigned', requireAuth, async (req: AuthedRequest, res: Response) =
 router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const task = await Task.findById(id)
       .populate('project', 'name workspace')
       .populate('assignees', 'name email')
       .populate('watchers', 'name email')
       .populate('createdBy', 'name email')
       .populate('documents', 'filename originalName mimeType size category uploadedAt uploadedBy');
-    
+
     if (!task) return res.status(404).json({ error: 'Task not found' });
-    
+
     // Get comments for this task
     const comments = await Comment.find({ task: id })
       .populate('author', 'name email')
       .populate('reactions.users', 'name email')
       .sort({ createdAt: 1 });
-    
+
     res.json({ task, comments });
   } catch (err) {
     console.error(err);
@@ -226,10 +238,10 @@ router.post('/:id/watchers', requireAuth, async (req: AuthedRequest, res: Respon
     const { id } = req.params;
     const { userId, action } = req.body as { userId?: string; action: 'add' | 'remove' };
     const watcherId = userId || req.user!.id;
-    
+
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
-    
+
     if (action === 'add') {
       if (!task.watchers.includes(new Types.ObjectId(watcherId) as any)) {
         task.watchers.push(new Types.ObjectId(watcherId) as any);
@@ -237,14 +249,14 @@ router.post('/:id/watchers', requireAuth, async (req: AuthedRequest, res: Respon
     } else {
       task.watchers = task.watchers.filter(w => w.toString() !== watcherId);
     }
-    
+
     await task.save();
-    
+
     const populated = await Task.findById(task._id)
       .populate('assignees', 'name email')
       .populate('watchers', 'name email')
       .populate('createdBy', 'name email');
-    
+
     res.json(populated);
   } catch (err) {
     console.error(err);
@@ -270,7 +282,7 @@ router.get('/:id/activities', requireAuth, async (req: AuthedRequest, res: Respo
       activities,
       total,
       page: parseInt(page as string),
-      totalPages: Math.ceil(total / parseInt(limit as string))
+      totalPages: Math.ceil(total / parseInt(limit as string)),
     });
   } catch (err) {
     console.error('Error fetching task activities:', err);
@@ -284,28 +296,25 @@ router.post('/:id/comments', requireAuth, async (req: AuthedRequest, res: Respon
     const { id } = req.params;
     const { content } = req.body as { content: string };
     const authorId = req.user!.id;
-    
+
     if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
-    
+
     const task = await Task.findById(id).populate('watchers', '_id');
     if (!task) return res.status(404).json({ error: 'Task not found' });
-    
+
     const comment = await Comment.create({
       task: id,
       author: authorId,
-      content: content.trim()
+      content: content.trim(),
     });
 
     // Extract @mentions from comment content
     const mentions = NotificationService.extractMentions(content);
-    
+
     // Find mentioned users by email or name
     if (mentions.length > 0) {
       const mentionedUsers = await User.find({
-        $or: [
-          { email: { $in: mentions } },
-          { name: { $in: mentions } }
-        ]
+        $or: [{ email: { $in: mentions } }, { name: { $in: mentions } }],
       });
 
       // Send mention notifications
@@ -322,12 +331,7 @@ router.post('/:id/comments', requireAuth, async (req: AuthedRequest, res: Respon
 
     // Notify watchers about new comment
     const watcherIds = task.watchers.map(w => (w as any)._id.toString());
-    await NotificationService.notifyNewComment(
-      id,
-      task.title,
-      watcherIds,
-      authorId
-    );
+    await NotificationService.notifyNewComment(id, task.title, watcherIds, authorId);
 
     // Track comment activity
     await TaskActivityService.createActivity({
@@ -335,13 +339,13 @@ router.post('/:id/comments', requireAuth, async (req: AuthedRequest, res: Respon
       performedBy: authorId,
       action: 'comment_added',
       details: 'Added a comment',
-      metadata: { commentId: comment._id }
+      metadata: { commentId: comment._id },
     });
-    
+
     const populated = await Comment.findById(comment._id)
       .populate('author', 'name email')
       .populate('reactions.users', 'name email');
-    
+
     res.status(201).json(populated);
   } catch (err) {
     console.error(err);
@@ -353,21 +357,21 @@ router.post('/:id/comments', requireAuth, async (req: AuthedRequest, res: Respon
 router.get('/workspace/:workspaceId', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { workspaceId } = req.params;
-    
+
     // Get all projects in workspace
     const projects = await Project.find({ workspace: workspaceId }, '_id');
     const projectIds = projects.map(p => p._id);
-    
+
     if (projectIds.length === 0) {
       return res.json([]);
     }
-    
+
     const tasks = await Task.find({ project: { $in: projectIds } })
       .populate('project', 'name')
       .populate('assignees', 'name email')
       .populate('createdBy', 'name email')
       .sort({ dueDate: 1, createdAt: -1 });
-    
+
     res.json(tasks);
   } catch (err) {
     console.error(err);
@@ -412,7 +416,7 @@ router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => 
     // Delete all related data
     await Comment.deleteMany({ task: id });
     await TaskActivity.deleteMany({ taskId: id });
-    
+
     // Delete the task
     await Task.findByIdAndDelete(id);
 
@@ -422,7 +426,7 @@ router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => 
       performedBy: userId,
       action: 'task_deleted',
       details: `Deleted task: ${task.title}`,
-      metadata: { taskTitle: task.title, projectId: task.project }
+      metadata: { taskTitle: task.title, projectId: task.project },
     });
 
     res.json({ message: 'Task deleted successfully' });
@@ -433,155 +437,169 @@ router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => 
 });
 
 // Add emoji reaction to comment
-router.post('/:taskId/comments/:commentId/reactions', requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const { taskId, commentId } = req.params;
-    const { emoji } = req.body;
-    const userId = req.user!.id;
+router.post(
+  '/:taskId/comments/:commentId/reactions',
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const { taskId, commentId } = req.params;
+      const { emoji } = req.body;
+      const userId = req.user!.id;
 
-    if (!emoji) {
-      return res.status(400).json({ error: 'Emoji is required' });
-    }
-
-    const comment = await Comment.findById(commentId);
-    if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
-    }
-
-    // Check if user already has this specific reaction
-    const existingReaction = comment.reactions.find(r => r.emoji === emoji);
-    const userHasThisReaction = existingReaction?.users.some(u => u.toString() === userId);
-    let isRemoving = false;
-
-    if (userHasThisReaction) {
-      // User is removing their reaction
-      existingReaction!.users = existingReaction!.users.filter(u => u.toString() !== userId);
-      existingReaction!.count = existingReaction!.users.length;
-      
-      // Remove the reaction if no users left
-      if (existingReaction!.users.length === 0) {
-        comment.reactions = comment.reactions.filter(r => r.emoji !== emoji);
+      if (!emoji) {
+        return res.status(400).json({ error: 'Emoji is required' });
       }
-      isRemoving = true;
-    } else {
-      // Remove user's existing reaction from other emojis first (one reaction per user)
-      comment.reactions = comment.reactions.filter(reaction => {
-        reaction.users = reaction.users.filter(u => u.toString() !== userId);
-        reaction.count = reaction.users.length;
-        return reaction.users.length > 0;
+
+      const comment = await Comment.findById(commentId);
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      // Check if user already has this specific reaction
+      const existingReaction = comment.reactions.find(r => r.emoji === emoji);
+      const userHasThisReaction = existingReaction?.users.some(u => u.toString() === userId);
+      let isRemoving = false;
+
+      if (userHasThisReaction) {
+        // User is removing their reaction
+        existingReaction!.users = existingReaction!.users.filter(u => u.toString() !== userId);
+        existingReaction!.count = existingReaction!.users.length;
+
+        // Remove the reaction if no users left
+        if (existingReaction!.users.length === 0) {
+          comment.reactions = comment.reactions.filter(r => r.emoji !== emoji);
+        }
+        isRemoving = true;
+      } else {
+        // Remove user's existing reaction from other emojis first (one reaction per user)
+        comment.reactions = comment.reactions.filter(reaction => {
+          reaction.users = reaction.users.filter(u => u.toString() !== userId);
+          reaction.count = reaction.users.length;
+          return reaction.users.length > 0;
+        });
+
+        // Add new reaction
+        const updatedReaction = comment.reactions.find(r => r.emoji === emoji);
+        if (updatedReaction) {
+          // Add user to existing reaction
+          updatedReaction.users.push(userId as any);
+          updatedReaction.count = updatedReaction.users.length;
+        } else {
+          // Create new reaction
+          comment.reactions.push({
+            emoji,
+            users: [userId as any],
+            count: 1,
+          });
+        }
+      }
+
+      await comment.save();
+
+      // Track activity
+      await TaskActivityService.createActivity({
+        taskId,
+        performedBy: userId,
+        action: isRemoving ? 'comment_reaction_removed' : 'comment_reaction_added',
+        details: isRemoving
+          ? `Removed ${emoji} reaction from comment`
+          : `Reacted with ${emoji} to comment`,
+        metadata: { commentId, emoji },
       });
 
-      // Add new reaction
-      const updatedReaction = comment.reactions.find(r => r.emoji === emoji);
-      if (updatedReaction) {
-        // Add user to existing reaction
-        updatedReaction.users.push(userId as any);
-        updatedReaction.count = updatedReaction.users.length;
-      } else {
-        // Create new reaction
-        comment.reactions.push({
-          emoji,
-          users: [userId as any],
-          count: 1
-        });
-      }
+      // Populate the author and reaction users before returning
+      await comment.populate('author', 'name email');
+      await comment.populate('reactions.users', 'name email');
+      res.json(comment);
+    } catch (err) {
+      console.error('Error managing comment reaction:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    await comment.save();
-
-    // Track activity
-    await TaskActivityService.createActivity({
-      taskId,
-      performedBy: userId,
-      action: isRemoving ? 'comment_reaction_removed' : 'comment_reaction_added',
-      details: isRemoving ? `Removed ${emoji} reaction from comment` : `Reacted with ${emoji} to comment`,
-      metadata: { commentId, emoji }
-    });
-
-    // Populate the author and reaction users before returning
-    await comment.populate('author', 'name email');
-    await comment.populate('reactions.users', 'name email');
-    res.json(comment);
-  } catch (err) {
-    console.error('Error managing comment reaction:', err);
-    res.status(500).json({ error: 'Internal server error' });
   }
-});
+);
 
 // Edit comment
-router.patch('/:taskId/comments/:commentId', requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const { taskId, commentId } = req.params;
-    const { content } = req.body;
-    const userId = req.user!.id;
+router.patch(
+  '/:taskId/comments/:commentId',
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const { taskId, commentId } = req.params;
+      const { content } = req.body;
+      const userId = req.user!.id;
 
-    if (!content?.trim()) {
-      return res.status(400).json({ error: 'Content is required' });
+      if (!content?.trim()) {
+        return res.status(400).json({ error: 'Content is required' });
+      }
+
+      const comment = await Comment.findById(commentId).populate('author', 'name email');
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      // Check if user is the comment author
+      if ((comment.author as any)._id.toString() !== userId) {
+        return res.status(403).json({ error: 'Only the comment author can edit this comment' });
+      }
+
+      // Update the comment
+      comment.content = content.trim();
+      await comment.save();
+
+      // Track activity
+      await TaskActivityService.createActivity({
+        taskId,
+        performedBy: userId,
+        action: 'comment_updated',
+        details: 'Updated a comment',
+        metadata: { commentId },
+      });
+
+      res.json(comment);
+    } catch (err) {
+      console.error('Error editing comment:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    const comment = await Comment.findById(commentId).populate('author', 'name email');
-    if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
-    }
-
-    // Check if user is the comment author
-    if ((comment.author as any)._id.toString() !== userId) {
-      return res.status(403).json({ error: 'Only the comment author can edit this comment' });
-    }
-
-    // Update the comment
-    comment.content = content.trim();
-    await comment.save();
-
-    // Track activity
-    await TaskActivityService.createActivity({
-      taskId,
-      performedBy: userId,
-      action: 'comment_updated',
-      details: 'Updated a comment',
-      metadata: { commentId }
-    });
-
-    res.json(comment);
-  } catch (err) {
-    console.error('Error editing comment:', err);
-    res.status(500).json({ error: 'Internal server error' });
   }
-});
+);
 
 // Delete comment
-router.delete('/:taskId/comments/:commentId', requireAuth, async (req: AuthedRequest, res: Response) => {
-  try {
-    const { taskId, commentId } = req.params;
-    const userId = req.user!.id;
+router.delete(
+  '/:taskId/comments/:commentId',
+  requireAuth,
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const { taskId, commentId } = req.params;
+      const userId = req.user!.id;
 
-    const comment = await Comment.findById(commentId).populate('author', 'name email');
-    if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
+      const comment = await Comment.findById(commentId).populate('author', 'name email');
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      // Check if user is the comment author
+      if ((comment.author as any)._id.toString() !== userId) {
+        return res.status(403).json({ error: 'Only the comment author can delete this comment' });
+      }
+
+      // Delete the comment
+      await Comment.findByIdAndDelete(commentId);
+
+      // Track activity
+      await TaskActivityService.createActivity({
+        taskId,
+        performedBy: userId,
+        action: 'comment_deleted',
+        details: 'Deleted a comment',
+        metadata: { commentId },
+      });
+
+      res.json({ message: 'Comment deleted successfully' });
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    // Check if user is the comment author
-    if ((comment.author as any)._id.toString() !== userId) {
-      return res.status(403).json({ error: 'Only the comment author can delete this comment' });
-    }
-
-    // Delete the comment
-    await Comment.findByIdAndDelete(commentId);
-
-    // Track activity
-    await TaskActivityService.createActivity({
-      taskId,
-      performedBy: userId,
-      action: 'comment_deleted',
-      details: 'Deleted a comment',
-      metadata: { commentId }
-    });
-
-    res.json({ message: 'Comment deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting comment:', err);
-    res.status(500).json({ error: 'Internal server error' });
   }
-});
+);
 
 export default router;

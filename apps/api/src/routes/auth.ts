@@ -19,7 +19,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    let { email, name, password } = req.body as { email?: string; name?: string; password?: string };
+    let { email, name, password } = req.body as {
+      email?: string;
+      name?: string;
+      password?: string;
+    };
     email = (email || '').trim().toLowerCase();
     name = (name || '').trim();
     if (!email || !name || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -31,11 +35,11 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ 
-      email, 
-      name, 
-      passwordHash: hash, 
-      emailVerified: false 
+    const user = await User.create({
+      email,
+      name,
+      passwordHash: hash,
+      emailVerified: false,
     });
 
     // Generate verification token
@@ -46,21 +50,25 @@ router.post('/register', async (req: Request, res: Response) => {
     await EmailVerification.create({
       userId: user._id,
       token: verificationToken,
-      expiresAt
+      expiresAt,
     });
 
     // Send verification email
     try {
       await emailService.sendVerificationEmail(email, verificationToken);
     } catch (emailError) {
-      logger.error('Failed to send verification email', { email, userId: user.id }, emailError as Error);
+      logger.error(
+        'Failed to send verification email',
+        { email, userId: user.id },
+        emailError as Error
+      );
       // Continue with registration even if email fails
     }
 
-    return res.status(201).json({ 
+    return res.status(201).json({
       message: 'Registration successful. Please check your email to verify your account.',
       user: { id: user.id, email, name, emailVerified: false },
-      requiresVerification: true
+      requiresVerification: true,
     });
   } catch (err) {
     logger.error('Registration error', {}, err as Error);
@@ -72,7 +80,8 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     let { email, password } = req.body as { email?: string; password?: string };
     email = (email || '').trim().toLowerCase();
-    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !password)
+      return res.status(400).json({ error: 'Email and password are required' });
 
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -82,25 +91,27 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Check if email is verified
     if (!user.emailVerified) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Please verify your email address before logging in',
         requiresVerification: true,
-        email: user.email
+        email: user.email,
       });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-    
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, {
+      expiresIn: '7d',
+    });
+
     // Set cookie with proper cross-domain settings
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('token', token, { 
-      httpOnly: true, 
+    res.cookie('token', token, {
+      httpOnly: true,
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
       // Remove domain restriction to allow subdomains to work
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    
+
     return res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
   } catch (err) {
     logger.error('Login error', {}, err as Error);
@@ -115,19 +126,21 @@ router.post('/logout', (_req: Request, res: Response) => {
 
 router.get('/me', requireAuth, async (req: AuthedRequest, res: Response) => {
   const { id } = req.user!;
-  const user = await User.findById(id).select('_id email name phone avatar lastActiveContext createdAt');
+  const user = await User.findById(id).select(
+    '_id email name phone avatar lastActiveContext createdAt'
+  );
   if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json({ 
-    user: { 
-      _id: user._id, 
-      id: user.id, 
-      email: user.email, 
-      name: user.name, 
+  res.json({
+    user: {
+      _id: user._id,
+      id: user.id,
+      email: user.email,
+      name: user.name,
       phone: user.phone,
       avatar: user.avatar,
       lastActiveContext: user.lastActiveContext,
-      createdAt: user.createdAt
-    } 
+      createdAt: user.createdAt,
+    },
   });
 });
 
@@ -147,7 +160,7 @@ router.patch('/profile', requireAuth, async (req: AuthedRequest, res: Response) 
       {
         name: name.trim(),
         phone: phone ? phone.trim() : undefined,
-        avatar: avatar ? avatar.trim() : undefined
+        avatar: avatar ? avatar.trim() : undefined,
       },
       { new: true, runValidators: true }
     ).select('_id email name phone avatar lastActiveContext createdAt');
@@ -156,17 +169,17 @@ router.patch('/profile', requireAuth, async (req: AuthedRequest, res: Response) 
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ 
-      user: { 
-        _id: updatedUser._id, 
-        id: updatedUser.id, 
-        email: updatedUser.email, 
-        name: updatedUser.name, 
+    res.json({
+      user: {
+        _id: updatedUser._id,
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
         phone: updatedUser.phone,
         avatar: updatedUser.avatar,
         lastActiveContext: updatedUser.lastActiveContext,
-        createdAt: updatedUser.createdAt
-      } 
+        createdAt: updatedUser.createdAt,
+      },
     });
   } catch (err) {
     logger.error('Error updating profile', { userId: req.user?.id }, err as Error);
@@ -204,24 +217,26 @@ router.post('/verify-email', async (req: Request, res: Response) => {
     if (user.emailVerified) {
       // Clean up the verification token
       await EmailVerification.deleteOne({ _id: verification._id });
-      
+
       // Generate JWT token for login since email is already verified
-      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-      
-      // Set cookie
-      const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('token', authToken, { 
-        httpOnly: true, 
-        sameSite: isProduction ? 'none' : 'lax',
-        secure: isProduction,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, {
+        expiresIn: '7d',
       });
 
-      return res.json({ 
+      // Set cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('token', authToken, {
+        httpOnly: true,
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      return res.json({
         message: 'Email verification completed',
         user: { id: user.id, email: user.email, name: user.name, emailVerified: true },
         token: authToken,
-        alreadyVerified: true
+        alreadyVerified: true,
       });
     }
 
@@ -235,24 +250,26 @@ router.post('/verify-email', async (req: Request, res: Response) => {
     if (!updateResult) {
       // User was already verified by another request - treat as success
       await EmailVerification.deleteOne({ _id: verification._id });
-      
+
       // Generate JWT token for login since email verification is complete
-      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-      
-      // Set cookie
-      const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('token', authToken, { 
-        httpOnly: true, 
-        sameSite: isProduction ? 'none' : 'lax',
-        secure: isProduction,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      const authToken = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, {
+        expiresIn: '7d',
       });
 
-      return res.json({ 
+      // Set cookie
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('token', authToken, {
+        httpOnly: true,
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      return res.json({
         message: 'Email verification completed',
         user: { id: user.id, email: user.email, name: user.name, emailVerified: true },
         token: authToken,
-        alreadyVerified: true
+        alreadyVerified: true,
       });
     }
 
@@ -264,26 +281,39 @@ router.post('/verify-email', async (req: Request, res: Response) => {
       await emailService.sendWelcomeEmail(updateResult);
       logger.info('Welcome email sent', { email: updateResult.email, userId: updateResult.id });
     } catch (emailError) {
-      logger.error('Failed to send welcome email', { email: updateResult.email, userId: updateResult.id }, emailError as Error);
+      logger.error(
+        'Failed to send welcome email',
+        { email: updateResult.email, userId: updateResult.id },
+        emailError as Error
+      );
       // Continue with verification even if welcome email fails
     }
 
     // Generate JWT token for immediate login
-    const authToken = jwt.sign({ id: updateResult.id, email: updateResult.email, name: updateResult.name }, JWT_SECRET, { expiresIn: '7d' });
-    
+    const authToken = jwt.sign(
+      { id: updateResult.id, email: updateResult.email, name: updateResult.name },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     // Set cookie
     const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('token', authToken, { 
-      httpOnly: true, 
+    res.cookie('token', authToken, {
+      httpOnly: true,
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return res.json({ 
+    return res.json({
       message: 'Email verified successfully',
-      user: { id: updateResult.id, email: updateResult.email, name: updateResult.name, emailVerified: true },
-      token: authToken
+      user: {
+        id: updateResult.id,
+        email: updateResult.email,
+        name: updateResult.name,
+        emailVerified: true,
+      },
+      token: authToken,
     });
   } catch (err) {
     logger.error('Email verification error', {}, err as Error);
@@ -320,7 +350,7 @@ router.post('/resend-verification', async (req: Request, res: Response) => {
     await EmailVerification.create({
       userId: user._id,
       token: verificationToken,
-      expiresAt
+      expiresAt,
     });
 
     // Send verification email
@@ -362,7 +392,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     }
 
     const result = await PasswordResetService.forgotPassword(email.toLowerCase().trim());
-    
+
     if (result.success) {
       return res.json({ message: result.message });
     } else {
@@ -384,7 +414,7 @@ router.get('/verify-reset-token', async (req: Request, res: Response) => {
     }
 
     const result = await PasswordResetService.verifyResetToken(token);
-    
+
     if (result.valid) {
       return res.json({ valid: true, message: 'Token is valid' });
     } else {
@@ -402,7 +432,9 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     const { token, password, confirmPassword } = req.body;
 
     if (!token || !password || !confirmPassword) {
-      return res.status(400).json({ error: 'Token, password, and password confirmation are required' });
+      return res
+        .status(400)
+        .json({ error: 'Token, password, and password confirmation are required' });
     }
 
     if (password !== confirmPassword) {
@@ -410,7 +442,7 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     }
 
     const result = await PasswordResetService.resetPassword(token, password);
-    
+
     if (result.success) {
       return res.json({ message: result.message });
     } else {
@@ -432,7 +464,7 @@ router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: 
 
     const Organization = require('../models/Organization').default;
     const ownedOrgs = await Organization.find({ ownerId: userId }).select('_id name members');
-    
+
     return res.json({ organizations: ownedOrgs });
   } catch (err) {
     logger.error('Error fetching owned organizations', { userId: req.user?.id }, err as Error);
@@ -477,7 +509,7 @@ router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: 
 
     // Update ownership
     organization.ownerId = newOwnerId;
-    
+
     // Update roles in members array
     organization.members = organization.members.map((member: any) => {
       if (member.userId.toString() === newOwnerId) {
@@ -512,7 +544,7 @@ router.get('/owned-organizations', requireAuth, async (req: AuthedRequest, res: 
 router.post('/transfer-ownership', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { organizationId, newOwnerId } = req.body;
-    
+
     if (!organizationId || !newOwnerId) {
       return res.status(400).json({ message: 'Organization ID and new owner ID are required' });
     }
@@ -542,17 +574,17 @@ router.delete('/delete-account', requireAuth, async (req: AuthedRequest, res: Re
     // Final safety check - ensure user doesn't own any organizations
     const ownedOrgs = await Organization.find({ owner: req.user!.id });
     if (ownedOrgs.length > 0) {
-      return res.status(400).json({ 
-        message: `Cannot delete account: You still own ${ownedOrgs.length} organization(s). Please transfer ownership first.` 
+      return res.status(400).json({
+        message: `Cannot delete account: You still own ${ownedOrgs.length} organization(s). Please transfer ownership first.`,
       });
     }
 
     // Perform soft delete
     const result = await UserDeletionService.softDeleteUser(req.user!.id);
-    
+
     // Clear the JWT cookie
     res.clearCookie('token');
-    
+
     res.json(result);
   } catch (error: any) {
     logger.error('Error deleting account', { userId: req.user?.id }, error);

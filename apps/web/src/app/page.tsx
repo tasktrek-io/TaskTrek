@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -7,7 +7,6 @@ import { Icons } from '../lib/icons';
 
 export default function HomePage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -16,8 +15,7 @@ export default function HomePage() {
     setIsLoggedIn(!!token);
   }, []);
 
-  const handleGetStarted = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGetStarted = () => {
     if (isLoggedIn) {
       router.push('/dashboard');
     } else {
@@ -26,35 +24,35 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900">
+    <main className='min-h-screen bg-white dark:bg-gray-900'>
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">T</span>
+      <header className='sticky top-0 z-50 w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm'>
+        <div className='flex items-center gap-3'>
+          <div className='w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center'>
+            <span className='text-white font-bold text-sm'>T</span>
           </div>
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">TaskTrek</span>
+          <span className='text-xl font-bold text-gray-900 dark:text-gray-100'>TaskTrek</span>
         </div>
-        
-        <div className="flex items-center gap-4">
+
+        <div className='flex items-center gap-4'>
           {isLoggedIn ? (
-            <Link 
-              href="/dashboard"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
+            <Link
+              href='/dashboard'
+              className='bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all'
             >
               Go to Dashboard
             </Link>
           ) : (
             <>
-              <Link 
-                href="/auth/login"
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              <Link
+                href='/auth/login'
+                className='text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors'
               >
                 Log In
               </Link>
-              <Link 
-                href="/auth/register"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
+              <Link
+                href='/auth/register'
+                className='bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all'
               >
                 Sign Up
               </Link>
@@ -64,299 +62,343 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
-          The complete project management <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500">platform</span>
+      <section className='max-w-6xl mx-auto px-6 py-20 text-center'>
+        <h1 className='text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight'>
+          The complete project management{' '}
+          <span className='text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500'>
+            platform
+          </span>
         </h1>
-        
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-          Organize projects, manage tasks with drag-and-drop boards, collaborate with your team, and track progress all in one place.
+
+        <p className='text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto'>
+          Organize projects, manage tasks with drag-and-drop boards, collaborate with your team, and
+          track progress all in one place.
         </p>
-        
-        <div className="flex justify-center items-center gap-4 mb-4">
+
+        <div className='flex justify-center items-center gap-4 mb-4'>
           <Link
-            href={isLoggedIn ? "/dashboard" : "/auth/register"}
-            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all font-medium text-lg"
+            href={isLoggedIn ? '/dashboard' : '/auth/register'}
+            className='bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all font-medium text-lg'
           >
-            {isLoggedIn ? "Go to Dashboard →" : "Start Managing Projects →"}
+            {isLoggedIn ? 'Go to Dashboard →' : 'Start Managing Projects →'}
           </Link>
         </div>
-        
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {isLoggedIn ? "Welcome back! Continue managing your projects." : "Free to use • No credit card required"}
+
+        <p className='text-sm text-gray-500 dark:text-gray-400'>
+          {isLoggedIn
+            ? 'Welcome back! Continue managing your projects.'
+            : 'Free to use • No credit card required'}
         </p>
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+      <section className='max-w-7xl mx-auto px-6 py-20'>
+        <div className='text-center mb-16'>
+          <h2 className='text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4'>
             Everything you need to manage projects
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            TaskTrek brings together all the tools your team needs. <span className="font-medium">Built for real project management.</span>
+          <p className='text-xl text-gray-600 dark:text-gray-400'>
+            TaskTrek brings together all the tools your team needs.{' '}
+            <span className='font-medium'>Built for real project management.</span>
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-8'>
           {/* Kanban Boards */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <Icons.Clipboard className="w-8 h-8" />
+          <div className='bg-gradient-to-br from-blue-500 to-blue-600 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <Icons.Clipboard className='w-8 h-8' />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Drag & Drop Kanban</h3>
-              <p className="text-blue-100 mb-6">
-                Visual project boards with seamless drag-and-drop. Move tasks between To Do, In Progress, and Done columns effortlessly.
+              <h3 className='text-2xl font-bold mb-4'>Drag & Drop Kanban</h3>
+              <p className='text-blue-100 mb-6'>
+                Visual project boards with seamless drag-and-drop. Move tasks between To Do, In
+                Progress, and Done columns effortlessly.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Visual task management</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Real-time updates</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Status tracking</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
 
           {/* Advanced Filtering */}
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <Icons.Search className="w-8 h-8" />
+          <div className='bg-gradient-to-br from-purple-500 to-purple-600 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <Icons.Search className='w-8 h-8' />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Smart Filtering & Search</h3>
-              <p className="text-purple-100 mb-6">
-                Find exactly what you need with powerful filters. Search by status, priority, assignee, due dates, and more.
+              <h3 className='text-2xl font-bold mb-4'>Smart Filtering & Search</h3>
+              <p className='text-purple-100 mb-6'>
+                Find exactly what you need with powerful filters. Search by status, priority,
+                assignee, due dates, and more.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Multi-field filtering</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Real-time search</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Smart sorting</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
 
           {/* Team Collaboration */}
-          <div className="bg-gradient-to-br from-green-500 to-green-600 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">👥</span>
+          <div className='bg-gradient-to-br from-green-500 to-green-600 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <span className='text-2xl'>👥</span>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Team Collaboration</h3>
-              <p className="text-green-100 mb-6">
-                Add team members, assign tasks, track progress, and collaborate seamlessly with built-in commenting and notifications.
+              <h3 className='text-2xl font-bold mb-4'>Team Collaboration</h3>
+              <p className='text-green-100 mb-6'>
+                Add team members, assign tasks, track progress, and collaborate seamlessly with
+                built-in commenting and notifications.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Task assignments</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Team comments</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Progress tracking</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
 
           {/* Workspaces */}
-          <div className="bg-gradient-to-br from-orange-500 to-pink-500 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <Icons.Building2 className="w-8 h-8" />
+          <div className='bg-gradient-to-br from-orange-500 to-pink-500 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <Icons.Building2 className='w-8 h-8' />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Multiple Workspaces</h3>
-              <p className="text-orange-100 mb-6">
-                Organize different teams and projects with separate workspaces. Switch between contexts effortlessly.
+              <h3 className='text-2xl font-bold mb-4'>Multiple Workspaces</h3>
+              <p className='text-orange-100 mb-6'>
+                Organize different teams and projects with separate workspaces. Switch between
+                contexts effortlessly.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Workspace switching</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Team isolation</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Project organization</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
 
           {/* Task Management */}
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <Icons.CheckCircle className="w-8 h-8" />
+          <div className='bg-gradient-to-br from-indigo-500 to-indigo-600 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <Icons.CheckCircle className='w-8 h-8' />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Complete Task Management</h3>
-              <p className="text-indigo-100 mb-6">
-                Create detailed tasks with priorities, due dates, descriptions, and attachments. Track everything that matters.
+              <h3 className='text-2xl font-bold mb-4'>Complete Task Management</h3>
+              <p className='text-indigo-100 mb-6'>
+                Create detailed tasks with priorities, due dates, descriptions, and attachments.
+                Track everything that matters.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Priority levels</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Due date tracking</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Rich descriptions</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
 
           {/* Project Editing */}
-          <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 p-8 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                <Icons.Settings className="w-8 h-8" />
+          <div className='bg-gradient-to-br from-cyan-500 to-cyan-600 p-8 rounded-3xl text-white relative overflow-hidden'>
+            <div className='relative z-10'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4'>
+                <Icons.Settings className='w-8 h-8' />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Project Customization</h3>
-              <p className="text-cyan-100 mb-6">
-                Edit project details, manage team members, set statuses, and customize everything to fit your workflow.
+              <h3 className='text-2xl font-bold mb-4'>Project Customization</h3>
+              <p className='text-cyan-100 mb-6'>
+                Edit project details, manage team members, set statuses, and customize everything to
+                fit your workflow.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className='space-y-2 text-sm'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Project editing</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Member management</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-white rounded-full'></div>
                   <span>Status tracking</span>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full"></div>
+            <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full'></div>
           </div>
         </div>
       </section>
 
       {/* Demo Preview Section */}
-      <section className="bg-gray-50 dark:bg-gray-800 py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+      <section className='bg-gray-50 dark:bg-gray-800 py-20'>
+        <div className='max-w-6xl mx-auto px-6'>
+          <div className='text-center mb-12'>
+            <h2 className='text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4'>
               See TaskTrek in action
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
+            <p className='text-xl text-gray-600 dark:text-gray-400'>
               Experience the power of visual project management
             </p>
           </div>
-          
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-            <div className="grid md:grid-cols-3 gap-6">
+
+          <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700'>
+            <div className='grid md:grid-cols-3 gap-6'>
               {/* To Do Column */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">To Do</h3>
-                  <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-sm">3</span>
+              <div className='bg-gray-50 dark:bg-gray-800 rounded-xl p-4'>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='font-semibold text-gray-900 dark:text-gray-100'>To Do</h3>
+                  <span className='bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-sm'>
+                    3
+                  </span>
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Design Homepage</span>
-                      <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded text-xs">High</span>
+                <div className='space-y-3'>
+                  <div className='bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                        Design Homepage
+                      </span>
+                      <span className='bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded text-xs'>
+                        High
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">JD</div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 15</span>
+                    <div className='flex items-center gap-2'>
+                      <div className='w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs'>
+                        JD
+                      </div>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>Due: Jan 15</span>
                     </div>
                   </div>
-                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Setup Database</span>
-                      <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded text-xs">Medium</span>
+                  <div className='bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                        Setup Database
+                      </span>
+                      <span className='bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded text-xs'>
+                        Medium
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">AS</div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 18</span>
+                    <div className='flex items-center gap-2'>
+                      <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs'>
+                        AS
+                      </div>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>Due: Jan 18</span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* In Progress Column */}
-              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">In Progress</h3>
-                  <span className="bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-sm">2</span>
+              <div className='bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4'>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='font-semibold text-gray-900 dark:text-gray-100'>In Progress</h3>
+                  <span className='bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-sm'>
+                    2
+                  </span>
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">API Development</span>
-                      <span className="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded text-xs">High</span>
+                <div className='space-y-3'>
+                  <div className='bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                        API Development
+                      </span>
+                      <span className='bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-1 rounded text-xs'>
+                        High
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">MK</div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Due: Jan 20</span>
+                    <div className='flex items-center gap-2'>
+                      <div className='w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs'>
+                        MK
+                      </div>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>Due: Jan 20</span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Done Column */}
-              <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Done</h3>
-                  <span className="bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-sm">4</span>
+              <div className='bg-green-50 dark:bg-green-900/30 rounded-xl p-4'>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='font-semibold text-gray-900 dark:text-gray-100'>Done</h3>
+                  <span className='bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-sm'>
+                    4
+                  </span>
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm opacity-75">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium line-through text-gray-900 dark:text-gray-100">Project Planning</span>
-                      <span className="bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs">Low</span>
+                <div className='space-y-3'>
+                  <div className='bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm opacity-75'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium line-through text-gray-900 dark:text-gray-100'>
+                        Project Planning
+                      </span>
+                      <span className='bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs'>
+                        Low
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">RP</div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Completed</span>
+                    <div className='flex items-center gap-2'>
+                      <div className='w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs'>
+                        RP
+                      </div>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>Completed</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <div className="mt-6 text-center">
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                ✨ Drag and drop tasks between columns • Filter by assignee, priority, or due date • Real-time collaboration
+
+            <div className='mt-6 text-center'>
+              <p className='text-gray-600 dark:text-gray-400 text-sm'>
+                ✨ Drag and drop tasks between columns • Filter by assignee, priority, or due date •
+                Real-time collaboration
               </p>
             </div>
           </div>
@@ -364,49 +406,49 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="bg-gray-900 py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+      <section className='bg-gray-900 py-20'>
+        <div className='max-w-6xl mx-auto px-6'>
+          <div className='grid md:grid-cols-2 gap-12 items-center'>
             <div>
-              <h2 className="text-3xl font-bold text-white mb-6">
+              <h2 className='text-3xl font-bold text-white mb-6'>
                 Built for teams that get things done
               </h2>
-              
-              <div className="grid grid-cols-2 gap-6">
+
+              <div className='grid grid-cols-2 gap-6'>
                 <div>
-                  <div className="text-3xl font-bold text-white">100+</div>
-                  <div className="text-gray-400">Projects managed</div>
+                  <div className='text-3xl font-bold text-white'>100+</div>
+                  <div className='text-gray-400'>Projects managed</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-white">1K+</div>
-                  <div className="text-gray-400">Tasks completed</div>
+                  <div className='text-3xl font-bold text-white'>1K+</div>
+                  <div className='text-gray-400'>Tasks completed</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-white">50+</div>
-                  <div className="text-gray-400">Teams organized</div>
+                  <div className='text-3xl font-bold text-white'>50+</div>
+                  <div className='text-gray-400'>Teams organized</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-white">24/7</div>
-                  <div className="text-gray-400">Always available</div>
+                  <div className='text-3xl font-bold text-white'>24/7</div>
+                  <div className='text-gray-400'>Always available</div>
                 </div>
               </div>
-              
-              <Link 
-                href="/auth/register"
-                className="inline-block mt-8 bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all"
+
+              <Link
+                href='/auth/register'
+                className='inline-block mt-8 bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all'
               >
                 Start your first project →
               </Link>
             </div>
-            
-            <div className="relative">
-              <div className="w-full h-64 bg-gradient-to-br from-orange-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-orange-500/30">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icons.Rocket className="w-8 h-8 text-white" />
+
+            <div className='relative'>
+              <div className='w-full h-64 bg-gradient-to-br from-orange-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-orange-500/30'>
+                <div className='text-center'>
+                  <div className='w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <Icons.Rocket className='w-8 h-8 text-white' />
                   </div>
-                  <div className="text-white font-semibold">Project Success</div>
-                  <div className="text-gray-300 text-sm">Delivered on time, every time</div>
+                  <div className='text-white font-semibold'>Project Success</div>
+                  <div className='text-gray-300 text-sm'>Delivered on time, every time</div>
                 </div>
               </div>
             </div>
@@ -415,51 +457,51 @@ export default function HomePage() {
       </section>
 
       {/* How it works section */}
-      <section className="bg-gradient-to-r from-orange-500 to-pink-500 py-20">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Getting started is simple
-          </h2>
-          <p className="text-orange-100 mb-12 text-xl">
+      <section className='bg-gradient-to-r from-orange-500 to-pink-500 py-20'>
+        <div className='max-w-6xl mx-auto px-6 text-center'>
+          <h2 className='text-4xl font-bold text-white mb-4'>Getting started is simple</h2>
+          <p className='text-orange-100 mb-12 text-xl'>
             Set up your first project in minutes and start collaborating with your team
           </p>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-white">1</span>
+
+          <div className='grid md:grid-cols-3 gap-8'>
+            <div className='bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4'>
+                <span className='text-2xl font-bold text-white'>1</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Create Your Workspace</h3>
-              <p className="text-orange-100 text-sm">
+              <h3 className='text-xl font-bold text-white mb-3'>Create Your Workspace</h3>
+              <p className='text-orange-100 text-sm'>
                 Set up your workspace and invite team members to collaborate on projects together.
               </p>
             </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-white">2</span>
+
+            <div className='bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4'>
+                <span className='text-2xl font-bold text-white'>2</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Add Your Projects</h3>
-              <p className="text-orange-100 text-sm">
-                Create projects, add tasks with priorities and due dates, and organize everything visually.
+              <h3 className='text-xl font-bold text-white mb-3'>Add Your Projects</h3>
+              <p className='text-orange-100 text-sm'>
+                Create projects, add tasks with priorities and due dates, and organize everything
+                visually.
               </p>
             </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-white">3</span>
+
+            <div className='bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20'>
+              <div className='w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4'>
+                <span className='text-2xl font-bold text-white'>3</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Track Progress</h3>
-              <p className="text-orange-100 text-sm">
-                Use drag-and-drop boards, filters, and real-time updates to keep everything on track.
+              <h3 className='text-xl font-bold text-white mb-3'>Track Progress</h3>
+              <p className='text-orange-100 text-sm'>
+                Use drag-and-drop boards, filters, and real-time updates to keep everything on
+                track.
               </p>
             </div>
           </div>
-          
-          <div className="mt-12">
-            <Link 
-              href="/auth/register"
-              className="inline-block bg-white text-orange-500 px-8 py-4 rounded-xl hover:bg-gray-100 transition-all font-bold text-lg"
+
+          <div className='mt-12'>
+            <Link
+              href='/auth/register'
+              className='inline-block bg-white text-orange-500 px-8 py-4 rounded-xl hover:bg-gray-100 transition-all font-bold text-lg'
             >
               Start Your First Project →
             </Link>
@@ -468,21 +510,29 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
+      <footer className='bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12'>
+        <div className='max-w-6xl mx-auto px-6'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-3'>
+              <div className='w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center'>
+                <span className='text-white font-bold text-sm'>T</span>
               </div>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">The app, for work.</span>
+              <span className='text-lg font-bold text-gray-900 dark:text-gray-100'>
+                The app, for work.
+              </span>
             </div>
-            
-            <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+
+            <div className='flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400'>
               <span>© 2025 TaskTrek</span>
-              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Security</Link>
-              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Privacy</Link>
-              <Link href="#" className="hover:text-gray-900 dark:hover:text-gray-200">Terms</Link>
+              <Link href='#' className='hover:text-gray-900 dark:hover:text-gray-200'>
+                Security
+              </Link>
+              <Link href='#' className='hover:text-gray-900 dark:hover:text-gray-200'>
+                Privacy
+              </Link>
+              <Link href='#' className='hover:text-gray-900 dark:hover:text-gray-200'>
+                Terms
+              </Link>
             </div>
           </div>
         </div>

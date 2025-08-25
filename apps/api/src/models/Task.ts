@@ -18,18 +18,21 @@ export interface ITask extends Document {
   updatedAt: Date;
 }
 
-const TaskSchema = new Schema<ITask>({
-  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
-  title: { type: String, required: true },
-  description: { type: String },
-  assignees: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  watchers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  status: { type: String, enum: ['todo', 'in_progress', 'done'], default: 'todo' },
-  priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
-  dueDate: { type: Date },
-  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  documents: [{ type: Schema.Types.ObjectId, ref: 'Document' }],
-}, { timestamps: true });
+const TaskSchema = new Schema<ITask>(
+  {
+    project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+    title: { type: String, required: true },
+    description: { type: String },
+    assignees: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    watchers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    status: { type: String, enum: ['todo', 'in_progress', 'done'], default: 'todo' },
+    priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
+    dueDate: { type: Date },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    documents: [{ type: Schema.Types.ObjectId, ref: 'Document' }],
+  },
+  { timestamps: true }
+);
 
 const Task = mongoose.model<ITask>('Task', TaskSchema);
 export default Task;

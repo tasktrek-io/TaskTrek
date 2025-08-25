@@ -12,7 +12,7 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   white: '\x1b[37m',
-  gray: '\x1b[90m'
+  gray: '\x1b[90m',
 };
 
 export enum LogLevel {
@@ -20,7 +20,7 @@ export enum LogLevel {
   WARN = 1,
   INFO = 2,
   DEBUG = 3,
-  TRACE = 4
+  TRACE = 4,
 }
 
 interface LogContext {
@@ -47,19 +47,25 @@ class Logger {
   private getLogLevel(): LogLevel {
     const level = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
     switch (level) {
-      case 'ERROR': return LogLevel.ERROR;
-      case 'WARN': return LogLevel.WARN;
-      case 'INFO': return LogLevel.INFO;
-      case 'DEBUG': return LogLevel.DEBUG;
-      case 'TRACE': return LogLevel.TRACE;
-      default: return LogLevel.INFO;
+      case 'ERROR':
+        return LogLevel.ERROR;
+      case 'WARN':
+        return LogLevel.WARN;
+      case 'INFO':
+        return LogLevel.INFO;
+      case 'DEBUG':
+        return LogLevel.DEBUG;
+      case 'TRACE':
+        return LogLevel.TRACE;
+      default:
+        return LogLevel.INFO;
     }
   }
 
   private formatTimestamp(): string {
     const now = new Date();
     // Convert to IST (UTC+5:30)
-    const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    const istTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
     return istTime.toISOString().replace('T', ' ').replace('Z', ' IST');
   }
 
@@ -83,7 +89,14 @@ class Logger {
     return contextStr ? ` [${contextStr}]` : '';
   }
 
-  private log(level: LogLevel, levelName: string, color: string, message: string, context?: LogContext, error?: Error): void {
+  private log(
+    level: LogLevel,
+    levelName: string,
+    color: string,
+    message: string,
+    context?: LogContext,
+    error?: Error
+  ): void {
     if (level > this.logLevel) {
       return;
     }
@@ -91,7 +104,7 @@ class Logger {
     const timestamp = this.formatTimestamp();
     const formattedLevel = this.formatLevel(levelName, color);
     const contextStr = this.formatContext(context);
-    
+
     let logMessage = `${colors.gray}${timestamp}${colors.reset} ${formattedLevel} ${colors.cyan}[${this.serviceName}]${colors.reset} ${message}${contextStr}`;
 
     if (error) {
@@ -132,7 +145,7 @@ class Logger {
       status: statusCode.toString(),
       responseTime: `${responseTime}ms`,
       ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.get('User-Agent')?.substring(0, 100)
+      userAgent: req.get('User-Agent')?.substring(0, 100),
     };
 
     // Add user ID if available (from auth middleware)
@@ -142,7 +155,7 @@ class Logger {
 
     const level = statusCode >= 400 ? 'warn' : 'info';
     const message = `${req.method} ${req.originalUrl} ${statusCode}`;
-    
+
     this[level](message, context);
   }
 
@@ -152,7 +165,7 @@ class Logger {
       operation,
       collection,
       ...(duration && { duration: `${duration}ms` }),
-      ...context
+      ...context,
     };
 
     this.debug(`Database ${operation}`, dbContext);
@@ -163,7 +176,7 @@ class Logger {
     const serviceContext: LogContext = {
       service: serviceName,
       operation,
-      ...context
+      ...context,
     };
 
     this.info(`Service operation`, serviceContext);
@@ -173,7 +186,7 @@ class Logger {
   security(event: string, context?: LogContext): void {
     const securityContext: LogContext = {
       event,
-      ...context
+      ...context,
     };
 
     this.warn(`Security event: ${event}`, securityContext);
@@ -186,12 +199,12 @@ export const logger = new Logger();
 // Express middleware for HTTP logging
 export const httpLogger = (req: Request, res: any, next: any) => {
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     logger.http(req, res.statusCode, duration);
   });
-  
+
   next();
 };
 

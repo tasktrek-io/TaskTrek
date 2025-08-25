@@ -25,19 +25,21 @@ function VerifyEmailContent() {
   const verifyEmail = async (verificationToken: string) => {
     try {
       const response = await api.post('/auth/verify-email', {
-        token: verificationToken
+        token: verificationToken,
       });
 
       setStatus('success');
       setMessage('Email verified successfully! You are now logged in.');
-      
+
       // Store the token
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         // Dispatch custom login event for socket connection
-        window.dispatchEvent(new CustomEvent('socket:login', { 
-          detail: { token: response.data.token } 
-        }));
+        window.dispatchEvent(
+          new CustomEvent('socket:login', {
+            detail: { token: response.data.token },
+          })
+        );
       }
 
       // Redirect to dashboard after 3 seconds
@@ -54,7 +56,7 @@ function VerifyEmailContent() {
     try {
       setIsResending(true);
       const email = localStorage.getItem('pendingVerificationEmail');
-      
+
       if (!email) {
         setMessage('Unable to resend verification email. Please register again.');
         return;
@@ -70,51 +72,69 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-md w-full space-y-8'>
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center">
+          <div className='mx-auto h-12 w-12 flex items-center justify-center'>
             {status === 'loading' && (
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
             )}
             {status === 'success' && (
-              <div className="rounded-full h-12 w-12 bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className='rounded-full h-12 w-12 bg-green-100 dark:bg-green-900 flex items-center justify-center'>
+                <svg
+                  className='h-6 w-6 text-green-600 dark:text-green-400'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M5 13l4 4L19 7'
+                  />
                 </svg>
               </div>
             )}
             {status === 'error' && (
-              <div className="rounded-full h-12 w-12 bg-red-100 dark:bg-red-900 flex items-center justify-center">
-                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <div className='rounded-full h-12 w-12 bg-red-100 dark:bg-red-900 flex items-center justify-center'>
+                <svg
+                  className='h-6 w-6 text-red-600 dark:text-red-400'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
                 </svg>
               </div>
             )}
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white'>
             {status === 'loading' && 'Verifying Email...'}
             {status === 'success' && 'Email Verified!'}
             {status === 'error' && 'Verification Failed'}
           </h2>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-              {message}
-            </p>
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6'>
+          <div className='text-center'>
+            <p className='text-sm text-gray-600 dark:text-gray-300 mb-6'>{message}</p>
 
             {status === 'success' && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+              <div className='space-y-4'>
+                <div className='text-center'>
+                  <p className='text-sm text-gray-500 dark:text-gray-400'>
                     Redirecting to dashboard in 3 seconds...
                   </p>
                 </div>
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                 >
                   Go to Dashboard Now
                 </button>
@@ -122,25 +142,25 @@ function VerifyEmailContent() {
             )}
 
             {status === 'error' && (
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 <button
                   onClick={resendVerification}
                   disabled={isResending}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
                 >
                   {isResending ? 'Sending...' : 'Resend Verification Email'}
                 </button>
-                
-                <div className="flex justify-center space-x-4">
+
+                <div className='flex justify-center space-x-4'>
                   <button
                     onClick={() => router.push('/auth/login')}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500"
+                    className='text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500'
                   >
                     Back to Login
                   </button>
                   <button
                     onClick={() => router.push('/auth/register')}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500"
+                    className='text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500'
                   >
                     Register Again
                   </button>
@@ -149,15 +169,15 @@ function VerifyEmailContent() {
             )}
 
             {status === 'loading' && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className='text-sm text-gray-500 dark:text-gray-400'>
                 Please wait while we verify your email address...
               </p>
             )}
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+        <div className='text-center'>
+          <p className='text-xs text-gray-500 dark:text-gray-400'>
             Having trouble? Contact our support team for assistance.
           </p>
         </div>
@@ -169,19 +189,19 @@ function VerifyEmailContent() {
 // Loading component for Suspense fallback
 function VerifyEmailLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-md w-full space-y-8'>
+        <div className='text-center'>
+          <div className='mx-auto h-12 w-12 flex items-center justify-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white'>
             Loading...
           </h2>
         </div>
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6'>
+          <div className='text-center'>
+            <p className='text-sm text-gray-600 dark:text-gray-300'>
               Please wait while we load the verification page...
             </p>
           </div>

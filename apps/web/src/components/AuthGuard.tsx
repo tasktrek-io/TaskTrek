@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api';
@@ -8,20 +8,23 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    api.get('/auth/me')
+    api
+      .get('/auth/me')
       .then(() => setAuthed(true))
       .catch(() => setAuthed(false))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className='p-6'>Loading...</div>;
   if (!authed) {
     return (
-      <div className="p-6">
+      <div className='p-6'>
         <p>You are not signed in.</p>
-        <Link href="/auth/login" className="text-blue-600 underline">Go to Login</Link>
+        <Link href='/auth/login' className='text-blue-600 underline'>
+          Go to Login
+        </Link>
       </div>
     );
   }
-  return <>{children}</>;  
+  return <>{children}</>;
 }

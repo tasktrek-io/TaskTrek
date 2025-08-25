@@ -27,20 +27,20 @@ class EmailService {
       port: process.env.SMTP_PORT,
       user: process.env.SMTP_USER,
       passLength: process.env.SMTP_PASS?.length,
-      secure: parseInt(process.env.SMTP_PORT || '465') === 465
+      secure: parseInt(process.env.SMTP_PORT || '465') === 465,
     });
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {
     try {
       const verificationLink = `${process.env.WEB_ORIGIN}/auth/verify-email?token=${token}`;
-      
+
       const mailOptions = {
         from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
         to: email,
         subject: 'Verify Your Email - TaskTrek',
         html: this.getVerificationEmailTemplate('User', verificationLink),
-        text: this.getVerificationEmailText('User', verificationLink)
+        text: this.getVerificationEmailText('User', verificationLink),
       };
 
       logger.debug('Attempting to send verification email', {
@@ -48,19 +48,23 @@ class EmailService {
         port: process.env.SMTP_PORT,
         user: process.env.SMTP_USER,
         from: process.env.FROM_EMAIL,
-        to: email
+        to: email,
       });
 
       const result = await this.transporter.sendMail(mailOptions);
       logger.info('Email sent successfully', { messageId: result.messageId, to: email });
     } catch (error: any) {
-      logger.error('Detailed email error', {
-        error: error?.message,
-        code: error?.code,
-        command: error?.command,
-        response: error?.response,
-        to: email
-      }, error);
+      logger.error(
+        'Detailed email error',
+        {
+          error: error?.message,
+          code: error?.code,
+          command: error?.command,
+          response: error?.response,
+          to: email,
+        },
+        error
+      );
       throw new Error(`Failed to send verification email: ${error?.message || 'Unknown error'}`);
     }
   }
