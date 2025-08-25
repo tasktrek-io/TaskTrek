@@ -69,7 +69,7 @@ jobs:
   dependency-review:
     name: 🔍 Dependency Review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.repository_visibility == 'public'
     
     steps:
       - name: 📦 Checkout code
@@ -79,3 +79,42 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: moderate
+          
+  manual-dependency-check:
+    name: 🔍 Manual Dependency Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.repository_visibility == 'private'
+    
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: 📥 Install dependencies
+        run: npm ci
+        
+      - name: 🔍 Check for known vulnerabilities
+        run: npm audit --audit-level=moderate
+        
+      - name: 📊 List dependency changes (if any)
+        run: |
+          echo "📋 Checking for package.json changes..."
+          git diff origin/main..HEAD --name-only | grep -E "(package\.json|package-lock\.json)" || echo "No dependency changes detected"
+          
+      - name: 🚨 Security advisory check
+        run: |
+          echo "🔒 Running enhanced security check..."
+          npm audit --audit-level=low --json > audit-results.json || true
+          
+          # Check if there are any vulnerabilities
+          if [ -s audit-results.json ]; then
+            echo "⚠️ Security audit results found. Please review:"
+            cat audit-results.json | jq -r '.vulnerabilities // empty | to_entries[] | "- \(.key): \(.value.severity)"' || echo "Raw audit output available"
+          else
+            echo "✅ No security vulnerabilities detected"
+          fi
