@@ -66,28 +66,16 @@ jobs:
       - name: 📊 Check for outdated packages
         run: npm outdated || true
 
-  dependency-review:
-    name: 🔍 Dependency Review
+  dependency-check:
+    name: 🔍 Dependency Security Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.repository_visibility == 'public'
+    if: github.event_name == 'pull_request'
     
     steps:
       - name: 📦 Checkout code
         uses: actions/checkout@v4
-        
-      - name: 🔍 Dependency Review
-        uses: actions/dependency-review-action@v4
         with:
-          fail-on-severity: moderate
-          
-  manual-dependency-check:
-    name: 🔍 Manual Dependency Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.repository_visibility == 'private'
-    
-    steps:
-      - name: 📦 Checkout code
-        uses: actions/checkout@v4
+          fetch-depth: 0  # Need full history to compare changes
         
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
@@ -98,23 +86,59 @@ jobs:
       - name: 📥 Install dependencies
         run: npm ci
         
-      - name: 🔍 Check for known vulnerabilities
+      - name: 🔍 Security audit
         run: npm audit --audit-level=moderate
         
-      - name: 📊 List dependency changes (if any)
+      - name: 📊 Check dependency changes
         run: |
-          echo "📋 Checking for package.json changes..."
-          git diff origin/main..HEAD --name-only | grep -E "(package\.json|package-lock\.json)" || echo "No dependency changes detected"
+          echo "📋 Checking for dependency changes in this PR..."
           
-      - name: 🚨 Security advisory check
+          # Check if package files were modified
+          CHANGED_FILES=$(git diff --name-only origin/main..HEAD | grep -E "(package\.json|package-lock\.json)" || true)
+          
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "📦 Dependency files changed:"
+            echo "$CHANGED_FILES"
+            
+            # Show package.json diff if it exists
+            if echo "$CHANGED_FILES" | grep -q "package\.json"; then
+              echo ""
+              echo "📋 Package.json changes:"
+              git diff origin/main..HEAD -- package.json apps/*/package.json || true
+            fi
+          else
+            echo "✅ No dependency changes detected in this PR"
+          fi
+          
+      - name: 🚨 Vulnerability summary
         run: |
-          echo "🔒 Running enhanced security check..."
-          npm audit --audit-level=low --json > audit-results.json || true
+          echo "🔒 Running comprehensive security check..."
           
-          # Check if there are any vulnerabilities
+          # Run audit and capture output
+          npm audit --json > audit-results.json 2>/dev/null || true
+          
+          # Check if audit found issues
           if [ -s audit-results.json ]; then
-            echo "⚠️ Security audit results found. Please review:"
-            cat audit-results.json | jq -r '.vulnerabilities // empty | to_entries[] | "- \(.key): \(.value.severity)"' || echo "Raw audit output available"
+            VULN_COUNT=$(cat audit-results.json | jq -r '.metadata.vulnerabilities.total // 0' 2>/dev/null || echo "0")
+            
+            if [ "$VULN_COUNT" != "0" ] && [ "$VULN_COUNT" != "null" ]; then
+              echo "⚠️ Found $VULN_COUNT vulnerabilities. Run 'npm audit' locally for details."
+              
+              # Show summary by severity if available
+              cat audit-results.json | jq -r '
+                if .metadata.vulnerabilities then
+                  "Severity breakdown:",
+                  "- Critical: \(.metadata.vulnerabilities.critical // 0)",
+                  "- High: \(.metadata.vulnerabilities.high // 0)", 
+                  "- Moderate: \(.metadata.vulnerabilities.moderate // 0)",
+                  "- Low: \(.metadata.vulnerabilities.low // 0)"
+                else
+                  "Run npm audit for detailed vulnerability information"
+                end
+              ' 2>/dev/null || echo "Run 'npm audit' locally for detailed vulnerability information"
+            else
+              echo "✅ No security vulnerabilities detected"
+            fi
           else
             echo "✅ No security vulnerabilities detected"
           fi
