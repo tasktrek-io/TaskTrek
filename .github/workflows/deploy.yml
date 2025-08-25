@@ -57,6 +57,21 @@ jobs:
           cp -r apps/api/dist deployment-package/api-dist
           cp -r apps/web/.next deployment-package/web-next
           
+          # Copy production node_modules for runtime
+          echo "📦 Copying production dependencies..."
+          
+          # Create minimal API node_modules with only production deps
+          cd apps/api
+          npm ci --omit=dev --prefer-offline --no-audit --no-fund
+          cd ../..
+          cp -r apps/api/node_modules deployment-package/api-node_modules
+          
+          # Create minimal Web node_modules with only production deps  
+          cd apps/web
+          npm ci --omit=dev --prefer-offline --no-audit --no-fund
+          cd ../..
+          cp -r apps/web/node_modules deployment-package/web-node_modules
+          
           # Copy public directory if it exists, otherwise create empty one
           if [ -d "apps/web/public" ]; then
             cp -r apps/web/public deployment-package/web-public
@@ -70,6 +85,11 @@ jobs:
           cp package.json deployment-package/
           cp apps/api/package.json deployment-package/api-package.json
           cp apps/web/package.json deployment-package/web-package.json
+          
+          # Copy lock files for faster, reliable installs
+          cp package-lock.json deployment-package/ || echo "⚠️ No root package-lock.json found"
+          cp apps/api/package-lock.json deployment-package/api-package-lock.json || echo "⚠️ No API package-lock.json found"
+          cp apps/web/package-lock.json deployment-package/web-package-lock.json || echo "⚠️ No Web package-lock.json found"
           
           # Copy scripts
           cp scripts/health-check.sh deployment-package/
@@ -109,6 +129,11 @@ jobs:
           cp -r api-dist/* apps/api/dist/
           cp -r web-next/* apps/web/.next/
           
+          # Copy pre-built node_modules
+          echo "📦 Setting up dependencies..."
+          cp -r api-node_modules apps/api/node_modules
+          cp -r web-node_modules apps/web/node_modules
+          
           # Copy public files if they exist
           if [ -d "web-public" ] && [ "$(ls -A web-public 2>/dev/null)" ]; then
             cp -r web-public/* apps/web/public/
@@ -117,15 +142,20 @@ jobs:
             echo "⚠️ No public files to copy"
           fi
           
-          # Copy package.json files for dependencies
+          # Copy package.json files for reference
           cp api-package.json apps/api/package.json
           cp web-package.json apps/web/package.json
           
-          # Install only runtime dependencies for API
-          echo "📦 Installing API runtime dependencies..."
-          cd apps/api
-          npm ci --production --prefer-offline --no-audit --no-fund || echo "⚠️ API deps install failed"
-          cd ../..
+          # Copy lock files if they exist (for future reference)
+          if [ -f "api-package-lock.json" ]; then
+            cp api-package-lock.json apps/api/package-lock.json
+            echo "✅ Copied API package-lock.json"
+          fi
+          
+          if [ -f "web-package-lock.json" ]; then
+            cp web-package-lock.json apps/web/package-lock.json
+            echo "✅ Copied Web package-lock.json"
+          fi
           
           # Start applications
           echo "🚀 Starting applications with PM2..."

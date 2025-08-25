@@ -20,8 +20,8 @@ module.exports = {
     },
     {
       name: 'tasktrek-web',
-      script: 'npm',
-      args: 'start',
+      script: './node_modules/.bin/next',
+      args: 'start -p 3000',
       cwd: './apps/web',
       instances: 1,
       exec_mode: 'fork',
