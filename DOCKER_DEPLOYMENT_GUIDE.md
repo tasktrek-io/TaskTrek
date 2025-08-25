@@ -44,35 +44,43 @@ cd TaskTrek
 ### 4. Configure environment variables
 
 ```bash
-cp .env.example .env
-nano .env
+# Copy API environment template
+cp apps/api/.env.example apps/api/.env
+nano apps/api/.env
+
+# Copy Web environment template
+cp apps/web/.env.example apps/web/.env.local
+nano apps/web/.env.local
 ```
 
-Update the following variables in `.env`:
+Update the API environment file (`apps/api/.env`):
 
 ```env
-# Database (leave as is for Docker)
+NODE_ENV=production
+PORT=5000
 MONGO_URI=mongodb://mongo:27017/project_mgmt
-
-# JWT (change these!)
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+WEB_ORIGIN=http://3.110.108.184
 
 # Email Configuration
 SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
+SMTP_PORT=465
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 FROM_EMAIL=your-email@gmail.com
+FROM_NAME=TaskTrek
 
-# URLs (update IP if needed)
-WEB_ORIGIN=http://3.110.108.184
-API_URL=http://3.110.108.184:5000
-NEXT_PUBLIC_API_URL=http://3.110.108.184:5000
-
-# File Upload (if using Cloudinary)
+# Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-api-key
 CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+```
+
+Update the Web environment file (`apps/web/.env.local`):
+
+```env
+NEXT_PUBLIC_API_URL=http://3.110.108.184/api
+NEXT_PUBLIC_WS_URL=http://3.110.108.184
 ```
 
 ## 🔄 Deployment Process

@@ -97,6 +97,37 @@ git fetch origin
 git reset --hard origin/main
 success "Code updated from Git"
 
+# Check and create environment files
+log "🔧 Checking environment configuration..."
+
+if [ ! -f "apps/api/.env" ]; then
+    if [ -f "apps/api/.env.example" ]; then
+        log "📋 Creating apps/api/.env from template..."
+        cp apps/api/.env.example apps/api/.env
+        warn "Please edit apps/api/.env with your production settings before continuing"
+        log "Required settings: MONGO_URI, JWT_SECRET, SMTP_*, CLOUDINARY_*"
+        read -p "Press Enter after you've configured apps/api/.env..."
+    else
+        error "apps/api/.env.example not found. Cannot create environment file."
+        exit 1
+    fi
+fi
+
+if [ ! -f "apps/web/.env.local" ]; then
+    if [ -f "apps/web/.env.example" ]; then
+        log "📋 Creating apps/web/.env.local from template..."
+        cp apps/web/.env.example apps/web/.env.local
+        warn "Please edit apps/web/.env.local with your production settings before continuing"
+        log "Required settings: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WS_URL"
+        read -p "Press Enter after you've configured apps/web/.env.local..."
+    else
+        error "apps/web/.env.example not found. Cannot create environment file."
+        exit 1
+    fi
+fi
+
+success "Environment files ready"
+
 # Create backup of current deployment
 if [ -f "$COMPOSE_FILE" ]; then
     log "📦 Creating backup of current deployment..."
