@@ -14,7 +14,7 @@ A modern, full-stack project management application built with Next.js, Express.
 - **Workspace Management** - Multi-workspace support for different teams/organizations
 - **Project Organization** - Create and manage projects within workspaces
 - **Task Management** - Comprehensive task creation, assignment, and tracking
-- **Real-time Notifications** - Stay updated with project activities
+- **Real-time Notifications** - Stay updated with project activities and online status tracking
 - **Activity Tracking** - Monitor task and project changes
 
 ### UI/UX Features
