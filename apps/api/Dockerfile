@@ -13,7 +13,7 @@ COPY ../../package.json ../../package-lock.json ./
 COPY package.json ./
 
 # Install dependencies for this workspace only
-RUN npm ci --only=production --no-audit --no-fund --workspace=apps/api
+RUN npm ci --only=production --no-audit --no-fund --workspace=apps/api --ignore-scripts --ignore-scripts
 
 # Build stage
 FROM base AS builder

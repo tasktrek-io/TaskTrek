@@ -13,7 +13,7 @@ COPY ../../package.json ../../package-lock.json ./
 COPY package.json ./
 
 # Install dependencies for this workspace only
-RUN npm ci --no-audit --no-fund --workspace=apps/web
+RUN npm ci --no-audit --no-fund --workspace=apps/web --ignore-scripts --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM base AS builder
