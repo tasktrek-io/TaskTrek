@@ -51,14 +51,26 @@ jobs:
           # Add EC2 to known hosts
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           
+          # Configure SSH to prevent timeouts
+          mkdir -p ~/.ssh
+          cat >> ~/.ssh/config << 'EOF'
+          Host deployment-server
+            HostName ${{ secrets.EC2_HOST }}
+            User ${{ secrets.EC2_USER }}
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+            TCPKeepAlive yes
+            ConnectTimeout 10
+          EOF
+          
           # Create deployment directory if it doesn't exist
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+          ssh deployment-server "
             mkdir -p /home/ubuntu/TaskTrek
             mkdir -p /home/ubuntu/backup
           "
           
           # Clone or update repository on EC2
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+          ssh deployment-server "
             if [ ! -d '/home/ubuntu/TaskTrek/.git' ]; then
               echo '📥 Cloning repository...'
               git clone https://github.com/${{ github.repository }}.git /home/ubuntu/TaskTrek
@@ -68,14 +80,17 @@ jobs:
           "
           
           # Copy deployment script to EC2
-          scp scripts/deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/TaskTrek/
-          scp scripts/health-check.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/TaskTrek/
+          scp -o ConnectTimeout=10 -o ServerAliveInterval=60 scripts/deploy.sh deployment-server:/home/ubuntu/TaskTrek/
+          scp -o ConnectTimeout=10 -o ServerAliveInterval=60 scripts/health-check.sh deployment-server:/home/ubuntu/TaskTrek/
           
-          # Run deployment script
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+          # Run deployment script with timeout protection
+          ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 deployment-server "
             cd /home/ubuntu/TaskTrek
             chmod +x deploy.sh health-check.sh
-            ./deploy.sh
+            timeout 900 ./deploy.sh || {
+              echo 'Deployment script timed out after 15 minutes'
+              exit 1
+            }
           "
           
       - name: 🔍 Health check

@@ -24,18 +24,37 @@ cd "$DEPLOY_PATH"
 git fetch origin
 git reset --hard origin/main
 
-# Install dependencies
+# Clean up node_modules to save space and avoid conflicts
+echo "🧹 Cleaning up old dependencies..."
+rm -rf node_modules
+rm -rf apps/*/node_modules
+
+# Install dependencies with memory optimization
 echo "📦 Installing dependencies..."
-npm ci --production
+export NODE_OPTIONS="--max-old-space-size=1024"
+npm ci --production --prefer-offline --no-audit --no-fund
 
 # Build applications
 echo "🏗️ Building applications..."
 npm run build
 
-# Install workspace dependencies
-echo "📦 Installing workspace dependencies..."
-cd apps/api && npm ci --production && cd ../..
-cd apps/web && npm ci --production && cd ../..
+# Install workspace dependencies separately to avoid memory issues
+echo "📦 Installing API dependencies..."
+cd apps/api 
+rm -rf node_modules
+npm ci --production --prefer-offline --no-audit --no-fund
+cd ../..
+
+echo "📦 Installing Web dependencies..."
+cd apps/web 
+rm -rf node_modules
+npm ci --production --prefer-offline --no-audit --no-fund
+cd ../..
+
+# Clean up build artifacts to save space
+echo "🧹 Cleaning up build artifacts..."
+find . -name "*.tsbuildinfo" -delete
+npm cache clean --force
 
 # Start applications
 echo "🚀 Starting applications..."
