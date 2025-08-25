@@ -23,7 +23,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "type-check": "npm run type-check --workspace api && npm run type-check --workspace web",
     "pre-commit": "npm run format:check && npm run lint && npm run type-check && npm run build",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "deploy": "chmod +x scripts/deploy.sh && scripts/deploy.sh",
+    "health-check": "chmod +x scripts/health-check.sh && scripts/health-check.sh"
   },
   "devDependencies": {
     "@types/node": "^20.15.0",
