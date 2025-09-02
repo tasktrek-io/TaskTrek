@@ -56,12 +56,14 @@ export default function Sidebar({
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedOrgForMembers, setSelectedOrgForMembers] = useState<any>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Check if device is mobile and set default collapsed state
     const checkMobileAndSetCollapsed = () => {
-      const isMobile = window.innerWidth < 768; // md breakpoint
-      setIsCollapsed(isMobile);
+      const mobile = window.innerWidth < 768; // md breakpoint
+      setIsMobile(mobile);
+      setIsCollapsed(mobile);
     };
 
     // Set initial state
@@ -344,11 +346,24 @@ export default function Sidebar({
   useEffect(() => {
     // Update CSS custom property for sidebar width
     const updateSidebarWidth = () => {
-      document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '4rem' : '16rem');
+      if (isMobile) {
+        // Mobile: no sidebar width, but add bottom padding for bottom nav and top padding for header
+        document.documentElement.style.setProperty('--sidebar-width', '0rem');
+        document.documentElement.style.setProperty('--bottom-nav-height', '4rem');
+        document.documentElement.style.setProperty('--mobile-header-height', '4rem');
+      } else {
+        // Desktop: sidebar width
+        document.documentElement.style.setProperty(
+          '--sidebar-width',
+          isCollapsed ? '4rem' : '16rem'
+        );
+        document.documentElement.style.setProperty('--bottom-nav-height', '0rem');
+        document.documentElement.style.setProperty('--mobile-header-height', '0rem');
+      }
     };
 
     updateSidebarWidth();
-  }, [isCollapsed]);
+  }, [isCollapsed, isMobile]);
 
   const getMenuItems = (): MenuItem[] => {
     const baseItems = [
@@ -389,9 +404,280 @@ export default function Sidebar({
 
   const menuItems = getMenuItems();
 
+  // Mobile bottom navigation
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Header */}
+        <div className='fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 md:hidden'>
+          <div className='flex items-center justify-between p-4'>
+            {/* Left side - Logo */}
+            <div className='flex items-center gap-2'>
+              <div className='w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold'>
+                <Icons.Settings className='w-5 h-5' />
+              </div>
+              <span className='font-semibold text-lg text-gray-900 dark:text-white'>TaskTrek</span>
+            </div>
+
+            {/* Right side - Notifications and Theme Toggle */}
+            <div className='flex items-center gap-2'>
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Bottom Navigation */}
+        <div className='fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 md:hidden'>
+          <div className='flex items-center justify-around py-2'>
+            {menuItems.slice(0, 3).map(item => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors relative ${
+                    isActive
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <div className='relative'>
+                    {typeof item.icon === 'string' ? (
+                      <span className='text-lg'>{item.icon}</span>
+                    ) : (
+                      <span>{item.icon}</span>
+                    )}
+                  </div>
+                  <span className='text-xs font-medium'>{item.name}</span>
+                </Link>
+              );
+            })}
+
+            {/* More menu for additional items */}
+            <button
+              onClick={() => setShowContextDropdown(!showContextDropdown)}
+              className='flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors text-gray-600 dark:text-gray-400'
+            >
+              <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M4 6h16M4 12h16M4 18h16'
+                />
+              </svg>
+              <span className='text-xs font-medium'>More</span>
+            </button>
+          </div>
+
+          {/* Mobile context/workspace selector dropdown */}
+          {showContextDropdown && (
+            <>
+              <div className='fixed inset-0 z-40' onClick={() => setShowContextDropdown(false)} />
+              <div className='absolute bottom-full left-0 right-0 mb-2 mx-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-2xl z-50 max-h-80 overflow-y-auto'>
+                {/* Context Switcher */}
+                {currentContext && (
+                  <div className='p-4 border-b border-gray-200 dark:border-gray-600'>
+                    <div className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                      Current Context
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-lg'>{currentContext.logo}</span>
+                      <span className='font-medium text-gray-900 dark:text-gray-100'>
+                        {currentContext.name}
+                      </span>
+                    </div>
+
+                    {/* Switch Context */}
+                    <div className='mt-3'>
+                      <div className='text-xs font-medium text-gray-500 dark:text-gray-400 mb-2'>
+                        Switch Context
+                      </div>
+                      <div className='space-y-1'>
+                        {contexts
+                          .filter(ctx => ctx._id !== currentContext._id)
+                          .map(context => (
+                            <button
+                              key={context._id}
+                              onClick={() => handleContextChange(context)}
+                              className='w-full flex items-center gap-2 p-2 text-left rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                            >
+                              <span className='text-sm'>
+                                {context.logo === '👤' ? (
+                                  <Icons.User className='w-4 h-4' />
+                                ) : context.logo === '🏢' ? (
+                                  <Icons.Building2 className='w-4 h-4' />
+                                ) : (
+                                  context.logo
+                                )}
+                              </span>
+                              <span className='text-sm font-medium'>{context.name}</span>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Workspace Selector */}
+                {currentWorkspace && workspaces.length > 0 && (
+                  <div className='p-4 border-b border-gray-200 dark:border-gray-600'>
+                    <div className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                      Current Workspace
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <div
+                        className='w-3 h-3 rounded-full'
+                        style={{ backgroundColor: currentWorkspace.color }}
+                      />
+                      <span className='font-medium text-gray-900 dark:text-gray-100'>
+                        {currentWorkspace.name}
+                      </span>
+                    </div>
+
+                    {/* Switch Workspace */}
+                    {workspaces.length > 1 && (
+                      <div className='mt-3'>
+                        <div className='text-xs font-medium text-gray-500 dark:text-gray-400 mb-2'>
+                          Switch Workspace
+                        </div>
+                        <div className='space-y-1'>
+                          {workspaces
+                            .filter(ws => ws._id !== currentWorkspace._id)
+                            .map(workspace => (
+                              <button
+                                key={workspace._id}
+                                onClick={() => handleWorkspaceChange(workspace)}
+                                className='w-full flex items-center gap-2 p-2 text-left rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                              >
+                                <div
+                                  className='w-3 h-3 rounded-full'
+                                  style={{ backgroundColor: workspace.color }}
+                                />
+                                <span className='text-sm font-medium'>{workspace.name}</span>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Additional Menu Items */}
+                <div className='p-4 border-b border-gray-200 dark:border-gray-600'>
+                  <div className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    Quick Actions
+                  </div>
+                  <div className='space-y-1'>
+                    {/* Profile Link */}
+                    <Link
+                      href='/profile'
+                      onClick={() => setShowContextDropdown(false)}
+                      className={`w-full flex items-center gap-2 p-2 text-left rounded transition-colors ${
+                        pathname === '/profile'
+                          ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className='relative'>
+                        <Icons.User className='w-4 h-4' />
+                        {/* Connection status indicator */}
+                        <span
+                          className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white ${
+                            isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                          }`}
+                        />
+                      </div>
+                      <span className='text-sm font-medium'>Profile</span>
+                    </Link>
+
+                    {/* Members link for organizations */}
+                    {currentContext && currentContext.type === 'organization' && (
+                      <Link
+                        href='/members'
+                        onClick={() => setShowContextDropdown(false)}
+                        className={`w-full flex items-center gap-2 p-2 text-left rounded transition-colors ${
+                          pathname === '/members'
+                            ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <Icons.Users className='w-4 h-4' />
+                        <span className='text-sm font-medium'>Members</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Options */}
+                <div className='p-4'>
+                  <button
+                    onClick={() => {
+                      setShowContextDropdown(false);
+                      setShowCreateOrgModal(true);
+                    }}
+                    className='w-full flex items-center gap-2 p-2 text-left text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'
+                  >
+                    <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M12 6v6m0 0v6m0-6h6m-6 0H6'
+                      />
+                    </svg>
+                    <span className='text-sm'>Create Organization</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowContextDropdown(false);
+                      logout();
+                    }}
+                    className='w-full flex items-center gap-2 p-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors mt-2'
+                  >
+                    <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                      />
+                    </svg>
+                    <span className='text-sm'>Logout</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Create Organization Modal */}
+        <CreateOrganizationModal
+          isOpen={showCreateOrgModal}
+          onClose={() => setShowCreateOrgModal(false)}
+          onOrganizationCreated={handleOrganizationCreated}
+        />
+
+        {/* Organization Members Modal */}
+        <OrganizationMembersModal
+          isOpen={showMembersModal}
+          onClose={() => {
+            setShowMembersModal(false);
+            setSelectedOrgForMembers(null);
+          }}
+          organization={selectedOrgForMembers}
+          onUpdate={handleMembersUpdated}
+        />
+      </>
+    );
+  }
+
+  // Desktop sidebar
   return (
     <div
-      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30`}
+      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col transition-all duration-300 fixed left-0 top-0 z-30 hidden md:flex`}
     >
       {/* Header */}
       <div className='p-4 border-b border-gray-200'>

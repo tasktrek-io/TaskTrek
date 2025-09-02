@@ -5,6 +5,8 @@
 :root { 
   color-scheme: light dark;
   --sidebar-width: 16rem;
+  --bottom-nav-height: 0rem;
+  --mobile-header-height: 0rem;
 }
 
 html, body {
@@ -14,4 +16,12 @@ html, body {
 /* Ensure main content transitions smoothly when sidebar changes */
 main {
   transition: margin-left 300ms ease-in-out;
+}
+
+/* Add bottom padding on mobile for bottom navigation and top padding for header */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: var(--bottom-nav-height);
+    padding-top: var(--mobile-header-height);
+  }
 }

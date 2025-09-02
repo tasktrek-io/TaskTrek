@@ -93,10 +93,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       <div className='min-h-screen bg-gray-50 dark:bg-gray-900'>
         <Sidebar currentWorkspace={sidebarWorkspace} onWorkspaceChange={setCurrentWorkspace} />
 
-        <main
-          className='p-6 transition-all duration-300'
-          style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}
-        >
+        <main className='p-6 transition-all duration-300 md:ml-[var(--sidebar-width,16rem)] pb-20 md:pb-6 pt-20 md:pt-6'>
           {children}
         </main>
       </div>
