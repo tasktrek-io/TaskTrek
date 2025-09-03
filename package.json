@@ -31,7 +31,13 @@
     "docker:logs": "docker-compose logs -f",
     "docker:clean": "docker-compose down && docker system prune -a -f",
     "deploy": "chmod +x scripts/deploy.sh && scripts/deploy.sh",
-    "health-check": "chmod +x scripts/health-check.sh && scripts/health-check.sh"
+    "health-check": "chmod +x scripts/health-check.sh && scripts/health-check.sh",
+    "build:prod": "docker-compose -f docker-compose.prod.yml build",
+    "deploy:prod": "chmod +x scripts/deploy-prod.sh && scripts/deploy-prod.sh",
+    "deploy:check": "chmod +x scripts/pre-deploy-check.sh && scripts/pre-deploy-check.sh",
+    "deploy:aws": "npm run deploy:check && chmod +x scripts/deploy-to-aws.sh && scripts/deploy-to-aws.sh",
+    "build:push": "chmod +x scripts/build-and-push.sh && scripts/build-and-push.sh",
+    "deploy:aws-prebuilt": "chmod +x scripts/deploy-aws-prebuilt.sh && scripts/deploy-aws-prebuilt.sh"
   },
   "devDependencies": {
     "@types/node": "^20.15.0",

@@ -97,21 +97,18 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       // Load notifications and unread count
       const [notificationsRes, unreadCountRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/notifications`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/notifications`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }),
-        fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/notifications/unread-count`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        ),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/notifications/unread-count`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
       ]);
 
       if (notificationsRes.ok && unreadCountRes.ok) {
@@ -234,7 +231,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setIsConnected(false);
     }
 
-    const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', {
+    const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost', {
       auth: {
         token: token,
       },
